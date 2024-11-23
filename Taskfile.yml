@@ -1,0 +1,58 @@
+# https://taskfile.dev
+version: '3'
+
+silent: true
+
+vars:
+  GO_MODULE: github.com/dndev-xx/go-ninja-chat
+  GOLANGCI_LINT_VERSION: v1.56.2
+  DEV_TOOLS: |
+    github.com/daixiang0/gci@v0.10.1
+    mvdan.cc/gofumpt@v0.4.0
+
+tasks:
+  default:
+    cmds:
+      - task: all
+
+  all:
+    cmds:
+      - task: tidy
+      - task: fmt
+      - task: lint
+      - task: tests
+      - task: build
+
+  tidy:
+    cmds:
+      - echo "- Tidy"
+      - go mod tidy
+      - go mod vendor
+
+  fmt:
+    cmds:
+      - echo "- Format"
+      - gofumpt -w .
+      - gci -w .
+
+  lint:
+    cmds:
+      - echo "- Lint"
+     
+  tests:
+    cmds:
+      - echo "- Tests"
+
+  build:
+    cmds:
+      - echo "- Build"
+      - go build ./cmd/chat-service
+
+  dev-tools:install:
+    cmds:
+      - echo "- Install dev tools"
+
+  generate:
+    cmds:
+      - echo "Run go generate..."
+      - go generate ./...
