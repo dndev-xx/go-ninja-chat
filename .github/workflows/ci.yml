@@ -12,16 +12,24 @@ env:
 
 jobs:
   lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/setup-go@v5
-        with:
-          go-version: ${{ env.GO_VERSION }}
-      - uses: actions/checkout@v4
-      - uses: golangci/golangci-lint-action@v4
-        with:
-          version: ${{ env.GOLANGCI_LINT_VERSION }}
-          args: --timeout=5m
+      runs-on: ubuntu-latest
+      steps:
+        - name: Extract branch name
+          run: echo "BRANCH=${GITHUB_REF#refs/heads/}" >> $GITHUB_ENV
+
+        - name: Set up Go
+          uses: actions/setup-go@v3
+          with:
+            go-version: ~1.23
+
+        - name: Check out code
+          uses: actions/checkout@v3
+
+        - name: Linters
+          uses: golangci/golangci-lint-action@v3
+          with:
+            version: v1.57.2
+            working-directory: ${{ env.BRANCH }}
 
   test:
     runs-on: ubuntu-latest
