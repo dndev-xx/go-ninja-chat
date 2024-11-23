@@ -11,7 +11,7 @@ env:
   GOLANGCI_LINT_VERSION: v1.56.2
 
 jobs:
-   lint:
+  lint:
     runs-on: ubuntu-latest
     steps:
       - name: Extract branch name
@@ -38,7 +38,7 @@ jobs:
         with:
           go-version: ${{ env.GO_VERSION }}
       - uses: actions/checkout@v4
-     # - run: go test -race ./...
+      # - run: go test -race ./...
 
   build:
     strategy:
