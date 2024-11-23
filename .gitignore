@@ -3,7 +3,7 @@
 .idea/
 .vscode/
 .env
-
+*.exe
 *.out
 *.test
 /chat-service
