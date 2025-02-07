@@ -82,6 +82,18 @@ func Init(opts Options) error {
 }
 
 func (o *Options) Validate() error {
+	if o.level == "" {
+        return errors.New("level is required")
+    }
+	if _, err := zapcore.ParseLevel(o.level); err!= nil {
+        return fmt.Errorf("invalid log level: %w", err)
+    }
+	if o.clock == nil {
+        return errors.New("clock is required")
+    }
+    if o.productionMode && os.Getenv("GIN_MODE") != "release" {
+        return errors.New("production mode is only available in release mode")
+    }
 	return nil
 }
 

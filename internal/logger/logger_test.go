@@ -9,7 +9,7 @@ import (
 func ExampleInit() {
 	if err := logger.Init(logger.NewOptions(
 		"error",
-		logger.WithProductionMode(true),
+		logger.WithProductionMode(false),
 		logger.WithClock(fakeClock{}),
 	)); err != nil {
 		panic(err)
