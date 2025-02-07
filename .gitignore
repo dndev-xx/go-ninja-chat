@@ -8,3 +8,5 @@
 *.test
 /chat-service
 configs/config.toml
+
+/bin/*
