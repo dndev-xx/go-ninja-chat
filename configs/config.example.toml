@@ -1,0 +1,9 @@
+[global]
+env = "dev"
+
+[log]
+level = "info"
+
+[servers]
+[servers.debug]
+addr = ":8079"

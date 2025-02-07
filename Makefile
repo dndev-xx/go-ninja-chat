@@ -8,10 +8,19 @@ build:
 run: build
 	$(BIN)
 
+test:
+	go test ./...
+
 lint:
 	golangci-lint run
+
+tidy:
+	go mod tidy
+	go mod vendor
 
 help:
 	@echo "build: build project"
 	@echo "run: build and run project"
+	@echo "test: run unit tests"
 	@echo "lint: golangci-lint project"
+	@echo "tidy: tidy and vendor run"

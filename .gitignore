@@ -10,3 +10,4 @@
 configs/config.toml
 
 /bin/*
+/vendor/
