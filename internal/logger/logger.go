@@ -44,10 +44,7 @@ func Init(opts Options) error {
 		return fmt.Errorf("validate options: %v", err)
 	}
 
-	level, err := zapcore.ParseLevel(opts.level)
-	if err != nil {
-		return fmt.Errorf("parse log level: %w", err)
-	}
+	atomicLevel := zap.NewAtomicLevelAt(zapcore.DebugLevel)
 
 	encoderConfig := zapcore.EncoderConfig{
 		TimeKey:        "T",
@@ -64,18 +61,13 @@ func Init(opts Options) error {
 		EncodeCaller:   zapcore.ShortCallerEncoder,
 	}
 
-	encoder := zapcore.NewJSONEncoder(encoderConfig)
-
 	core := zapcore.NewCore(
-		encoder,
+		zapcore.NewJSONEncoder(encoderConfig),
 		zapcore.AddSync(os.Stdout),
-		zap.NewAtomicLevelAt(level),
+		atomicLevel,
 	)
 
-	logger := zap.New(
-		core,
-		zap.WithClock(opts.clock),
-	)
+	logger := zap.New(core, zap.WithClock(opts.clock))
 	zap.ReplaceGlobals(logger)
 
 	return nil
