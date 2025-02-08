@@ -69,7 +69,7 @@ func Init(opts Options) error {
 
 	logger := zap.New(core, zap.WithClock(opts.clock))
 	zap.ReplaceGlobals(logger)
-
+	Sync()
 	return nil
 }
 
@@ -90,7 +90,7 @@ func (o *Options) Validate() error {
 }
 
 func Sync() {
-	if err := zap.L().Sync(); err != nil && !errors.Is(err, syscall.ENOTTY) {
+	if err := zap.L().Sync(); err != nil && !errors.Is(err, syscall.EINVAL) {
 		stdlog.Printf("cannot sync logger: %v", err)
 	}
 }
