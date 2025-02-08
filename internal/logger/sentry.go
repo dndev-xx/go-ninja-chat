@@ -22,7 +22,7 @@ func NewSentryClient(dsn, env, version string) (*zap.Logger, error) {
         },
     })
 	if err != nil {
-		fmt.Printf("sentry.Init: %s", err)
+		return nil, fmt.Errorf("failed to initialize Sentry client: %w", err)
 	}
 
 	encoderConfig := zapcore.EncoderConfig{
