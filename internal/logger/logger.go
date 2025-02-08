@@ -44,7 +44,25 @@ func Init(opts Options) error {
 		return fmt.Errorf("validate options: %v", err)
 	}
 
-	atomicLevel := zap.NewAtomicLevelAt(zapcore.DebugLevel)
+	var atomicLevel zap.AtomicLevel
+	switch opts.level {
+		case "debug":
+            atomicLevel = zap.NewAtomicLevelAt(zapcore.DebugLevel)
+        case "info":
+            atomicLevel = zap.NewAtomicLevelAt(zapcore.InfoLevel)
+        case "warn":
+            atomicLevel = zap.NewAtomicLevelAt(zapcore.WarnLevel)
+        case "error":
+            atomicLevel = zap.NewAtomicLevelAt(zapcore.ErrorLevel)
+        case "dpanic":
+            atomicLevel = zap.NewAtomicLevelAt(zapcore.DPanicLevel)
+        case "panic":
+            atomicLevel = zap.NewAtomicLevelAt(zapcore.PanicLevel)
+        case "fatal":
+            atomicLevel = zap.NewAtomicLevelAt(zapcore.FatalLevel)
+        default:
+            return fmt.Errorf("unknown log level: %s", opts.level)
+	}
 
 	encoderConfig := zapcore.EncoderConfig{
 		TimeKey:        "T",

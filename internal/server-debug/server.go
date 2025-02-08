@@ -8,6 +8,8 @@ import (
 	"net/http/pprof"
 	"time"
 
+	"github.com/dndev-xx/go-ninja-chat/internal/logger"
+	"github.com/dndev-xx/go-ninja-chat/internal/buildinfo"
 	"github.com/dndev-xx/go-ninja-chat/internal/validator"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -105,9 +107,39 @@ func (s *Server) Run(ctx context.Context) error {
 }
 
 func (s *Server) Version(c echo.Context) error {
-	return c.JSON(http.StatusOK, map[string]string{
-		"version": "0.0.1",
-	})
+	info := buildinfo.BuildInfo
+
+	response := map[string]interface{}{
+		"go_version": info.GoVersion,
+		"path":       info.Path,
+		"main": map[string]string{
+			"path":    info.Main.Path,
+			"version": info.Main.Version,
+			"sum":     info.Main.Sum,
+		},
+		"dependencies": []map[string]string{},
+		"settings":     []map[string]string{},
+	}
+
+	for _, dep := range info.Deps {
+		depInfo := map[string]string{
+			"path":    dep.Path,
+			"version": dep.Version,
+			"sum":     dep.Sum,
+		}
+		if dep.Replace != nil {
+			depInfo["replace"] = fmt.Sprintf("%s@%s", dep.Replace.Path, dep.Replace.Version)
+		}
+		response["dependencies"] = append(response["dependencies"].([]map[string]string), depInfo)
+	}
+
+	for _, setting := range info.Settings {
+		response["settings"] = append(response["settings"].([]map[string]string), map[string]string{
+			"key":   setting.Key,
+			"value": setting.Value,
+		})
+	}
+	return c.JSON(http.StatusOK, response)
 }
 
 func (s *Server) getLogLevelHandler(c echo.Context) error {
@@ -124,17 +156,16 @@ func (s *Server) logLevelHandler(c echo.Context) error {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request"})
 	}
 
-	var level zapcore.Level
-	if err := level.UnmarshalText([]byte(req.Level)); err != nil {
+	if _, err := zapcore.ParseLevel(req.Level); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid level"})
 	}
+	opts := logger.NewOptions(req.Level)
 
-	if !zap.L().Core().Enabled(level) {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "level not changeable"})
+	if err := logger.Init(opts); err != nil {
+		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to change log level"})
 	}
+	zap.L().Named("change-log-level").Info("log level changed", zap.String("level", req.Level))
 
-	zap.ReplaceGlobals(zap.New(zap.L().Core(), zap.IncreaseLevel(level)))
-	zap.L().Named("change-log-level").Info("change state", zap.String("level", level.String()))
 	return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
 }
 
