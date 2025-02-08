@@ -24,7 +24,7 @@ func TestServer_LoggerLevel(t *testing.T) {
 	err := logger.Init(logger.NewOptions("debug"))
 	require.NoError(t, err)
 
-	srv, err := serverdebug.New(serverdebug.NewOptions(":80"))
+	srv, err := serverdebug.New(nil, serverdebug.NewOptions(":80"))
 	require.NoError(t, err)
 
 	testSrv := httptest.NewServer(srv.Handler())

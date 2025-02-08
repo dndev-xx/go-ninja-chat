@@ -7,3 +7,6 @@ level = "info"
 [servers]
 [servers.debug]
 addr = ":8079"
+
+[sentry]
+dsn = "your_dsn"

@@ -40,17 +40,21 @@ func run() (errReturned error) {
 		panic(err)
 	}
 
-	srvDebug, err := serverdebug.New(serverdebug.NewOptions(cfg.Servers.Debug.Addr))
+	logger ,err := logger.NewSentryClient(cfg.Sentry.DSN, cfg.Global.Env, "0.0.1")
+	if err != nil {
+		return fmt.Errorf("init sentry client: %v", err)
+	}
+	srvDebug, err := serverdebug.New(logger, serverdebug.NewOptions(cfg.Servers.Debug.Addr))
 	if err != nil {
 		return fmt.Errorf("init debug server: %v", err)
 	}
 
 	eg, ctx := errgroup.WithContext(ctx)
 
-	// Run servers.
+	// Запуск серверов
 	eg.Go(func() error { return srvDebug.Run(ctx) })
 
-	// Run services.
+	// Запуск сервисов
 	// Ждут своего часа.
 	// ...
 
