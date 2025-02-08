@@ -16,6 +16,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/sync/errgroup"
+	"github.com/getsentry/sentry-go"
 )
 
 const (
@@ -50,18 +51,15 @@ func NewOptions(addr string, opts ...Option) Options {
 	return options
 }
 
-func New(opts Options) (*Server, error) {
+func New(logger *zap.Logger, opts Options) (*Server, error) {
 	if err := validator.Validator.Struct(opts); err != nil {
 		return nil, fmt.Errorf("validate options: %w", err)
 	}
-
-	lg := zap.L().Named("server-debug")
-
 	e := echo.New()
 	e.Use(middleware.Recover())
 
 	s := &Server{
-		lg: lg,
+		lg: logger,
 		srv: &http.Server{
 			Addr:              opts.addr,
 			Handler:           e,
@@ -76,6 +74,8 @@ func New(opts Options) (*Server, error) {
 	index.addPage("/log/level", "Change log level (PUT)")
 	e.GET("/log/level", s.getLogLevelHandler)
 	index.addPage("/log/level", "Get current log level (GET)")
+	e.GET("/debug/error", s.debugError)
+	index.addPage("/debug/error", "Debug sentry error event")
 	s.setupPprof(e, index)
 
 	e.GET("/", index.handler)
@@ -104,6 +104,21 @@ func (s *Server) Run(ctx context.Context) error {
 	})
 
 	return eg.Wait()
+}
+
+func (s *Server) debugError(c echo.Context) error {
+	defer func() {
+		if r := recover(); r != nil {
+			sentry.CurrentHub().WithScope(func(scope *sentry.Scope) {
+				scope.SetExtra("Path", c.Request().URL.Path)
+				scope.SetExtra("Method", c.Request().Method)
+				event := sentry.CaptureException(fmt.Errorf("%v", r))
+				zap.L().Named("sent-to-sentry").Info("event id", zap.String("eventId", string(*event)))
+			})
+			c.String(http.StatusInternalServerError, "Internal Server Error")
+		}
+	}()
+	panic("test panic")
 }
 
 func (s *Server) Version(c echo.Context) error {

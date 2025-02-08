@@ -4,6 +4,7 @@ type Config struct {
 	Global  GlobalConfig  `toml:"global" validate:"required"`
 	Log     LogConfig     `toml:"log" validate:"required"`
 	Servers ServersConfig `toml:"servers" validate:"required"`
+	Sentry SentryConfig `toml:"sentry" validate:"required"`
 }
 
 type GlobalConfig struct {
@@ -16,6 +17,10 @@ type LogConfig struct {
 
 type ServersConfig struct {
 	Debug DebugServerConfig `toml:"debug" validate:"required"`
+}
+
+type SentryConfig struct {
+    DSN string `toml:"dsn" validate:"required"`
 }
 
 type DebugServerConfig struct {

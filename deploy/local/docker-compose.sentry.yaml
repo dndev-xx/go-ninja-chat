@@ -1,0 +1,82 @@
+version: '3.8'
+
+services:
+  postgres-sentry:
+    image: postgres:13
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: postgres-sentry
+    environment:
+      POSTGRES_USER: sentry
+      POSTGRES_PASSWORD: sentry
+      POSTGRES_DB: sentry
+    volumes:
+      - postgres-sentry-data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  redis-sentry:
+    image: redis:5.0.6
+    container_name: redis-sentry
+    volumes:
+      - redis-sentry-data:/data
+
+  sentry:
+    image: sentry:9.1.2
+    container_name: sentry
+    environment:
+      SENTRY_SECRET_KEY: "QZtC9guu95v7/zoig/kW073TxFh+IEiWj3k2vdzTUPA="
+      SENTRY_POSTGRES_HOST: postgres-sentry
+      SENTRY_POSTGRES_PORT: 5432
+      SENTRY_DB_USER: sentry
+      SENTRY_DB_PASSWORD: sentry
+      SENTRY_DB_NAME: sentry
+      SENTRY_REDIS_HOST: redis-sentry
+      SENTRY_REDIS_PORT: 6379
+    ports:
+      - "9000:9000"
+    depends_on:
+      - postgres-sentry
+      - redis-sentry
+    volumes:
+      - sentry-data:/var/lib/sentry/files
+
+  sentry_cron:
+    image: sentry:9.1.2
+    container_name: sentry_cron
+    environment:
+      SENTRY_SECRET_KEY: "QZtC9guu95v7/zoig/kW073TxFh+IEiWj3k2vdzTUPA="
+      SENTRY_POSTGRES_HOST: postgres-sentry
+      SENTRY_POSTGRES_PORT: 5432
+      SENTRY_DB_USER: sentry
+      SENTRY_DB_PASSWORD: sentry
+      SENTRY_DB_NAME: sentry
+      SENTRY_REDIS_HOST: redis-sentry
+      SENTRY_REDIS_PORT: 6379
+    depends_on:
+      - postgres-sentry
+      - redis-sentry
+    command: "sentry run cron"
+
+  sentry_worker:
+    image: sentry:9.1.2
+    container_name: sentry_worker
+    environment:
+      SENTRY_SECRET_KEY: "QZtC9guu95v7/zoig/kW073TxFh+IEiWj3k2vdzTUPA="
+      SENTRY_POSTGRES_HOST: postgres-sentry
+      SENTRY_POSTGRES_PORT: 5432
+      SENTRY_DB_USER: sentry
+      SENTRY_DB_PASSWORD: sentry
+      SENTRY_DB_NAME: sentry
+      SENTRY_REDIS_HOST: redis-sentry
+      SENTRY_REDIS_PORT: 6379
+    depends_on:
+      - postgres-sentry
+      - redis-sentry
+    command: "sentry run worker"
+
+volumes:
+  postgres-sentry-data:
+  redis-sentry-data:
+  sentry-data:
