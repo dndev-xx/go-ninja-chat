@@ -2,7 +2,7 @@ package buildinfo
 
 import "runtime/debug"
 
-var BuildInfo *debug.BuildInfo // FIXME: Заиспользуй меня
+var BuildInfo *debug.BuildInfo
 
 func init() {
 	var ok bool

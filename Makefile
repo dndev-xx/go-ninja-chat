@@ -4,12 +4,18 @@ SOURCE := "./cmd/chat-service"
 COMPOSE_FILE := "./deploy/local/docker-compose.yaml"
 COMPOSE_SENTRY_FILE := "./deploy/local/docker-compose.sentry.yaml"
 CONTAINER_DB_NAME := local-postgres-1
+GEN_TYPE := "./cmd/gen-types/"
+GEN_PATH := "./internal/types/"
+TYPE_LOWER := $(shell echo $(TYPE) | tr '[:upper:]' '[:lower:]')
 
 build:
 	go build -v -o $(BIN) -ldflags "$(LDFLAGS)" $(SOURCE)
 
 run: build
 	$(BIN)
+
+gen_types:
+	go run $(GEN_TYPE) types $(TYPE) $(GEN_PATH)types.$(TYPE_LOWER).gen.go
 
 test:
 	go test ./... -v
@@ -67,3 +73,4 @@ help:
 	@echo "up_sentry: docker up_sentry"
 	@echo "down_sentry: docker down_sentry"
 	@echo "sentry_update: migrate local sentry"
+	@echo "gen_types: generate types TYPE=<name type> -- make gen_types TYPE=ChatID"

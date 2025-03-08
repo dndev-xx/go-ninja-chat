@@ -3,8 +3,11 @@ module github.com/dndev-xx/go-ninja-chat
 go 1.23.1
 
 require (
+	entgo.io/ent v0.14.1
 	github.com/getsentry/sentry-go v0.20.0
 	github.com/go-playground/validator/v10 v10.24.0
+	github.com/golang/mock v1.6.0
+	github.com/google/uuid v1.6.0
 	github.com/kazhuravlev/options-gen v0.33.2
 	github.com/labstack/echo/v4 v4.13.3
 	github.com/spf13/viper v1.19.0
