@@ -9,7 +9,7 @@
 /chat-service
 configs/config.toml
 
-deploy/local/postgres-data
+deploy/local/*-data
 
 /bin/*
 /vendor/

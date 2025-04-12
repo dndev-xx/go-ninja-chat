@@ -51,12 +51,7 @@ func run() (errReturned error) {
 
 	eg, ctx := errgroup.WithContext(ctx)
 
-	// Запуск серверов
 	eg.Go(func() error { return srvDebug.Run(ctx) })
-
-	// Запуск сервисов
-	// Ждут своего часа.
-	// ...
 
 	if err = eg.Wait(); err != nil && !errors.Is(err, context.Canceled) {
 		return fmt.Errorf("wait app stop: %v", err)

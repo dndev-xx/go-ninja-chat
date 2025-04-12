@@ -1,17 +1,14 @@
 package logger
 
 import (
-	"crypto/tls"
-	"net/http"
 	"os"
-	"fmt"
-	"github.com/getsentry/sentry-go"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
 func NewSentryClient(dsn, env, version string) (*zap.Logger, error) {
-	err := sentry.Init(sentry.ClientOptions{
+	// Run with sentry only linux machine
+	/*err := sentry.Init(sentry.ClientOptions{
         Dsn:         dsn,
         Release:     version,
         Environment: env,
@@ -23,7 +20,7 @@ func NewSentryClient(dsn, env, version string) (*zap.Logger, error) {
     })
 	if err != nil {
 		return nil, fmt.Errorf("failed to initialize Sentry client: %w", err)
-	}
+	}*/
 
 	encoderConfig := zapcore.EncoderConfig{
 		TimeKey:        "T",
@@ -45,7 +42,7 @@ func NewSentryClient(dsn, env, version string) (*zap.Logger, error) {
 	)
 
 	logger := zap.New(core)
-	logger.Info("Sentry client initialized", zap.String("env", env), zap.String("version", version))
+	logger.Info("Client initialized", zap.String("env", env), zap.String("version", version))
 
 	return logger, nil
 }

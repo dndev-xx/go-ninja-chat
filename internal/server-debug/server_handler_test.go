@@ -17,7 +17,7 @@ func (s *Server) Handler() http.Handler {
 	return s.srv.Handler
 }
 
-func TestServer_Version(t *testing.T) {
+func TestServerVersion(t *testing.T) {
 	logger, _ := zap.NewDevelopment()
 	server, err := New(logger, NewOptions(":8080"))
 	require.NoError(t, err)
@@ -44,7 +44,7 @@ func TestServer_Version(t *testing.T) {
 	assert.Contains(t, response, "settings")
 }
 
-func TestServer_GetLogLevelHandler(t *testing.T) {
+func TestServerGetLogLevelHandler(t *testing.T) {
 	logger, _ := zap.NewDevelopment()
 	server, err := New(logger, NewOptions(":8080"))
 	require.NoError(t, err)
@@ -67,7 +67,7 @@ func TestServer_GetLogLevelHandler(t *testing.T) {
 	assert.Contains(t, response, "level")
 }
 
-func TestServer_LogLevelHandler(t *testing.T) {
+func TestServerLogLevelHandler(t *testing.T) {
 	logger, _ := zap.NewDevelopment()
 	server, err := New(logger, NewOptions(":8080"))
 	require.NoError(t, err)
@@ -92,7 +92,7 @@ func TestServer_LogLevelHandler(t *testing.T) {
 	assert.Equal(t, "ok", response["status"])
 }
 
-func TestServer_SetupPprof(t *testing.T) {
+func TestServerSetupPprof(t *testing.T) {
 	logger, _ := zap.NewDevelopment()
 	server, err := New(logger, NewOptions(":8080"))
 	require.NoError(t, err)
