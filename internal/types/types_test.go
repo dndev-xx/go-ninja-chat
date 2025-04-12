@@ -30,6 +30,7 @@ func TestParse(t *testing.T) {
 	require.NoError(t, err)
 	chatIDInt, err := types.Parse[types.ChatID](1)
 	require.NoError(t, err)
+	
 	assert.Equal(t, "f0317e88-bbfe-11ed-8728-461e464ebed8", chatID.String())
 	assert.Equal(t, "1", chatIDInt.String())
 }
