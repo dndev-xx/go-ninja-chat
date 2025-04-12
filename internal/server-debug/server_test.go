@@ -19,7 +19,7 @@ import (
 	serverdebug "github.com/dndev-xx/go-ninja-chat/internal/server-debug"
 )
 
-func TestServer_LoggerLevel(t *testing.T) {
+func TestServerLoggerLevel(t *testing.T) {
 	// Arrange.
 	err := logger.Init(logger.NewOptions("debug"))
 	require.NoError(t, err)

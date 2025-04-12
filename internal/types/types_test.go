@@ -30,7 +30,7 @@ func TestParse(t *testing.T) {
 	require.NoError(t, err)
 	chatIDInt, err := types.Parse[types.ChatID](1)
 	require.NoError(t, err)
-	
+
 	assert.Equal(t, "f0317e88-bbfe-11ed-8728-461e464ebed8", chatID.String())
 	assert.Equal(t, "1", chatIDInt.String())
 }
@@ -51,13 +51,13 @@ func TestChatIDNil(t *testing.T) {
 	assert.Equal(t, types.ChatIDNil.String(), uuid.Nil.String())
 }
 
-func TestChatID_String(t *testing.T) {
+func TestChatIDString(t *testing.T) {
 	id := types.NewChatID()
 	require.NotEmpty(t, id.String())
 	assert.Equal(t, uuid.MustParse(id.String()).String(), id.String())
 }
 
-func TestChatID_Scan(t *testing.T) {
+func TestChatIDScan(t *testing.T) {
 	const src = "5c9de646-529c-11ed-81ba-461e464ebed9"
 
 	t.Run("from string and bytes", func(t *testing.T) {
@@ -87,7 +87,7 @@ func TestChatID_Scan(t *testing.T) {
 	})
 }
 
-func TestChatID_MarshalText(t *testing.T) {
+func TestChatIDMarshalText(t *testing.T) {
 	chatID := types.MustParse[types.ChatID]("f0317e88-bbfe-11ed-8728-461e464ebed8")
 	v, err := chatID.MarshalText()
 	require.NoError(t, err)
@@ -99,14 +99,14 @@ func TestChatID_MarshalText(t *testing.T) {
 	assert.Equal(t, chatID.String(), chatID2.String())
 }
 
-func TestChatID_IsZero(t *testing.T) {
+func TestChatIDIsZero(t *testing.T) {
 	id := types.NewChatID()
 	assert.True(t, id.IsZero())
 	assert.True(t, types.ChatIDNil.IsZero())
 	assert.Equal(t, uuid.Nil.String(), types.ChatIDNil.String())
 }
 
-func TestChatID_Matches(t *testing.T) {
+func TestChatIDMatches(t *testing.T) {
 	id := types.NewChatID()
 	id2 := types.MustParse[types.ChatID](id.String())
 	assert.NotEqual(t, id, id2.String())
@@ -114,7 +114,7 @@ func TestChatID_Matches(t *testing.T) {
 }
 
 //nolint:testifylint // not directly related single checks
-func TestChatID_Validate(t *testing.T) {
+func TestChatIDValidate(t *testing.T) {
 	tt := types.ChatID{}
 	assert.Error(t, types.NewChatID().Validate())
 	assert.Error(t, tt.Validate())

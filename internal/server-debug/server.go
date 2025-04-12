@@ -29,26 +29,9 @@ type Options struct {
 	addr string `option:"mandatory" validate:"required,hostname_port"`
 }
 
-var defaultOptions = Options{
-	addr: ":8080",
-}
-
-type Option func(*Options)
-
 type Server struct {
 	lg  *zap.Logger
 	srv *http.Server
-}
-
-func NewOptions(addr string, opts ...Option) Options {
-	options := defaultOptions
-	options.addr = addr
-
-	for _, opt := range opts {
-		opt(&options)
-	}
-
-	return options
 }
 
 func New(logger *zap.Logger, opts Options) (*Server, error) {
@@ -57,7 +40,6 @@ func New(logger *zap.Logger, opts Options) (*Server, error) {
 	}
 	e := echo.New()
 	e.Use(middleware.Recover())
-
 	s := &Server{
 		lg: logger,
 		srv: &http.Server{
@@ -93,7 +75,6 @@ func (s *Server) Run(ctx context.Context) error {
 
 		return s.srv.Shutdown(ctx) //nolint:contextcheck // graceful shutdown with new context
 	})
-
 	eg.Go(func() error {
 		s.lg.Info("listen and serve", zap.String("addr", s.srv.Addr))
 

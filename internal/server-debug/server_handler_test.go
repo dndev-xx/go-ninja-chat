@@ -10,7 +10,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"go.uber.org/zap"
 )
 
 func (s *Server) Handler() http.Handler {
@@ -18,8 +17,7 @@ func (s *Server) Handler() http.Handler {
 }
 
 func TestServerVersion(t *testing.T) {
-	logger, _ := zap.NewDevelopment()
-	server, err := New(logger, NewOptions(":8080"))
+	server, err := New(nil, NewOptions(":8080"))
 	require.NoError(t, err)
 
 	req := httptest.NewRequest(http.MethodGet, "/version", nil)
@@ -45,8 +43,7 @@ func TestServerVersion(t *testing.T) {
 }
 
 func TestServerGetLogLevelHandler(t *testing.T) {
-	logger, _ := zap.NewDevelopment()
-	server, err := New(logger, NewOptions(":8080"))
+	server, err := New(nil, NewOptions(":8080"))
 	require.NoError(t, err)
 
 	req := httptest.NewRequest(http.MethodGet, "/log/level", nil)
@@ -68,8 +65,7 @@ func TestServerGetLogLevelHandler(t *testing.T) {
 }
 
 func TestServerLogLevelHandler(t *testing.T) {
-	logger, _ := zap.NewDevelopment()
-	server, err := New(logger, NewOptions(":8080"))
+	server, err := New(nil, NewOptions(":8080"))
 	require.NoError(t, err)
 
 	reqBody := `{"level": "debug"}`
@@ -93,8 +89,7 @@ func TestServerLogLevelHandler(t *testing.T) {
 }
 
 func TestServerSetupPprof(t *testing.T) {
-	logger, _ := zap.NewDevelopment()
-	server, err := New(logger, NewOptions(":8080"))
+	server, err := New(nil, NewOptions(":8080"))
 	require.NoError(t, err)
 
 	req := httptest.NewRequest(http.MethodGet, "/debug/pprof/", nil)
