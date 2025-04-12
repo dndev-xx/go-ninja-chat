@@ -46,12 +46,13 @@ func (b *AppBuilder) WithConfig() Builder {
 func (b *AppBuilder) WithLogger() Builder {
 	if err := logger.Init(logger.NewOptions(
 		b.App.Config.Log.Level,
-		logger.WithProductionMode(false),
+		logger.WithProductionMode(b.App.Config.Global.IsProduction()),
 	)); err != nil {
 		b.err = err
 		return b
 	}
 	b.App.Logger = logger.GetLogger()
+	b.App.Logger.Info("configuration was successful with level", zap.String("level", b.App.Config.Log.Level))
 	return b
 }
 
@@ -59,6 +60,7 @@ func (b *AppBuilder) WithDebugHTTPSrv() Builder {
 	srvDebug, err := serverdebug.New(b.App.Logger, serverdebug.NewOptions(b.App.Config.Servers.Debug.Addr))
 	if err != nil {
 		b.err = fmt.Errorf("init debug server: %v", err)
+		b.App.Logger.Error("init debug server", zap.String("error", err.Error()))
 		return b
 	}
 	b.App.DebugServer = srvDebug
