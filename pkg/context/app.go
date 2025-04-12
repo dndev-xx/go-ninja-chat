@@ -1,11 +1,12 @@
 package context
 
 import (
+	"context"
 	"flag"
 	"fmt"
-	"context"
 	"os/signal"
 	"syscall"
+
 	"github.com/dndev-xx/go-ninja-chat/internal/config"
 	"github.com/dndev-xx/go-ninja-chat/internal/logger"
 	serverdebug "github.com/dndev-xx/go-ninja-chat/internal/server-debug"
@@ -52,7 +53,7 @@ func (b *AppBuilder) WithLogger() Builder {
 		return b
 	}
 	b.App.Logger = logger.GetLogger()
-	b.App.Logger.Info("configuration was successful with level", zap.String("level", b.App.Config.Log.Level))
+	b.App.Logger.Info("configuration logger was successful with level", zap.String("level", b.App.Config.Log.Level))
 	return b
 }
 
@@ -60,10 +61,10 @@ func (b *AppBuilder) WithDebugHTTPSrv() Builder {
 	srvDebug, err := serverdebug.New(b.App.Logger, serverdebug.NewOptions(b.App.Config.Servers.Debug.Addr))
 	if err != nil {
 		b.err = fmt.Errorf("init debug server: %v", err)
-		b.App.Logger.Error("init debug server", zap.String("error", err.Error()))
 		return b
 	}
 	b.App.DebugServer = srvDebug
+	b.App.Logger.Info("configuration debug server was successful")
 	return b
 }
 
@@ -71,7 +72,7 @@ func (b *AppBuilder) GetContext() (*AppContext, error) {
 	return b.App, b.err
 }
 
-func (a *AppContext) Run() error {
+func (a *AppContext) DebugServerRun() error {
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 	eg, ctx := errgroup.WithContext(ctx)

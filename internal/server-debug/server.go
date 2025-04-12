@@ -8,20 +8,22 @@ import (
 	"net/http/pprof"
 	"time"
 
-	"github.com/dndev-xx/go-ninja-chat/internal/logger"
 	"github.com/dndev-xx/go-ninja-chat/internal/buildinfo"
+	"github.com/dndev-xx/go-ninja-chat/internal/logger"
 	"github.com/dndev-xx/go-ninja-chat/internal/validator"
+	"github.com/getsentry/sentry-go"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/mssola/useragent"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/sync/errgroup"
-	"github.com/getsentry/sentry-go"
 )
 
 const (
 	readHeaderTimeout = time.Second
 	shutdownTimeout   = 3 * time.Second
+	groupLevel = "/log/level"
 )
 
 //go:generate options-gen -out-filename=server_options.gen.go -from-struct=Options
@@ -40,6 +42,7 @@ func New(logger *zap.Logger, opts Options) (*Server, error) {
 	}
 	e := echo.New()
 	e.Use(middleware.Recover())
+	e.Use(LoggerMiddleware(logger))
 	s := &Server{
 		lg: logger,
 		srv: &http.Server{
@@ -52,12 +55,12 @@ func New(logger *zap.Logger, opts Options) (*Server, error) {
 
 	e.GET("/version", s.Version)
 	index.addPage("/version", "Get build information")
-	e.PUT("/log/level", s.logLevelHandler)
-	index.addPage("/log/level", "Change log level (PUT)")
-	e.GET("/log/level", s.getLogLevelHandler)
-	index.addPage("/log/level", "Get current log level (GET)")
-	e.GET("/debug/error", s.debugError)
-	index.addPage("/debug/error", "Debug sentry error event")
+	e.PUT(groupLevel, s.logLevelHandler)
+	index.addPage(groupLevel, "Change log level (PUT)")
+	e.GET(groupLevel, s.getLogLevelHandler)
+	index.addPage(groupLevel, "Get current log level (GET)")
+	//e.GET("/debug/error", s.debugError)
+	//index.addPage("/debug/error", "Debug sentry error event")
 	s.setupPprof(e, index)
 
 	e.GET("/", index.handler)
@@ -76,7 +79,7 @@ func (s *Server) Run(ctx context.Context) error {
 		return s.srv.Shutdown(ctx) //nolint:contextcheck // graceful shutdown with new context
 	})
 	eg.Go(func() error {
-		s.lg.Info("listen and serve", zap.String("addr", s.srv.Addr))
+		s.lg.Info("listen and serve debug server", zap.String("addr", s.srv.Addr))
 
 		if err := s.srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			return fmt.Errorf("listen and serve: %v", err)
@@ -178,4 +181,25 @@ func (s *Server) setupPprof(e *echo.Echo, index *indexPage) {
 	index.addPage("/debug/pprof/profile", "pprof profile")
 	index.addPage("/debug/pprof/symbol", "pprof symbol")
 	index.addPage("/debug/pprof/trace", "pprof trace")
+}
+
+func LoggerMiddleware(logger *zap.Logger) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			ip := c.Request().RemoteAddr
+			method := c.Request().Method
+			path := c.Request().URL.Path
+			userAgent := c.Request().UserAgent()
+			ua := useragent.New(userAgent)
+			browserName, _ := ua.Browser()
+			logger.Info("Incoming request debug server`",
+				zap.String("ip", ip),
+				zap.String("method", method),
+				zap.String("path", path),
+				zap.String("os", ua.OS()),
+				zap.String("browser", browserName),
+			)
+			return next(c)
+		}
+	}
 }

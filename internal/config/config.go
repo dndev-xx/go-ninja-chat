@@ -7,7 +7,7 @@ type Config struct {
 }
 
 type GlobalConfig struct {
-	Env string `toml:"env" validate:"required,oneof=dev stage prod"`
+	Env string `toml:"env" validate:"required,oneof=local dev stage prod"`
 }
 
 func (c GlobalConfig) IsProduction() bool {

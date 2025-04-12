@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	application "github.com/dndev-xx/go-ninja-chat/pkg/context"
+	"go.uber.org/zap"
 )
 
 func main() {
@@ -17,7 +18,7 @@ func main() {
 		return
 	}
 
-	if err := app.Run(); err != nil {
-		fmt.Printf("Error running app: %v\n", err)
+	if err := app.DebugServerRun(); err != nil {
+		app.Logger.Error("Error running app", zap.String("err", err.Error()))
 	}
 }
