@@ -11,7 +11,7 @@ var (
 	// ChatsColumns holds the columns for the "chats" table.
 	ChatsColumns = []*schema.Column{
 		{Name: "id", Type: field.TypeUUID},
-		{Name: "client_id", Type: field.TypeUUID},
+		{Name: "client_id", Type: field.TypeUUID, Unique: true},
 		{Name: "created_at", Type: field.TypeTime},
 	}
 	// ChatsTable holds the schema information for the "chats" table.

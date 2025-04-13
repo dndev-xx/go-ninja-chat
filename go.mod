@@ -9,6 +9,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/kazhuravlev/options-gen v0.40.0
 	github.com/labstack/echo/v4 v4.13.3
+	github.com/mattn/go-sqlite3 v1.14.27
 	github.com/mssola/useragent v1.0.0
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.10.0
