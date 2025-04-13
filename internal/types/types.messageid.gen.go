@@ -9,22 +9,22 @@ import (
 	"github.com/google/uuid"
 )
 
-type ChatID struct {
+type MessageID struct {
 	value any	
 }
 
-var ChatIDNil = ChatID{value: nil}
+var MessageIDNil = MessageID{value: nil}
 
 // Type returns the type name as string for Entgo compatibility
-func (ChatID) Type() string {
-	return "ChatID"
+func (MessageID) Type() string {
+	return "MessageID"
 }
 
-func NewChatID() *ChatID {
-	return &ChatID{}
+func NewMessageID() *MessageID {
+	return &MessageID{}
 }
 
-func (c *ChatID) MarshalText() ([]byte, error) {
+func (c *MessageID) MarshalText() ([]byte, error) {
 	if c.value == nil {
 		return []byte(uuid.Nil.String()), nil
 	}	
@@ -36,23 +36,23 @@ func (c *ChatID) MarshalText() ([]byte, error) {
 	case []byte:
 		return v, nil
 	default:
-		return nil, fmt.Errorf("invalid type for ChatID: %T", c.value)
+		return nil, fmt.Errorf("invalid type for MessageID: %T", c.value)
 	}
 }
 
-func (c *ChatID) IsZero() bool {
+func (c *MessageID) IsZero() bool {
 	return c.value == nil
 }
 
-func (c *ChatID) UnmarshalText(text []byte) error {
+func (c *MessageID) UnmarshalText(text []byte) error {
 	c.value = string(text)
 	return nil
 }
 
-func (c *ChatID) Value() (driver.Value, error) {
+func (c *MessageID) Value() (driver.Value, error) {
 	switch v := c.value.(type) {
 	case nil:
-		*c = ChatIDNil
+		*c = MessageIDNil
         return uuid.Nil.String(), nil
 	case uuid.UUID:
 		return v.String(), nil
@@ -70,32 +70,32 @@ func (c *ChatID) Value() (driver.Value, error) {
 	}
 }
 
-func (c *ChatID) Scan(value any) error {
+func (c *MessageID) Scan(value any) error {
 	switch v := value.(type) {
 	case nil:
-		*c = ChatIDNil
+		*c = MessageIDNil
         return nil
 	case string:
 		val, err := uuid.Parse(v)
 		if err != nil {
-			*c = ChatID{value: v}
+			*c = MessageID{value: v}
 		}
-		*c = ChatID{value: val}
+		*c = MessageID{value: val}
 		return nil
 	case []byte:
-		*c = ChatID{value: v}
+		*c = MessageID{value: v}
 		return nil
 	case int:
-		*c = ChatID{value: strconv.Itoa(v)}
+		*c = MessageID{value: strconv.Itoa(v)}
 		return nil
 	default:
 		return fmt.Errorf("unsupported type: %T", v)
 	}
 }
 
-func (c *ChatID) Validate() error {
+func (c *MessageID) Validate() error {
 	if c.IsZero() {
-		return fmt.Errorf("ChatID is zero value")
+		return fmt.Errorf("MessageID is zero value")
 	}
 
 	switch v := c.value.(type) {
@@ -103,23 +103,23 @@ func (c *ChatID) Validate() error {
 		return nil 
 	case string:
 		if _, err := uuid.Parse(v); err != nil {
-			return fmt.Errorf("invalid string format for ChatID: %s", v)
+			return fmt.Errorf("invalid string format for MessageID: %s", v)
 		}
 		return nil
 	case []byte:
 		strValue := string(v)
 		if _, err := uuid.Parse(strValue); err != nil {
-			return fmt.Errorf("invalid byte format for ChatID: %s", strValue)
+			return fmt.Errorf("invalid byte format for MessageID: %s", strValue)
 		}
 		return nil
 	case int:
-		return fmt.Errorf("int type is not valid for ChatID")
+		return fmt.Errorf("int type is not valid for MessageID")
 	default:
 		return fmt.Errorf("unsupported type: %T", v)
 	}
 }
 
-func (c *ChatID) String() string {
+func (c *MessageID) String() string {
 	switch v := c.value.(type) {
 	case uuid.UUID:
 		return v.String() 
@@ -137,7 +137,7 @@ func (c *ChatID) String() string {
 	}
 }
 
-func (c *ChatID) Matches(x interface{}) bool {
+func (c *MessageID) Matches(x interface{}) bool {
 	if c == nil {
 		return false
 	}
@@ -152,56 +152,56 @@ func (c *ChatID) Matches(x interface{}) bool {
 			return uuidVal == v
 		}
 		return false
-	case *ChatID:
+	case *MessageID:
 		if v == nil {
 			return false
 		}
 		return c.String() == v.String()
-	case ChatID:
+	case MessageID:
 		return c.String() == v.String()
 	default:
 		return false
 	}
 }
 
-func ParseChatID(input any) (*ChatID, error) {
+func ParseMessageID(input any) (*MessageID, error) {
 	if input == nil {
-		return &ChatIDNil, nil
+		return &MessageIDNil, nil
 	}
 	
 	switch v := input.(type) {
 	case string:
 		if v == "" {
-			return &ChatIDNil, nil
+			return &MessageIDNil, nil
 		}
 		if id, err := uuid.Parse(v); err == nil {
-			return &ChatID{value: id}, nil
+			return &MessageID{value: id}, nil
 		}
-		return &ChatID{value: v}, nil
+		return &MessageID{value: v}, nil
 	case uuid.UUID:
-		return &ChatID{value: v}, nil
+		return &MessageID{value: v}, nil
 	case []byte:
 		if len(v) == 0 {
-			return &ChatIDNil, nil
+			return &MessageIDNil, nil
 		}
 		if id, err := uuid.Parse(string(v)); err == nil {
-			return &ChatID{value: id}, nil
+			return &MessageID{value: id}, nil
 		}
-		return &ChatID{value: string(v)}, nil
-	case *ChatID:
+		return &MessageID{value: string(v)}, nil
+	case *MessageID:
 		if v == nil {
-			return &ChatIDNil, nil
+			return &MessageIDNil, nil
 		}
 		return v, nil
-	case ChatID:
+	case MessageID:
 		return &v, nil
 	default:
-		return nil, fmt.Errorf("unsupported type for ChatID: %T", input)
+		return nil, fmt.Errorf("unsupported type for MessageID: %T", input)
 	}
 }
 
-func MustParseChatID(input any) *ChatID {
-	val, err := ParseChatID(input)
+func MustParseMessageID(input any) *MessageID {
+	val, err := ParseMessageID(input)
 	if err != nil {
 		panic(err)
 	}

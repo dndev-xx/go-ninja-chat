@@ -34,6 +34,11 @@ test:
 	go test ./... -v
 	@echo "$(GREEN)Tests completed successfully.$(RESET)"
 
+test-fail:
+	@echo "$(YELLOW)Running unit tests...$(RESET)"
+	go test ./... -v | grep -E "FAIL|--- FAIL:"
+	@echo "$(GREEN)Tests completed successfully.$(RESET)"
+
 lint:
 	@echo "$(YELLOW)Running linter...$(RESET)"
 	golangci-lint run
@@ -95,6 +100,7 @@ help:
 	@echo "  $(GREEN)build$(RESET): Build project"
 	@echo "  $(GREEN)run$(RESET): Build and run project"
 	@echo "  $(GREEN)test$(RESET): Run unit tests"
+	@echo "  $(GREEN)test-fail$(RESET): Run only failed unit tests"
 	@echo "  $(GREEN)lint$(RESET): Lint project using golangci-lint"
 	@echo "  $(GREEN)tidy$(RESET): Tidy and vendor dependencies"
 	@echo "  $(GREEN)gen$(RESET): Generate code"

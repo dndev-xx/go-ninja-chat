@@ -37,10 +37,19 @@ func New{{.Type}}() *{{.Type}} {
 }
 
 func (c *{{.Type}}) MarshalText() ([]byte, error) {
-	if strValue, ok := c.value.(string); ok {
-		return []byte(strValue), nil
+	if c.value == nil {
+		return []byte(uuid.Nil.String()), nil
+	}	
+	switch v := c.value.(type) {
+	case uuid.UUID:
+		return []byte(v.String()), nil
+	case string:
+		return []byte(v), nil
+	case []byte:
+		return v, nil
+	default:
+		return nil, fmt.Errorf("invalid type for {{.Type}}: %T", c.value)
 	}
-	return nil, fmt.Errorf("invalid type for {{.Type}}: %T", c.value)
 }
 
 func (c *{{.Type}}) IsZero() bool {
@@ -141,30 +150,70 @@ func (c *{{.Type}}) String() string {
 }
 
 func (c *{{.Type}}) Matches(x interface{}) bool {
+	if c == nil {
+		return false
+	}
+	
 	switch v := x.(type) {
 	case string:
-		return c.value == v
+		return c.String() == v
 	case []byte:
-		return c.value == string(v)
-	case int:
-		if intValue, ok := c.value.(int); ok {
-			return intValue == v
+		return c.String() == string(v)
+	case uuid.UUID:
+		if uuidVal, ok := c.value.(uuid.UUID); ok {
+			return uuidVal == v
 		}
 		return false
+	case *{{.Type}}:
+		if v == nil {
+			return false
+		}
+		return c.String() == v.String()
+	case {{.Type}}:
+		return c.String() == v.String()
 	default:
 		return false
 	}
 }
 
-func Parse[T any](input any) (*{{.Type}}, error) {
-	if input == "" {
-		return &{{.Type}}{}, fmt.Errorf("input cannot be empty")
+func Parse{{.Type}}(input any) (*{{.Type}}, error) {
+	if input == nil {
+		return &{{.Type}}Nil, nil
 	}
-	return &{{.Type}}{value: input}, nil
+	
+	switch v := input.(type) {
+	case string:
+		if v == "" {
+			return &{{.Type}}Nil, nil
+		}
+		if id, err := uuid.Parse(v); err == nil {
+			return &{{.Type}}{value: id}, nil
+		}
+		return &{{.Type}}{value: v}, nil
+	case uuid.UUID:
+		return &{{.Type}}{value: v}, nil
+	case []byte:
+		if len(v) == 0 {
+			return &{{.Type}}Nil, nil
+		}
+		if id, err := uuid.Parse(string(v)); err == nil {
+			return &{{.Type}}{value: id}, nil
+		}
+		return &{{.Type}}{value: string(v)}, nil
+	case *{{.Type}}:
+		if v == nil {
+			return &{{.Type}}Nil, nil
+		}
+		return v, nil
+	case {{.Type}}:
+		return &v, nil
+	default:
+		return nil, fmt.Errorf("unsupported type for {{.Type}}: %T", input)
+	}
 }
 
-func MustParse[T any](input any) *{{.Type}} {
-	val, err := Parse[T](input)
+func MustParse{{.Type}}(input any) *{{.Type}} {
+	val, err := Parse{{.Type}}(input)
 	if err != nil {
 		panic(err)
 	}
@@ -181,30 +230,34 @@ type TemplateData struct {
 
 func main() {
 	if len(os.Args) != 4 {
-		log.Fatalf("invalid args count: %d", len(os.Args)-1)
+		log.Fatalf("Usage: %s <package> <type> <output-file>", os.Args[0])
 	}
 
-	pkg, t, out := os.Args[1], os.Args[2], os.Args[3]
-	if err := run(pkg, t, out); err != nil {
+	pkg, typ, out := os.Args[1], os.Args[2], os.Args[3]
+	if err := run(pkg, typ, out); err != nil {
 		log.Fatal(err)
 	}
 
 	p, _ := os.Getwd()
-	fmt.Printf("%v generated\n", filepath.Join(p, out))
+	fmt.Printf("%s generated successfully in %s\n", typ, filepath.Join(p, out))
 }
 
-func run(pkg string, t string, outFile string) error {
+func run(pkg, typ, outFile string) error {
 	data := TemplateData{
 		Package: pkg,
 		Import:  []string{"database/sql/driver", "fmt", "strconv", "github.com/google/uuid"},
-		Type:    t,
+		Type:    typ,
 	}
 
 	f, err := os.Create(outFile)
 	if err != nil {
-		return err
+		return fmt.Errorf("failed to create file: %w", err)
 	}
 	defer f.Close()
 
-	return temp.Execute(f, data)
+	if err := temp.Execute(f, data); err != nil {
+		return fmt.Errorf("template execution failed: %w", err)
+	}
+
+	return nil
 }

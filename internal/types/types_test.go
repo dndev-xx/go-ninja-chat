@@ -23,31 +23,67 @@ var _ interface {
 	gomock.Matcher
 } = (*types.ChatID)(nil)
 
-func TestParse(t *testing.T) {
-	_, err := types.Parse[types.ChatID]("abra-cadabra")
-	require.NoError(t, err)
-	chatID, err := types.Parse[types.ChatID]("f0317e88-bbfe-11ed-8728-461e464ebed8")
-	require.NoError(t, err)
-	chatIDInt, err := types.Parse[types.ChatID](1)
-	require.NoError(t, err)
-
-	assert.Equal(t, "f0317e88-bbfe-11ed-8728-461e464ebed8", chatID.String())
-	assert.Equal(t, "1", chatIDInt.String())
-}
-
-func TestMustParse(t *testing.T) {
-	assert.Panics(t, func() {
-		types.MustParse[types.ChatID]("")
+func TestParseChatID(t *testing.T) {
+	t.Run("valid uuid string", func(t *testing.T) {
+		chatID, err := types.ParseChatID("f0317e88-bbfe-11ed-8728-461e464ebed8")
+		require.NoError(t, err)
+		assert.Equal(t, "f0317e88-bbfe-11ed-8728-461e464ebed8", chatID.String())
 	})
 
-	assert.NotPanics(t, func() {
-		chatID := types.MustParse[types.ChatID]("f0317e88-bbfe-11ed-8728-461e464ebed8")
-		assert.Equal(t, "f0317e88-bbfe-11ed-8728-461e464ebed8", chatID.String())
+	t.Run("valid uuid object", func(t *testing.T) {
+		uuidVal := uuid.New()
+		chatID, err := types.ParseChatID(uuidVal)
+		require.NoError(t, err)
+		assert.Equal(t, uuidVal.String(), chatID.String())
+	})
+
+	t.Run("valid bytes", func(t *testing.T) {
+		uuidVal := uuid.New()
+		chatID, err := types.ParseChatID([]byte(uuidVal.String()))
+		require.NoError(t, err)
+		assert.Equal(t, uuidVal.String(), chatID.String())
+	})
+
+	t.Run("invalid string", func(t *testing.T) {
+		_, err := types.ParseChatID("invalid-uuid")
+		require.NoError(t, err) // теперь сохраняет raw string
+	})
+
+	t.Run("empty string", func(t *testing.T) {
+		chatID, err := types.ParseChatID("")
+		require.NoError(t, err)
+		assert.Equal(t, types.ChatIDNil.String(), chatID.String())
+	})
+
+	t.Run("nil value", func(t *testing.T) {
+		chatID, err := types.ParseChatID(nil)
+		require.NoError(t, err)
+		assert.Equal(t, types.ChatIDNil.String(), chatID.String())
+	})
+
+	t.Run("integer value", func(t *testing.T) {
+		_, err := types.ParseChatID(123)
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "unsupported type for ChatID")
+	})
+}
+
+func TestMustParseChatID(t *testing.T) {
+	t.Run("valid uuid", func(t *testing.T) {
+		assert.NotPanics(t, func() {
+			chatID := types.MustParseChatID("f0317e88-bbfe-11ed-8728-461e464ebed8")
+			assert.Equal(t, "f0317e88-bbfe-11ed-8728-461e464ebed8", chatID.String())
+		})
+	})
+
+	t.Run("invalid type", func(t *testing.T) {
+		assert.Panics(t, func() {
+			types.MustParseChatID(123)
+		})
 	})
 }
 
 func TestChatIDNil(t *testing.T) {
-	t.Log(types.ChatIDNil)
 	assert.Equal(t, types.ChatIDNil.String(), uuid.Nil.String())
 }
 
@@ -87,38 +123,108 @@ func TestChatIDScan(t *testing.T) {
 	})
 }
 
-func TestChatIDMarshalText(t *testing.T) {
-	chatID := types.MustParse[types.ChatID]("f0317e88-bbfe-11ed-8728-461e464ebed8")
-	v, err := chatID.MarshalText()
-	require.NoError(t, err)
-	assert.Equal(t, "f0317e88-bbfe-11ed-8728-461e464ebed8", string(v))
-
-	var chatID2 types.ChatID
-	err = chatID2.UnmarshalText(v)
-	require.NoError(t, err)
-	assert.Equal(t, chatID.String(), chatID2.String())
-}
-
 func TestChatIDIsZero(t *testing.T) {
+	assert.True(t, types.ChatIDNil.IsZero())
+	
 	id := types.NewChatID()
 	assert.True(t, id.IsZero())
-	assert.True(t, types.ChatIDNil.IsZero())
-	assert.Equal(t, uuid.Nil.String(), types.ChatIDNil.String())
+
+	parsedID := types.MustParseChatID("f0317e88-bbfe-11ed-8728-461e464ebed8")
+	assert.False(t, parsedID.IsZero())
+}
+
+func TestChatIDValidate(t *testing.T) {
+	t.Run("valid uuid", func(t *testing.T) {
+		id := types.MustParseChatID("f0317e88-bbfe-11ed-8728-461e464ebed8")
+		assert.NoError(t, id.Validate())
+	})
+
+	t.Run("nil value", func(t *testing.T) {
+		assert.Error(t, types.ChatIDNil.Validate())
+	})
+
+	t.Run("invalid string format", func(t *testing.T) {
+		// Используем ParseChatID вместо прямого доступа к полю value
+		id, err := types.ParseChatID("invalid-uuid")
+		require.NoError(t, err)
+		assert.Error(t, id.Validate())
+	})
+
+	t.Run("empty value", func(t *testing.T) {
+		id := types.NewChatID()
+		assert.Error(t, id.Validate())
+	})
 }
 
 func TestChatIDMatches(t *testing.T) {
-	id := types.NewChatID()
-	id2 := types.MustParse[types.ChatID](id.String())
-	assert.NotEqual(t, id, id2.String())
-	assert.False(t, id.Matches(id2.String()))
+	validUUID := "f0317e88-bbfe-11ed-8728-461e464ebed8"
+	
+	t.Run("matches string", func(t *testing.T) {
+		id := types.MustParseChatID(validUUID)
+		assert.True(t, id.Matches(validUUID))
+	})
+
+	t.Run("matches uuid.UUID", func(t *testing.T) {
+		id := types.MustParseChatID(validUUID)
+		uuidVal := uuid.MustParse(validUUID)
+		assert.True(t, id.Matches(uuidVal))
+	})
+
+	t.Run("matches bytes", func(t *testing.T) {
+		id := types.MustParseChatID(validUUID)
+		assert.True(t, id.Matches([]byte(validUUID)))
+	})
+
+	t.Run("does not match different value", func(t *testing.T) {
+		id := types.MustParseChatID(validUUID)
+		assert.False(t, id.Matches("different-value"))
+	})
+
+	t.Run("nil receiver", func(t *testing.T) {
+		var id *types.ChatID
+		assert.False(t, id.Matches(validUUID))
+	})
 }
 
-//nolint:testifylint // not directly related single checks
-func TestChatIDValidate(t *testing.T) {
-	tt := types.ChatID{}
-	assert.Error(t, types.NewChatID().Validate())
-	assert.Error(t, tt.Validate())
-	assert.Error(t, types.ChatIDNil.Validate())
+func TestChatIDMarshalText(t *testing.T) {
+	validUUID := "f0317e88-bbfe-11ed-8728-461e464ebed8"
+	
+	t.Run("marshal uuid value", func(t *testing.T) {
+		id := types.MustParseChatID(validUUID)
+		v, err := id.MarshalText()
+		require.NoError(t, err)
+		assert.Equal(t, validUUID, string(v))
+	})
+
+	t.Run("marshal string value", func(t *testing.T) {
+		id, err := types.ParseChatID(validUUID)
+		require.NoError(t, err)
+		v, err := id.MarshalText()
+		require.NoError(t, err)
+		assert.Equal(t, validUUID, string(v))
+	})
+
+	t.Run("marshal nil value", func(t *testing.T) {
+		id := types.ChatIDNil
+		v, err := id.MarshalText()
+		require.NoError(t, err)
+		assert.Equal(t, uuid.Nil.String(), string(v))
+	})
+}
+
+func TestChatIDValue(t *testing.T) {
+	t.Run("valid uuid", func(t *testing.T) {
+		id := types.MustParseChatID("f0317e88-bbfe-11ed-8728-461e464ebed8")
+		val, err := id.Value()
+		require.NoError(t, err)
+		assert.Equal(t, "f0317e88-bbfe-11ed-8728-461e464ebed8", val)
+	})
+
+	t.Run("nil value", func(t *testing.T) {
+		val, err := types.ChatIDNil.Value()
+		require.NoError(t, err)
+		assert.Equal(t, uuid.Nil.String(), val)
+	})
 }
 
 func getValueAsString(t *testing.T, valuer driver.Valuer) string {
