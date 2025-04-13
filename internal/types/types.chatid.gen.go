@@ -15,6 +15,11 @@ type ChatID struct {
 
 var ChatIDNil = ChatID{value: nil}
 
+// Type returns the type name as string for Entgo compatibility
+func (ChatID) Type() string {
+	return "ChatID"
+}
+
 func NewChatID() *ChatID {
 	return &ChatID{}
 }
@@ -52,7 +57,7 @@ func (c *ChatID) Value() (driver.Value, error) {
 	case int:
 		return strconv.Itoa(v), nil
 	default:
-		return nil, fmt.Errorf("unsupported type: %T", v)
+		return nil, fmt.Errorf("unsupported type: %s", v)
 	}
 }
 

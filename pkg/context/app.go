@@ -58,7 +58,7 @@ func (b *AppBuilder) WithLogger() Builder {
 }
 
 func (b *AppBuilder) WithDebugHTTPSrv() Builder {
-	srvDebug, err := serverdebug.New(b.App.Logger, serverdebug.NewOptions(b.App.Config.Servers.Debug.Addr))
+	srvDebug, err := serverdebug.New(serverdebug.NewOptions(b.App.Config.Servers.Debug.Addr))
 	if err != nil {
 		b.err = fmt.Errorf("init debug server: %v", err)
 		return b
