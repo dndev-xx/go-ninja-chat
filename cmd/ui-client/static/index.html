@@ -1,0 +1,71 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Client: Bank Support Chat</title>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="lib/bootstrap.5.0.2.min.css">
+    <link rel="stylesheet" href="index.css">
+    <!-- !!! -->
+</head>
+<body onload="main()">
+<div class="page-content page-container">
+    <div class="padding">
+        <div class="container d-flex justify-content-center">
+            <div class="col-md-6 col-sm-12">
+                <div class="card card-bordered">
+                    <div class="card-header">
+                        <h4 class="card-title"><strong>Bank Customer Support</strong></h4>
+                    </div>
+
+                    <div class="ps-container ps-theme-default ps-active-y" id="chat-content"
+                         style="overflow-y: scroll !important; height:700px !important;">
+
+                        <div class="ps-scrollbar-x-rail" style="left: 0px; bottom: 0px;">
+                            <div class="ps-scrollbar-x" tabindex="0" style="left: 0px; width: 0px;"></div>
+                        </div>
+                        <div class="ps-scrollbar-y-rail" style="top: 0px; height: 0px; right: 2px;">
+                            <div class="ps-scrollbar-y" tabindex="0" style="top: 0px; height: 2px;"></div>
+                        </div>
+
+                        <div class="welcome-text">We remind you that you must not write here:
+- number, expiration date, CVC of debit and corporate cards;
+- code words, login, password and SMS codes from Internet banking.
+
+Now a lot of clients write to us, and we want to help everyone.
+Thanks for waiting for us!</div>
+                    </div>
+
+                    <div class="publisher bt-1 border-light">
+                         <span class="publisher-btn file-group">
+                            <i class="fa fa-paperclip file-browser"></i>
+                            <input type="file">
+                        </span>
+                        <textarea id="msgInput" class="publisher-input" type="text"
+                                  placeholder="Write something"></textarea>
+                        <a class="publisher-btn text-info" href="#" id="sendBtn" data-abc="true"><i
+                                class="fa fa-paper-plane"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="lib/jquery-3.6.0.min.js"></script>
+<script src="lib/bootstrap.5.0.2.bundle.min.js"></script>
+<script src="lib/fontawesome.js"></script>
+<script src="lib/keycloak.js"></script>
+
+<script src="app/conf.js"></script>
+<script src="app/utils.js"></script>
+<script src="app/components.js"></script>
+<script src="app/api.v1.js"></script>
+<script src="app/stream.js"></script>
+<script src="app/main.js"></script>
+<!-- !!! -->
+
+</body>
+</html>

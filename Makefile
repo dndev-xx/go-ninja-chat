@@ -7,6 +7,7 @@ CONTAINER_DB_NAME := local-postgres-1
 GEN_TYPE := "./cmd/gen-types/"
 GEN_PATH := "./internal/types/"
 TYPE_LOWER := $(shell echo $(TYPE) | tr '[:upper:]' '[:lower:]')
+UI_CLIENT := "./cmd/ui-client/main.go"
 
 # ANSI color codes for better output
 GREEN  := \033[32m
@@ -24,6 +25,11 @@ run: build
 	$(BIN)
 	@echo "$(GREEN)Execution completed.$(RESET)"
 
+run-client:
+	@echo "$(YELLOW)Running ui client...$(RESET)"
+	go run $(UI_CLIENT)
+	@echo "$(GREEN)Execution completed.$(RESET)"
+
 gen_types:
 	@echo "$(YELLOW)Generating types for $(TYPE)...$(RESET)"
 	go run $(GEN_TYPE) types $(TYPE) $(GEN_PATH)types.$(TYPE_LOWER).gen.go
@@ -37,6 +43,11 @@ test:
 test-fail:
 	@echo "$(YELLOW)Running unit tests...$(RESET)"
 	go test ./... -v | grep -E "FAIL|--- FAIL:"
+	@echo "$(GREEN)Tests completed successfully.$(RESET)"
+
+test-it:
+	@echo "$(YELLOW)Running integration tests...$(RESET)"
+	go test -tags integration ./...
 	@echo "$(GREEN)Tests completed successfully.$(RESET)"
 
 lint:
@@ -99,8 +110,10 @@ help:
 	@echo "$(YELLOW)Available commands:$(RESET)"
 	@echo "  $(GREEN)build$(RESET): Build project"
 	@echo "  $(GREEN)run$(RESET): Build and run project"
+	@echo "  $(GREEN)run-client$(RESET): Run ui-client"
 	@echo "  $(GREEN)test$(RESET): Run unit tests"
 	@echo "  $(GREEN)test-fail$(RESET): Run only failed unit tests"
+	@echo "  $(GREEN)test-it$(RESET): Run integration tests"
 	@echo "  $(GREEN)lint$(RESET): Lint project using golangci-lint"
 	@echo "  $(GREEN)tidy$(RESET): Tidy and vendor dependencies"
 	@echo "  $(GREEN)gen$(RESET): Generate code"
