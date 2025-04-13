@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/dndev-xx/go-ninja-chat/internal/buildinfo"
-	"github.com/dndev-xx/go-ninja-chat/internal/logger"
+	lg "github.com/dndev-xx/go-ninja-chat/internal/logger"
 	"github.com/dndev-xx/go-ninja-chat/internal/validator"
 	"github.com/getsentry/sentry-go"
 	"github.com/labstack/echo/v4"
@@ -55,7 +55,7 @@ func New(logger *zap.Logger, opts Options) (*Server, error) {
 
 	e.GET("/version", s.Version)
 	index.addPage("/version", "Get build information")
-	e.PUT(groupLevel, s.logLevelHandler)
+	e.PUT(groupLevel, echo.WrapHandler(lg.Level))//s.logLevelHandler)
 	index.addPage(groupLevel, "Change log level (PUT)")
 	e.GET(groupLevel, s.getLogLevelHandler)
 	index.addPage(groupLevel, "Get current log level (GET)")
@@ -158,9 +158,9 @@ func (s *Server) logLevelHandler(c echo.Context) error {
 	if _, err := zapcore.ParseLevel(req.Level); err != nil {
 		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid level"})
 	}
-	opts := logger.NewOptions(req.Level)
+	opts := lg.NewOptions(req.Level)
 
-	if err := logger.Init(opts); err != nil {
+	if err := lg.Init(opts); err != nil {
 		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to change log level"})
 	}
 	zap.L().Named("change-log-level").Info("log level changed", zap.String("level", req.Level))
