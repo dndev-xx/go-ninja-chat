@@ -31,6 +31,27 @@ func WithDebugMode(opt bool) OptOptionsSetter {
 	}
 }
 
+func WithRealm(opt string) OptOptionsSetter {
+	return func(o *Options) {
+		o.realm = opt
+
+	}
+}
+
+func WithClientID(opt string) OptOptionsSetter {
+	return func(o *Options) {
+		o.clientID = opt
+
+	}
+}
+
+func WithClientSecret(opt string) OptOptionsSetter {
+	return func(o *Options) {
+		o.clientSecret = opt
+
+	}
+}
+
 func (o *Options) Validate() error {
 	return nil
 }

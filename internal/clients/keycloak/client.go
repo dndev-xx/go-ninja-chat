@@ -2,7 +2,6 @@ package keycloakclient
 
 import (
 	"fmt"
-
 	"github.com/go-resty/resty/v2"
 )
 
@@ -10,6 +9,9 @@ import (
 type Options struct {
 	basePath  string
 	debugMode bool
+	realm string
+	clientID string
+	clientSecret string
 }
 
 // Client is a tiny client to the KeyCloak realm operations. UMA configuration:
@@ -17,6 +19,9 @@ type Options struct {
 type Client struct {
 	BasePath string
 	DebugMode bool
+	realm string
+	clientID string
+	clientSecret string
 	cli      *resty.Client
 }
 
@@ -32,6 +37,9 @@ func New(opts Options) (*Client, error) {
 	return &Client{
 		BasePath: opts.basePath,
 		DebugMode: opts.debugMode,
+		realm: opts.realm,
+		clientID: opts.clientID,
+		clientSecret: opts.clientSecret,
 		cli: cli,
 	}, nil
 }

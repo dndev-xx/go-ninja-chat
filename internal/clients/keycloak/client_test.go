@@ -25,10 +25,10 @@ func (s *KeycloakSuite) SetupSuite() {
 
 	var err error
 	s.kc, err = keycloakclient.New(keycloakclient.NewOptions(
-		testingh.Config.KeycloakBasePath,
-		testingh.Config.KeycloakRealm,
-		testingh.Config.KeycloakClientID,
-		testingh.Config.KeycloakClientSecret,
+		keycloakclient.WithBasePath(testingh.Config.KeycloakBasePath),
+		keycloakclient.WithRealm(testingh.Config.KeycloakRealm),
+		keycloakclient.WithClientID(testingh.Config.KeycloakClientID),
+		keycloakclient.WithClientSecret(testingh.Config.KeycloakClientSecret),
 		keycloakclient.WithDebugMode(true),
 	))
 	s.Require().NoError(err)
