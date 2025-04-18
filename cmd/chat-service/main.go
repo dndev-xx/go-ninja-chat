@@ -23,19 +23,19 @@ func main() {
 		WithClientHTTPSrv().
 		GetContext()
 
-		if err != nil {
-			fmt.Printf("Failed to build app: %v\n", err)
-			os.Exit(1)
-		}
+	if err != nil {
+		fmt.Printf("Failed to build app: %v\n", err)
+		os.Exit(1)
+	}
 	
-		go func(){ if err := app.DebugServer.Run(ctx); err != nil {
-			app.Logger.Error("Error running server", zap.String("server", "debug"), zap.String("err", err.Error()))
-		}}()
-		go func(){ if err := app.ClientServer.Run(ctx); err != nil {
-			app.Logger.Error("Error running server", zap.String("server", "client"), zap.String("err", err.Error()))
-		}}()
+	go func(){ if err := app.DebugServer.Run(ctx); err != nil {
+		app.Logger.Error("Error running server", zap.String("server", "debug"), zap.String("err", err.Error()))
+	}}()
+	go func(){ if err := app.ClientServer.Run(ctx); err != nil {
+		app.Logger.Error("Error running server", zap.String("server", "client"), zap.String("err", err.Error()))
+	}}()
 	
-		<-ctx.Done()
-		fmt.Println("Shutting down gracefully...")
+	<-ctx.Done()
+	fmt.Println("Shutting down gracefully...")
 }
 
