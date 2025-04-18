@@ -63,8 +63,10 @@ func New(opts Options) (*Server, error) {
 		MaxAge:           3600,
 	}))
 	authMiddleware := mw.NewKeycloakTokenAuth(opts.keycloakClient, opts.resource, opts.role)
+	loggerMiddleware := mw.LoggerMiddleware(opts.logger)
 
 	v1 := e.Group("/v1",
+	loggerMiddleware,
 	authMiddleware,
 	oapimdlwr.OapiRequestValidatorWithOptions(opts.v1Swagger, &oapimdlwr.Options{
 		Options: openapi3filter.Options{
