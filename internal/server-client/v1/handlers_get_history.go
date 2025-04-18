@@ -1,7 +1,6 @@
 package v1
 
 import (
-	"net/http"
 	"time"
 
 	clientv1 "github.com/dndev-xx/go-ninja-chat/internal/server-client/v1/pkg"
@@ -25,6 +24,7 @@ var stub = clientv1.MessagesPage{Messages: []clientv1.Message{
 
 }, TotalCount: 2,}
 
-func (h Handlers) PostGetHistory(eCtx echo.Context, params clientv1.PostGetHistoryParams)error {
-	return eCtx.JSON(http.StatusOK, stub)
+func (h Handlers) PostGetHistory(eCtx echo.Context, params clientv1.PostGetHistoryParams) error {
+	eCtx.Set("responseData", stub)
+	return nil
 }

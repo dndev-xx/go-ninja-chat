@@ -44,6 +44,7 @@ type Server struct {
 
 func New(opts Options) (*Server, error) {
 	e := echo.New()
+	lg := opts.logger
 	e.HideBanner = true
 	e.HidePort = true
 
@@ -63,10 +64,13 @@ func New(opts Options) (*Server, error) {
 		MaxAge:           3600,
 	}))
 	authMiddleware := mw.NewKeycloakTokenAuth(opts.keycloakClient, opts.resource, opts.role)
-	loggerMiddleware := mw.LoggerMiddleware(opts.logger)
+	loggerMiddleware := mw.LoggerMiddleware(lg)
+	recoverLog := mw.RecoveryMiddleware(lg)
 
 	v1 := e.Group("/v1",
+	mw.JSONResponseMiddleware(),
 	loggerMiddleware,
+	recoverLog,
 	authMiddleware,
 	oapimdlwr.OapiRequestValidatorWithOptions(opts.v1Swagger, &oapimdlwr.Options{
 		Options: openapi3filter.Options{
@@ -86,7 +90,7 @@ func New(opts Options) (*Server, error) {
 	}
 
 	return &Server{
-		lg:  opts.logger,
+		lg:  lg,
 		srv: srv,
 		e:   e,
 	}, nil
