@@ -91,6 +91,7 @@ func (b *AppBuilder) WithClientHTTPSrv() Builder {
 		keycloakclient.WithRealm(b.App.Config.Clients.Keycloak.Realm),
 		keycloakclient.WithClientID(b.App.Config.Clients.Keycloak.ClientID),
 		keycloakclient.WithClientSecret(b.App.Config.Clients.Keycloak.ClientSecret),
+		keycloakclient.WithDebugMode(b.App.Config.Clients.Keycloak.DebugMode),
 	))
 	if err != nil {
 		b.err = fmt.Errorf("create keycloak error %v", err)
