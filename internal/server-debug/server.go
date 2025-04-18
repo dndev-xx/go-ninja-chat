@@ -58,6 +58,8 @@ func New(opts Options) (*Server, error) {
 
 	e.PUT("/log/level", echo.WrapHandler(logger.Level))
 	e.GET("/log/level", echo.WrapHandler(logger.Level))
+	e.GET("/schema/client", s.getOpenAPISpec)
+	index.addPage("/schema/client", "Get specification")
 
 	{
 		pprofMux := http.NewServeMux()
