@@ -1,0 +1,99 @@
+openapi: 3.0.3
+info:
+  title: Bank Support Chat Client API
+  version: v1
+
+servers:
+  - url: http://localhost:8080/v1
+    description: Development server
+
+paths:
+  /getHistory:
+    post:
+      description: Get chat history.
+      parameters:
+        - $ref: "#/components/parameters/XRequestIDHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GetHistoryRequest"
+      responses:
+        '200':
+          description: Messages list.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetHistoryResponse"
+
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    XRequestIDHeader:
+      in: header
+      name: X-Request-ID
+      required: true
+      description: Unique identifier for the request.
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    GetHistoryRequest:
+      type: object
+      properties:
+        pageSize:
+          type: integer
+          minimum: 10
+          maximum: 100
+        cursor:
+          type: string
+
+    GetHistoryResponse:
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/MessagesPage"
+
+    MessagesPage:
+      required: [messages, totalCount]
+      properties:
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/Message"
+        totalCount:
+          type: integer
+          description: Total number of messages available.
+
+    Message:
+      required: [id, authorId, body, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+          x-go-type: uuid.UUID
+         # x-go-type-import:
+           # path: "github.com/dndev-xx/go-ninja-chat/internal/types"
+        authorId:
+          type: string
+          format: uuid
+          x-go-type: uuid.UUID
+          #x-go-type-import:
+            #path: "github.com/dndev-xx/go-ninja-chat/internal/types"
+        body:
+          type: string
+          description: The content of the message.
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when the message was created.

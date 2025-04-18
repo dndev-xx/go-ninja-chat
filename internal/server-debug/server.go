@@ -89,7 +89,7 @@ func (s *Server) Run(ctx context.Context) error {
 	})
 
 	eg.Go(func() error {
-		s.lg.Info("listen and serve", zap.String("addr", s.srv.Addr))
+		s.lg.Info("debug-server", zap.String("addr", s.srv.Addr))
 
 		if err := s.srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			return fmt.Errorf("listen and serve: %v", err)

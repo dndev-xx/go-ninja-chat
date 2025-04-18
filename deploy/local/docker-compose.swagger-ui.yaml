@@ -1,0 +1,10 @@
+services:
+  swagger-ui:
+    image: swaggerapi/swagger-ui
+    profiles: ["swagger-ui"]
+    ports:
+      - "127.0.0.1:3011:8080"
+    volumes:
+      - ../../api/client.v1.swagger.yaml:/client.v1.swagger.yaml
+    environment:
+      SWAGGER_JSON: /client.v1.swagger.yaml

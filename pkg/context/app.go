@@ -1,25 +1,26 @@
 package context
 
 import (
-	"context"
 	"flag"
 	"fmt"
-	"os/signal"
-	"syscall"
 
 	"github.com/dndev-xx/go-ninja-chat/internal/config"
 	"github.com/dndev-xx/go-ninja-chat/internal/logger"
+	swag "github.com/getkin/kin-openapi/openapi3"
 	serverdebug "github.com/dndev-xx/go-ninja-chat/internal/server-debug"
+	serverclient "github.com/dndev-xx/go-ninja-chat/internal/server-client"
+	h "github.com/dndev-xx/go-ninja-chat/internal/server-client/v1"
 	"go.uber.org/zap"
-	"golang.org/x/sync/errgroup"
 )
 
 var configPath = flag.String("config", "configs/config.toml", "Path to config file")
 
 type AppContext struct {
-	Config      *config.Config
-	Logger      *zap.Logger
-	DebugServer *serverdebug.Server
+	Config      	*config.Config
+	Logger      	*zap.Logger
+	DebugServer 	*serverdebug.Server
+	Swagger 		*swag.T
+	ClientServer 	*serverclient.Server
 }
 
 type AppBuilder struct {
@@ -68,17 +69,37 @@ func (b *AppBuilder) WithDebugHTTPSrv() Builder {
 	return b
 }
 
-func (b *AppBuilder) GetContext() (*AppContext, error) {
-	return b.App, b.err
+func (b *AppBuilder) WithSwagger() Builder {
+	swagger, err := swag.NewLoader().LoadFromFile("api/client.v1.swagger.yaml")
+	if err != nil {
+		b.err = fmt.Errorf("load swagger spec: %v", err)
+		return b
+	}
+	b.App.Swagger = swagger
+	return b
 }
 
-func (a *AppContext) DebugServerRun() error {
-	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
-	defer cancel()
-	eg, ctx := errgroup.WithContext(ctx)
+func (b *AppBuilder) WithClientHTTPSrv() Builder {
+	handlers, err := h.NewHandlers(h.Options{})
+	if err != nil {
+		b.err = fmt.Errorf("create v1 handlers %v", err)
+		return b
+	}
+	server, err := serverclient.New(serverclient.NewOptions(
+		b.App.Logger,
+		b.App.Config.Servers.Client.Addr,
+		b.App.Config.Servers.Client.AllowOrigins,
+		b.App.Swagger,
+		handlers,
+	))
+	if err != nil {
+		b.err = fmt.Errorf("create server %v", err)
+		return b
+	}
+	b.App.ClientServer = server
+	return b
+}
 
-	eg.Go(func() error {
-		return a.DebugServer.Run(ctx)
-	})
-	return eg.Wait()
+func (b *AppBuilder) GetContext() (*AppContext, error) {
+	return b.App, b.err
 }

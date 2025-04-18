@@ -1,13 +1,26 @@
 package config
 
+import (
+	"fmt"
+	"time"
+
+	"github.com/go-playground/validator/v10"
+)
+
 type Config struct {
-	Global  GlobalConfig  `toml:"global"`
-	Log     LogConfig     `toml:"log"`
-	Servers ServersConfig `toml:"servers"`
+	Global    GlobalConfig          `toml:"global"`
+	Log       LogConfig             `toml:"log"`
+	Sentry    SentryConfig          `toml:"sentry"`
+	Tracing   TracingConfig         `toml:"tracing"`
+	Servers   ServersConfig         `toml:"servers"`
+	Stores    StoresConfig          `toml:"stores"`
+	Clients   ClientsConfig         `toml:"clients"`
+	Services  ServicesConfig        `toml:"services"`
 }
 
 type GlobalConfig struct {
-	Env string `toml:"env" validate:"required,oneof=local dev stage prod"`
+	Name string `toml:"name" validate:"required"`
+	Env  string `toml:"env" validate:"required,oneof=local dev stage prod"`
 }
 
 func (c GlobalConfig) IsProduction() bool {
@@ -18,10 +31,115 @@ type LogConfig struct {
 	Level string `toml:"level" validate:"required,oneof=debug info warn error"`
 }
 
+type SentryConfig struct {
+	DSN string `toml:"dsn"`
+}
+
+type TracingConfig struct {
+	Enabled    bool   `toml:"enabled"`
+	AgentAddr  string `toml:"agent_addr"`
+}
+
 type ServersConfig struct {
-	Debug DebugServerConfig `toml:"debug"`
+	Debug   DebugServerConfig   `toml:"debug"`
+	Client  ClientServerConfig 	`toml:"client"`
+	Manager ManagerServerConfig `toml:"manager"`
 }
 
 type DebugServerConfig struct {
 	Addr string `toml:"addr" validate:"required,hostname_port"`
+}
+
+type ClientServerConfig struct {
+	Addr           string            	`toml:"addr" validate:"required,hostname_port"`
+	AllowOrigins   []string          	`toml:"alloworigins"`
+	SecWsProtocol  string            	`toml:"secwsprotocol"`
+	RequiredAccess RequiredAccessConfig `toml:"requiredaccess"`
+}
+
+type ManagerServerConfig struct {
+	Addr           string            	`toml:"addr" validate:"required,hostname_port"`
+	AllowOrigins   []string          	`toml:"alloworigins"`
+	SecWsProtocol  string            	`toml:"secwsprotocol"`
+	RequiredAccess RequiredAccessConfig `toml:"requiredaccess"`
+}
+
+type RequiredAccessConfig struct {
+	Resource string `toml:"resource"`
+	Role     string `toml:"role"`
+}
+
+type StoresConfig struct {
+	Use    string       `toml:"use"`
+	SQLite SQLiteConfig `toml:"sqlite"`
+	PSQL   PSQLConfig   `toml:"psql"`
+}
+
+type SQLiteConfig struct{}
+
+type PSQLConfig struct {
+	Addr     string `toml:"addr"`
+	Username string `toml:"username"`
+	Password string `toml:"password"`
+	Database string `toml:"database"`
+	Debug    bool   `toml:"debug"`
+}
+
+type ClientsConfig struct {
+	Keycloak KeycloakConfig `toml:"keycloak"`
+}
+
+type KeycloakConfig struct {
+	BasePath    string `toml:"base_path"`
+	Realm       string `toml:"realm"`
+	ClientID    string `toml:"client_id"`
+	ClientSecret string `toml:"client_secret"`
+	DebugMode   bool   `toml:"debug_mode"`
+}
+
+type ServicesConfig struct {
+	ManagerLoad          ManagerLoadConfig          `toml:"manager_load"`
+	ManagerScheduler     ManagerSchedulerConfig     `toml:"manager_scheduler"`
+	MsgProducer          MsgProducerConfig          `toml:"msg_producer"`
+	Outbox               OutboxConfig               `toml:"outbox"`
+	AFCVerdictsProcessor AFCVerdictsProcessorConfig `toml:"afc_verdicts_processor"`
+}
+
+type ManagerLoadConfig struct {
+	MaxProblemsAtSameTime int `toml:"max_problems_at_same_time"`
+}
+
+type ManagerSchedulerConfig struct {
+	Period time.Duration `toml:"period"`
+}
+
+type MsgProducerConfig struct {
+	Brokers    []string `toml:"brokers"`
+	Topic      string   `toml:"topic"`
+	BatchSize  int      `toml:"batch_size"`
+	EncryptKey string   `toml:"encrypt_key"`
+}
+
+type OutboxConfig struct {
+	Workers    int           `toml:"workers"`
+	IdleTime   time.Duration `toml:"idle_time"`
+	ReserveFor time.Duration `toml:"reserve_for"`
+}
+
+type AFCVerdictsProcessorConfig struct {
+	Brokers                 []string `toml:"brokers"`
+	Consumers               int      `toml:"consumers"`
+	ConsumerGroup           string   `toml:"consumer_group"`
+	BatchSize               int      `toml:"batch_size"`
+	VerdictsTopic           string   `toml:"verdicts_topic"`
+	VerdictsDLQTopic        string   `toml:"verdicts_dlq_topic"`
+	VerdictsSigningPublicKey string   `toml:"verdicts_signing_public_key"`
+}
+
+func (c *Config) Validate() error {
+	validate := validator.New()
+	if err := validate.Struct(c); err != nil {
+		return fmt.Errorf("config validation failed: %w", err)
+	}
+	return nil
 }

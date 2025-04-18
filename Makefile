@@ -3,17 +3,27 @@ LDFLAGS := -X main.release="develop" -X main.buildDate=$(shell date -u +%Y-%m-%d
 SOURCE := "./cmd/chat-service"
 COMPOSE_FILE := "./deploy/local/docker-compose.yaml"
 COMPOSE_SENTRY_FILE := "./deploy/local/docker-compose.sentry.yaml"
+SWAGGER_FILE := "./deploy/local/docker-compose.swagger-ui.yaml"
 CONTAINER_DB_NAME := local-postgres-1
 GEN_TYPE := "./cmd/gen-types/"
 GEN_PATH := "./internal/types/"
 TYPE_LOWER := $(shell echo $(TYPE) | tr '[:upper:]' '[:lower:]')
 UI_CLIENT := "./cmd/ui-client/main.go"
+SWAGGER_CONFIG := "./api/codegen.yaml"
+SWAGGER_YAML := "./api/client.v1.swagger.yaml"
+GEN_TYPES_OUT = internal/server-client/v1/pkg/types.gen.go
+GEN_SERVER_OUT = internal/server-client/v1/pkg/server.gen.go
+GEN_CLIENT_OUT = internal/server-client/v1/pkg/client.gen.go
 
 # ANSI color codes for better output
 GREEN  := \033[32m
 YELLOW := \033[33m
 RED    := \033[31m
 RESET  := \033[0m
+
+# Phony targets declaration
+.PHONY: build run run-client gen_swagger gen_types test test-fail test-it lint tidy gen \
+        up up-db up-swagger down db_status db_logs db_stop db_clean sentry_update help
 
 build:
 	@echo "$(YELLOW)Building project...$(RESET)"
@@ -28,6 +38,27 @@ run: build
 run-client:
 	@echo "$(YELLOW)Running ui client...$(RESET)"
 	go run $(UI_CLIENT)
+	@echo "$(GREEN)Execution completed.$(RESET)"
+
+gen_swagger:
+	@echo "$(YELLOW)Running ui client...$(RESET)"
+	oapi-codegen \
+      -package pkg \
+      -generate types \
+      -o $(GEN_TYPES_OUT) \
+      $(SWAGGER_YAML)
+    
+	oapi-codegen \
+      -package pkg \
+      -generate echo-server \
+      -o $(GEN_SERVER_OUT) \
+      $(SWAGGER_YAML)
+    
+	oapi-codegen \
+      -package pkg \
+      -generate client \
+      -o $(GEN_CLIENT_OUT) \
+      $(SWAGGER_YAML)
 	@echo "$(GREEN)Execution completed.$(RESET)"
 
 gen_types:
@@ -76,6 +107,11 @@ up-db:
 	docker compose -f $(COMPOSE_FILE) up -d
 	@echo "$(GREEN)Containers started successfully.$(RESET)"
 
+up-swagger:
+	@echo "$(YELLOW)Starting containers from $(SWAGGER_FILE) ...$(RESET)"
+	docker compose -f $(SWAGGER_FILE) up -d swagger-ui
+	@echo "$(GREEN)Containers started successfully.$(RESET)"
+
 down:
 	@echo "$(YELLOW)Stopping containers from $(COMPOSE_FILE) and $(COMPOSE_SENTRY_FILE)...$(RESET)"
 	docker compose -f $(COMPOSE_FILE) -f $(COMPOSE_SENTRY_FILE) down
@@ -117,8 +153,10 @@ help:
 	@echo "  $(GREEN)lint$(RESET): Lint project using golangci-lint"
 	@echo "  $(GREEN)tidy$(RESET): Tidy and vendor dependencies"
 	@echo "  $(GREEN)gen$(RESET): Generate code"
+	@echo "  $(GREEN)gen_swagger$(RESET): Generate code for swagger"
 	@echo "  $(GREEN)up$(RESET): Start all containers (including Sentry)"
 	@echo "  $(GREEN)up-db$(RESET): Start DB containers"
+	@echo "  $(GREEN)up-swagger$(RESET): Start SWAGGER containers"
 	@echo "  $(GREEN)down$(RESET): Stop all containers (including Sentry)"
 	@echo "  $(GREEN)db_status$(RESET): Check status of the database container"
 	@echo "  $(GREEN)db_logs$(RESET): Fetch logs for the database container"
