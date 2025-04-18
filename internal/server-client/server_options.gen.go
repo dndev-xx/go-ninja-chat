@@ -5,6 +5,7 @@ package serverclient
 import (
 	fmt461e464ebed9 "fmt"
 
+	mw "github.com/dndev-xx/go-ninja-chat/internal/middlewares"
 	clientv1 "github.com/dndev-xx/go-ninja-chat/internal/server-client/v1/pkg"
 	"github.com/getkin/kin-openapi/openapi3"
 	errors461e464ebed9 "github.com/kazhuravlev/options-gen/pkg/errors"
@@ -20,6 +21,9 @@ func NewOptions(
 	allowOrigins []string,
 	v1Swagger *openapi3.T,
 	v1Handlers clientv1.ServerInterface,
+	keycloakClient mw.Introspector,
+	resource string,
+	role string,
 	options ...OptOptionsSetter,
 ) Options {
 	o := Options{}
@@ -35,6 +39,12 @@ func NewOptions(
 	o.v1Swagger = v1Swagger
 
 	o.v1Handlers = v1Handlers
+
+	o.keycloakClient = keycloakClient
+
+	o.resource = resource
+
+	o.role = role
 
 	for _, opt := range options {
 		opt(&o)

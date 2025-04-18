@@ -19,8 +19,8 @@ type Config struct {
 }
 
 type GlobalConfig struct {
-	Name string `toml:"name" validate:"required"`
-	Env  string `toml:"env" validate:"required,oneof=local dev stage prod"`
+	Name string `toml:"name"`
+	Env  string `toml:"env" validate:"oneof=local dev stage prod"`
 }
 
 func (c GlobalConfig) IsProduction() bool {
@@ -28,7 +28,7 @@ func (c GlobalConfig) IsProduction() bool {
 }
 
 type LogConfig struct {
-	Level string `toml:"level" validate:"required,oneof=debug info warn error"`
+	Level string `toml:"level" validate:"oneof=debug info warn error"`
 }
 
 type SentryConfig struct {
@@ -47,18 +47,18 @@ type ServersConfig struct {
 }
 
 type DebugServerConfig struct {
-	Addr string `toml:"addr" validate:"required,hostname_port"`
+	Addr string `toml:"addr" validate:"hostname_port"`
 }
 
 type ClientServerConfig struct {
-	Addr           string            	`toml:"addr" validate:"required,hostname_port"`
+	Addr           string            	`toml:"addr" validate:"hostname_port"`
 	AllowOrigins   []string          	`toml:"alloworigins"`
 	SecWsProtocol  string            	`toml:"secwsprotocol"`
 	RequiredAccess RequiredAccessConfig `toml:"requiredaccess"`
 }
 
 type ManagerServerConfig struct {
-	Addr           string            	`toml:"addr" validate:"required,hostname_port"`
+	Addr           string            	`toml:"addr" validate:"hostname_port"`
 	AllowOrigins   []string          	`toml:"alloworigins"`
 	SecWsProtocol  string            	`toml:"secwsprotocol"`
 	RequiredAccess RequiredAccessConfig `toml:"requiredaccess"`
@@ -90,11 +90,11 @@ type ClientsConfig struct {
 }
 
 type KeycloakConfig struct {
-	BasePath    string `toml:"base_path"`
+	BasePath    string `toml:"basepath"`
 	Realm       string `toml:"realm"`
-	ClientID    string `toml:"client_id"`
-	ClientSecret string `toml:"client_secret"`
-	DebugMode   bool   `toml:"debug_mode"`
+	ClientID    string `toml:"clientid"`
+	ClientSecret string `toml:"clientsecret"`
+	DebugMode   bool   `toml:"debugmode"`
 }
 
 type ServicesConfig struct {

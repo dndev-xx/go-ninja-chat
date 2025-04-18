@@ -19,9 +19,9 @@ type Options struct {
 type Client struct {
 	BasePath string
 	DebugMode bool
-	realm string
-	clientID string
-	clientSecret string
+	Realm string
+	ClientID string
+	ClientSecret string
 	cli      *resty.Client
 }
 
@@ -37,9 +37,9 @@ func New(opts Options) (*Client, error) {
 	return &Client{
 		BasePath: opts.basePath,
 		DebugMode: opts.debugMode,
-		realm: opts.realm,
-		clientID: opts.clientID,
-		clientSecret: opts.clientSecret,
+		Realm: opts.realm,
+		ClientID: opts.clientID,
+		ClientSecret: opts.clientSecret,
 		cli: cli,
 	}, nil
 }

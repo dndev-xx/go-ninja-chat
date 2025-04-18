@@ -11,6 +11,7 @@ import (
 	serverclient "github.com/dndev-xx/go-ninja-chat/internal/server-client"
 	h "github.com/dndev-xx/go-ninja-chat/internal/server-client/v1"
 	"go.uber.org/zap"
+	keycloakclient "github.com/dndev-xx/go-ninja-chat/internal/clients/keycloak"
 )
 
 var configPath = flag.String("config", "configs/config.toml", "Path to config file")
@@ -85,12 +86,25 @@ func (b *AppBuilder) WithClientHTTPSrv() Builder {
 		b.err = fmt.Errorf("create v1 handlers %v", err)
 		return b
 	}
+	kc, err := keycloakclient.New(keycloakclient.NewOptions(
+		keycloakclient.WithBasePath(b.App.Config.Clients.Keycloak.BasePath),
+		keycloakclient.WithRealm(b.App.Config.Clients.Keycloak.Realm),
+		keycloakclient.WithClientID(b.App.Config.Clients.Keycloak.ClientID),
+		keycloakclient.WithClientSecret(b.App.Config.Clients.Keycloak.ClientSecret),
+	))
+	if err != nil {
+		b.err = fmt.Errorf("create keycloak error %v", err)
+		return b
+	}
 	server, err := serverclient.New(serverclient.NewOptions(
 		b.App.Logger,
 		b.App.Config.Servers.Client.Addr,
 		b.App.Config.Servers.Client.AllowOrigins,
 		b.App.Swagger,
 		handlers,
+		kc,
+		b.App.Config.Servers.Client.RequiredAccess.Resource,
+		b.App.Config.Servers.Client.RequiredAccess.Role,
 	))
 	if err != nil {
 		b.err = fmt.Errorf("create server %v", err)

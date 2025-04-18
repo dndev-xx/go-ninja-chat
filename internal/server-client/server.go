@@ -16,6 +16,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	clientv1 "github.com/dndev-xx/go-ninja-chat/internal/server-client/v1/pkg"
+	mw "github.com/dndev-xx/go-ninja-chat/internal/middlewares"
 )
 
 const (
@@ -25,11 +26,14 @@ const (
 
 //go:generate options-gen -out-filename=server_options.gen.go -from-struct=Options
 type Options struct {
-	logger       *zap.Logger              `option:"mandatory"`
-	addr         string                   `option:"mandatory" validate:"hostname_port"`
-	allowOrigins []string                 `option:"mandatory"`
-	v1Swagger    *openapi3.T              `option:"mandatory"`
-	v1Handlers   clientv1.ServerInterface `option:"mandatory"`
+	logger       *zap.Logger              	`option:"mandatory"`
+	addr         string                   	`option:"mandatory" validate:"hostname_port"`
+	allowOrigins []string                 	`option:"mandatory"`
+	v1Swagger    *openapi3.T              	`option:"mandatory"`
+	v1Handlers   clientv1.ServerInterface 	`option:"mandatory"`
+	keycloakClient mw.Introspector 		  	`option:"mandatory"`
+	resource       string                   `option:"mandatory"`
+	role           string                   `option:"mandatory"`
 }
 
 type Server struct {
@@ -39,7 +43,6 @@ type Server struct {
 }
 
 func New(opts Options) (*Server, error) {
-
 	e := echo.New()
 	e.HideBanner = true
 	e.HidePort = true
@@ -59,8 +62,11 @@ func New(opts Options) (*Server, error) {
 		AllowCredentials: true,
 		MaxAge:           3600,
 	}))
+	authMiddleware := mw.NewKeycloakTokenAuth(opts.keycloakClient, opts.resource, opts.role)
 
-	v1 := e.Group("/v1", oapimdlwr.OapiRequestValidatorWithOptions(opts.v1Swagger, &oapimdlwr.Options{
+	v1 := e.Group("/v1",
+	authMiddleware,
+	oapimdlwr.OapiRequestValidatorWithOptions(opts.v1Swagger, &oapimdlwr.Options{
 		Options: openapi3filter.Options{
 			ExcludeRequestBody:  false,
 			ExcludeResponseBody: true,
