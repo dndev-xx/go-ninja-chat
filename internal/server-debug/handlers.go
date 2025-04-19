@@ -27,3 +27,7 @@ func (s *Server) getOpenAPISpec(c echo.Context) error {
 
 	return c.Blob(http.StatusOK, "application/json", jsonData)
 }
+
+func (s *Server) AllLogs(c echo.Context) error {
+	return c.String(http.StatusOK, s.logBuffer.String())
+}
