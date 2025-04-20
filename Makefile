@@ -14,6 +14,7 @@ SWAGGER_YAML := "./api/client.v1.swagger.yaml"
 GEN_TYPES_OUT = internal/server-client/v1/pkg/types.gen.go
 GEN_SERVER_OUT = internal/server-client/v1/pkg/server.gen.go
 GEN_CLIENT_OUT = internal/server-client/v1/pkg/client.gen.go
+GEN_SPEC_OUT = internal/server-client/v1/pkg/spec.gen.go
 
 # ANSI color codes for better output
 GREEN  := \033[32m
@@ -58,6 +59,12 @@ gen_swagger:
       -package pkg \
       -generate client \
       -o $(GEN_CLIENT_OUT) \
+      $(SWAGGER_YAML)
+
+	oapi-codegen \
+	  -package pkg \
+	  -generate spec \
+      -o $(GEN_SPEC_OUT) \
       $(SWAGGER_YAML)
 	@echo "$(GREEN)Execution completed.$(RESET)"
 

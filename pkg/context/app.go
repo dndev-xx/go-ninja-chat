@@ -4,14 +4,15 @@ import (
 	"flag"
 	"fmt"
 
+	keycloakclient "github.com/dndev-xx/go-ninja-chat/internal/clients/keycloak"
 	"github.com/dndev-xx/go-ninja-chat/internal/config"
 	"github.com/dndev-xx/go-ninja-chat/internal/logger"
-	swag "github.com/getkin/kin-openapi/openapi3"
-	serverdebug "github.com/dndev-xx/go-ninja-chat/internal/server-debug"
 	serverclient "github.com/dndev-xx/go-ninja-chat/internal/server-client"
 	h "github.com/dndev-xx/go-ninja-chat/internal/server-client/v1"
+	sw "github.com/dndev-xx/go-ninja-chat/internal/server-client/v1/pkg"
+	serverdebug "github.com/dndev-xx/go-ninja-chat/internal/server-debug"
+	swag "github.com/getkin/kin-openapi/openapi3"
 	"go.uber.org/zap"
-	keycloakclient "github.com/dndev-xx/go-ninja-chat/internal/clients/keycloak"
 )
 
 var configPath = flag.String("config", "configs/config.toml", "Path to config file")
@@ -71,7 +72,7 @@ func (b *AppBuilder) WithDebugHTTPSrv() Builder {
 }
 
 func (b *AppBuilder) WithSwagger() Builder {
-	swagger, err := swag.NewLoader().LoadFromFile("api/client.v1.swagger.yaml")
+	swagger, err := sw.GetSwagger()
 	if err != nil {
 		b.err = fmt.Errorf("load swagger spec: %v", err)
 		return b
