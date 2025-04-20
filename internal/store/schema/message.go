@@ -1,10 +1,13 @@
 package schema
 
 import (
+	"time"
+
 	"entgo.io/ent"
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
-	"time"
+	"entgo.io/ent/schema/index"
 	"github.com/google/uuid"
 )
 
@@ -51,5 +54,14 @@ func (Message) Edges() []ent.Edge {
 			Field("problem_id").
 			Unique().
 			Required(),
+	}
+}
+
+func (Message) Indexes() []ent.Index {
+	return []ent.Index{
+		index.Fields("chat_id").Annotations(entsql.IndexType("HASH")),
+		index.Fields("chat_id", "created_at"),
+		index.Fields("author_id", "is_visible_for_client"),
+		index.Fields("created_at").Annotations(entsql.IndexType("BTREE")),
 	}
 }

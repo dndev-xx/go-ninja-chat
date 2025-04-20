@@ -44,7 +44,7 @@ func (r *Repo) GetClientChatMessages(
 	query := r.db.Message(ctx).
 		Query().
 		Where(
-			message.ChatIDEQ(clientID),
+			message.AuthorIDEQ(clientID),
 			message.IsVisibleForClient(true),
 		).
 		Order(store.Desc(message.FieldCreatedAt)).
