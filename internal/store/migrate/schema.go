@@ -3,6 +3,7 @@
 package migrate
 
 import (
+	"entgo.io/ent/dialect/entsql"
 	"entgo.io/ent/dialect/sql/schema"
 	"entgo.io/ent/schema/field"
 )
@@ -51,6 +52,34 @@ var (
 				Columns:    []*schema.Column{MessagesColumns[10]},
 				RefColumns: []*schema.Column{ProblemsColumns[0]},
 				OnDelete:   schema.NoAction,
+			},
+		},
+		Indexes: []*schema.Index{
+			{
+				Name:    "message_chat_id",
+				Unique:  false,
+				Columns: []*schema.Column{MessagesColumns[9]},
+				Annotation: &entsql.IndexAnnotation{
+					Type: "HASH",
+				},
+			},
+			{
+				Name:    "message_chat_id_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{MessagesColumns[9], MessagesColumns[8]},
+			},
+			{
+				Name:    "message_author_id_is_visible_for_client",
+				Unique:  false,
+				Columns: []*schema.Column{MessagesColumns[1], MessagesColumns[2]},
+			},
+			{
+				Name:    "message_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{MessagesColumns[8]},
+				Annotation: &entsql.IndexAnnotation{
+					Type: "BTREE",
+				},
 			},
 		},
 	}
