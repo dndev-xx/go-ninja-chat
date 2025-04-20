@@ -12,20 +12,20 @@ import (
 	"github.com/dndev-xx/go-ninja-chat/internal/store/chat"
 	"github.com/dndev-xx/go-ninja-chat/internal/store/message"
 	"github.com/dndev-xx/go-ninja-chat/internal/store/problem"
-	"github.com/google/uuid"
+	"github.com/dndev-xx/go-ninja-chat/internal/types"
 )
 
 // Message is the model entity for the Message schema.
 type Message struct {
 	config `json:"-"`
 	// ID of the ent.
-	ID uuid.UUID `json:"id,omitempty"`
+	ID types.MessageID `json:"id,omitempty"`
 	// ChatID holds the value of the "chat_id" field.
-	ChatID uuid.UUID `json:"chat_id,omitempty"`
+	ChatID types.ChatID `json:"chat_id,omitempty"`
 	// ProblemID holds the value of the "problem_id" field.
-	ProblemID uuid.UUID `json:"problem_id,omitempty"`
+	ProblemID types.ProblemID `json:"problem_id,omitempty"`
 	// AuthorID holds the value of the "author_id" field.
-	AuthorID uuid.UUID `json:"author_id,omitempty"`
+	AuthorID types.UserID `json:"author_id,omitempty"`
 	// IsVisibleForClient holds the value of the "is_visible_for_client" field.
 	IsVisibleForClient bool `json:"is_visible_for_client,omitempty"`
 	// IsVisibleForManager holds the value of the "is_visible_for_manager" field.
@@ -90,8 +90,14 @@ func (*Message) scanValues(columns []string) ([]any, error) {
 			values[i] = new(sql.NullString)
 		case message.FieldCheckedAt, message.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
-		case message.FieldID, message.FieldChatID, message.FieldProblemID, message.FieldAuthorID:
-			values[i] = new(uuid.UUID)
+		case message.FieldChatID:
+			values[i] = new(types.ChatID)
+		case message.FieldID:
+			values[i] = new(types.MessageID)
+		case message.FieldProblemID:
+			values[i] = new(types.ProblemID)
+		case message.FieldAuthorID:
+			values[i] = new(types.UserID)
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -108,25 +114,25 @@ func (m *Message) assignValues(columns []string, values []any) error {
 	for i := range columns {
 		switch columns[i] {
 		case message.FieldID:
-			if value, ok := values[i].(*uuid.UUID); !ok {
+			if value, ok := values[i].(*types.MessageID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
 				m.ID = *value
 			}
 		case message.FieldChatID:
-			if value, ok := values[i].(*uuid.UUID); !ok {
+			if value, ok := values[i].(*types.ChatID); !ok {
 				return fmt.Errorf("unexpected type %T for field chat_id", values[i])
 			} else if value != nil {
 				m.ChatID = *value
 			}
 		case message.FieldProblemID:
-			if value, ok := values[i].(*uuid.UUID); !ok {
+			if value, ok := values[i].(*types.ProblemID); !ok {
 				return fmt.Errorf("unexpected type %T for field problem_id", values[i])
 			} else if value != nil {
 				m.ProblemID = *value
 			}
 		case message.FieldAuthorID:
-			if value, ok := values[i].(*uuid.UUID); !ok {
+			if value, ok := values[i].(*types.UserID); !ok {
 				return fmt.Errorf("unexpected type %T for field author_id", values[i])
 			} else if value != nil {
 				m.AuthorID = *value

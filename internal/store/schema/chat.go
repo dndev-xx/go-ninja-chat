@@ -1,11 +1,12 @@
 package schema
 
 import (
+	"time"
+
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
-	"time"
-	"github.com/google/uuid"
+	"github.com/dndev-xx/go-ninja-chat/internal/types"
 )
 
 // Chat holds the schema definition for the Chat entity.
@@ -16,11 +17,11 @@ type Chat struct {
 // Fields of the Chat.
 func (Chat) Fields() []ent.Field {
 	return []ent.Field{
-		field.UUID("id", uuid.UUID{}).
-			Default(uuid.New),
-		field.UUID("client_id", uuid.UUID{}).Unique(),
+		field.UUID("id", types.ChatID{}).Default(types.NewChatID).Unique().Immutable(),
+		field.UUID("client_id", types.UserID{}).Unique().Immutable(),
 		field.Time("created_at").
-			Default(time.Now),
+			Default(time.Now).
+			Immutable(),
 	}
 }
 

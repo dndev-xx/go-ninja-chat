@@ -10,7 +10,7 @@ import (
 	"reflect"
 
 	"github.com/dndev-xx/go-ninja-chat/internal/store/migrate"
-	"github.com/google/uuid"
+	"github.com/dndev-xx/go-ninja-chat/internal/types"
 
 	"entgo.io/ent"
 	"entgo.io/ent/dialect"
@@ -279,7 +279,7 @@ func (c *ChatClient) UpdateOne(ch *Chat) *ChatUpdateOne {
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *ChatClient) UpdateOneID(id uuid.UUID) *ChatUpdateOne {
+func (c *ChatClient) UpdateOneID(id types.ChatID) *ChatUpdateOne {
 	mutation := newChatMutation(c.config, OpUpdateOne, withChatID(id))
 	return &ChatUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
@@ -296,7 +296,7 @@ func (c *ChatClient) DeleteOne(ch *Chat) *ChatDeleteOne {
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *ChatClient) DeleteOneID(id uuid.UUID) *ChatDeleteOne {
+func (c *ChatClient) DeleteOneID(id types.ChatID) *ChatDeleteOne {
 	builder := c.Delete().Where(chat.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
@@ -313,12 +313,12 @@ func (c *ChatClient) Query() *ChatQuery {
 }
 
 // Get returns a Chat entity by its id.
-func (c *ChatClient) Get(ctx context.Context, id uuid.UUID) (*Chat, error) {
+func (c *ChatClient) Get(ctx context.Context, id types.ChatID) (*Chat, error) {
 	return c.Query().Where(chat.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *ChatClient) GetX(ctx context.Context, id uuid.UUID) *Chat {
+func (c *ChatClient) GetX(ctx context.Context, id types.ChatID) *Chat {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
@@ -444,7 +444,7 @@ func (c *MessageClient) UpdateOne(m *Message) *MessageUpdateOne {
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *MessageClient) UpdateOneID(id uuid.UUID) *MessageUpdateOne {
+func (c *MessageClient) UpdateOneID(id types.MessageID) *MessageUpdateOne {
 	mutation := newMessageMutation(c.config, OpUpdateOne, withMessageID(id))
 	return &MessageUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
@@ -461,7 +461,7 @@ func (c *MessageClient) DeleteOne(m *Message) *MessageDeleteOne {
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *MessageClient) DeleteOneID(id uuid.UUID) *MessageDeleteOne {
+func (c *MessageClient) DeleteOneID(id types.MessageID) *MessageDeleteOne {
 	builder := c.Delete().Where(message.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
@@ -478,12 +478,12 @@ func (c *MessageClient) Query() *MessageQuery {
 }
 
 // Get returns a Message entity by its id.
-func (c *MessageClient) Get(ctx context.Context, id uuid.UUID) (*Message, error) {
+func (c *MessageClient) Get(ctx context.Context, id types.MessageID) (*Message, error) {
 	return c.Query().Where(message.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *MessageClient) GetX(ctx context.Context, id uuid.UUID) *Message {
+func (c *MessageClient) GetX(ctx context.Context, id types.MessageID) *Message {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)
@@ -609,7 +609,7 @@ func (c *ProblemClient) UpdateOne(pr *Problem) *ProblemUpdateOne {
 }
 
 // UpdateOneID returns an update builder for the given id.
-func (c *ProblemClient) UpdateOneID(id uuid.UUID) *ProblemUpdateOne {
+func (c *ProblemClient) UpdateOneID(id types.ProblemID) *ProblemUpdateOne {
 	mutation := newProblemMutation(c.config, OpUpdateOne, withProblemID(id))
 	return &ProblemUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
 }
@@ -626,7 +626,7 @@ func (c *ProblemClient) DeleteOne(pr *Problem) *ProblemDeleteOne {
 }
 
 // DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *ProblemClient) DeleteOneID(id uuid.UUID) *ProblemDeleteOne {
+func (c *ProblemClient) DeleteOneID(id types.ProblemID) *ProblemDeleteOne {
 	builder := c.Delete().Where(problem.ID(id))
 	builder.mutation.id = &id
 	builder.mutation.op = OpDeleteOne
@@ -643,12 +643,12 @@ func (c *ProblemClient) Query() *ProblemQuery {
 }
 
 // Get returns a Problem entity by its id.
-func (c *ProblemClient) Get(ctx context.Context, id uuid.UUID) (*Problem, error) {
+func (c *ProblemClient) Get(ctx context.Context, id types.ProblemID) (*Problem, error) {
 	return c.Query().Where(problem.ID(id)).Only(ctx)
 }
 
 // GetX is like Get, but panics if an error occurs.
-func (c *ProblemClient) GetX(ctx context.Context, id uuid.UUID) *Problem {
+func (c *ProblemClient) GetX(ctx context.Context, id types.ProblemID) *Problem {
 	obj, err := c.Get(ctx, id)
 	if err != nil {
 		panic(err)

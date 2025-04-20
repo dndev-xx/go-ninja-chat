@@ -4,14 +4,14 @@ import (
 	"time"
 
 	"github.com/dndev-xx/go-ninja-chat/internal/store"
-	"github.com/google/uuid"
+	"github.com/dndev-xx/go-ninja-chat/internal/types"
 )
 
 type Message struct {
-	ID                   uuid.UUID
-	ChatID               uuid.UUID
-	ProblemID            uuid.UUID
-	AuthorID             uuid.UUID
+	ID                   types.MessageID
+	ChatID               types.ChatID
+	ProblemID            types.ProblemID
+	AuthorID             types.UserID
 	Body                 string
 	IsVisibleForClient   bool
 	IsVisibleForManager  bool

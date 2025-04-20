@@ -8,61 +8,61 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/dndev-xx/go-ninja-chat/internal/store/predicate"
-	"github.com/google/uuid"
+	"github.com/dndev-xx/go-ninja-chat/internal/types"
 )
 
 // ID filters vertices based on their ID field.
-func ID(id uuid.UUID) predicate.Problem {
+func ID(id types.ProblemID) predicate.Problem {
 	return predicate.Problem(sql.FieldEQ(FieldID, id))
 }
 
 // IDEQ applies the EQ predicate on the ID field.
-func IDEQ(id uuid.UUID) predicate.Problem {
+func IDEQ(id types.ProblemID) predicate.Problem {
 	return predicate.Problem(sql.FieldEQ(FieldID, id))
 }
 
 // IDNEQ applies the NEQ predicate on the ID field.
-func IDNEQ(id uuid.UUID) predicate.Problem {
+func IDNEQ(id types.ProblemID) predicate.Problem {
 	return predicate.Problem(sql.FieldNEQ(FieldID, id))
 }
 
 // IDIn applies the In predicate on the ID field.
-func IDIn(ids ...uuid.UUID) predicate.Problem {
+func IDIn(ids ...types.ProblemID) predicate.Problem {
 	return predicate.Problem(sql.FieldIn(FieldID, ids...))
 }
 
 // IDNotIn applies the NotIn predicate on the ID field.
-func IDNotIn(ids ...uuid.UUID) predicate.Problem {
+func IDNotIn(ids ...types.ProblemID) predicate.Problem {
 	return predicate.Problem(sql.FieldNotIn(FieldID, ids...))
 }
 
 // IDGT applies the GT predicate on the ID field.
-func IDGT(id uuid.UUID) predicate.Problem {
+func IDGT(id types.ProblemID) predicate.Problem {
 	return predicate.Problem(sql.FieldGT(FieldID, id))
 }
 
 // IDGTE applies the GTE predicate on the ID field.
-func IDGTE(id uuid.UUID) predicate.Problem {
+func IDGTE(id types.ProblemID) predicate.Problem {
 	return predicate.Problem(sql.FieldGTE(FieldID, id))
 }
 
 // IDLT applies the LT predicate on the ID field.
-func IDLT(id uuid.UUID) predicate.Problem {
+func IDLT(id types.ProblemID) predicate.Problem {
 	return predicate.Problem(sql.FieldLT(FieldID, id))
 }
 
 // IDLTE applies the LTE predicate on the ID field.
-func IDLTE(id uuid.UUID) predicate.Problem {
+func IDLTE(id types.ProblemID) predicate.Problem {
 	return predicate.Problem(sql.FieldLTE(FieldID, id))
 }
 
 // ChatID applies equality check predicate on the "chat_id" field. It's identical to ChatIDEQ.
-func ChatID(v uuid.UUID) predicate.Problem {
+func ChatID(v types.ChatID) predicate.Problem {
 	return predicate.Problem(sql.FieldEQ(FieldChatID, v))
 }
 
 // ManagerID applies equality check predicate on the "manager_id" field. It's identical to ManagerIDEQ.
-func ManagerID(v uuid.UUID) predicate.Problem {
+func ManagerID(v types.UserID) predicate.Problem {
 	return predicate.Problem(sql.FieldEQ(FieldManagerID, v))
 }
 
@@ -77,62 +77,62 @@ func CreatedAt(v time.Time) predicate.Problem {
 }
 
 // ChatIDEQ applies the EQ predicate on the "chat_id" field.
-func ChatIDEQ(v uuid.UUID) predicate.Problem {
+func ChatIDEQ(v types.ChatID) predicate.Problem {
 	return predicate.Problem(sql.FieldEQ(FieldChatID, v))
 }
 
 // ChatIDNEQ applies the NEQ predicate on the "chat_id" field.
-func ChatIDNEQ(v uuid.UUID) predicate.Problem {
+func ChatIDNEQ(v types.ChatID) predicate.Problem {
 	return predicate.Problem(sql.FieldNEQ(FieldChatID, v))
 }
 
 // ChatIDIn applies the In predicate on the "chat_id" field.
-func ChatIDIn(vs ...uuid.UUID) predicate.Problem {
+func ChatIDIn(vs ...types.ChatID) predicate.Problem {
 	return predicate.Problem(sql.FieldIn(FieldChatID, vs...))
 }
 
 // ChatIDNotIn applies the NotIn predicate on the "chat_id" field.
-func ChatIDNotIn(vs ...uuid.UUID) predicate.Problem {
+func ChatIDNotIn(vs ...types.ChatID) predicate.Problem {
 	return predicate.Problem(sql.FieldNotIn(FieldChatID, vs...))
 }
 
 // ManagerIDEQ applies the EQ predicate on the "manager_id" field.
-func ManagerIDEQ(v uuid.UUID) predicate.Problem {
+func ManagerIDEQ(v types.UserID) predicate.Problem {
 	return predicate.Problem(sql.FieldEQ(FieldManagerID, v))
 }
 
 // ManagerIDNEQ applies the NEQ predicate on the "manager_id" field.
-func ManagerIDNEQ(v uuid.UUID) predicate.Problem {
+func ManagerIDNEQ(v types.UserID) predicate.Problem {
 	return predicate.Problem(sql.FieldNEQ(FieldManagerID, v))
 }
 
 // ManagerIDIn applies the In predicate on the "manager_id" field.
-func ManagerIDIn(vs ...uuid.UUID) predicate.Problem {
+func ManagerIDIn(vs ...types.UserID) predicate.Problem {
 	return predicate.Problem(sql.FieldIn(FieldManagerID, vs...))
 }
 
 // ManagerIDNotIn applies the NotIn predicate on the "manager_id" field.
-func ManagerIDNotIn(vs ...uuid.UUID) predicate.Problem {
+func ManagerIDNotIn(vs ...types.UserID) predicate.Problem {
 	return predicate.Problem(sql.FieldNotIn(FieldManagerID, vs...))
 }
 
 // ManagerIDGT applies the GT predicate on the "manager_id" field.
-func ManagerIDGT(v uuid.UUID) predicate.Problem {
+func ManagerIDGT(v types.UserID) predicate.Problem {
 	return predicate.Problem(sql.FieldGT(FieldManagerID, v))
 }
 
 // ManagerIDGTE applies the GTE predicate on the "manager_id" field.
-func ManagerIDGTE(v uuid.UUID) predicate.Problem {
+func ManagerIDGTE(v types.UserID) predicate.Problem {
 	return predicate.Problem(sql.FieldGTE(FieldManagerID, v))
 }
 
 // ManagerIDLT applies the LT predicate on the "manager_id" field.
-func ManagerIDLT(v uuid.UUID) predicate.Problem {
+func ManagerIDLT(v types.UserID) predicate.Problem {
 	return predicate.Problem(sql.FieldLT(FieldManagerID, v))
 }
 
 // ManagerIDLTE applies the LTE predicate on the "manager_id" field.
-func ManagerIDLTE(v uuid.UUID) predicate.Problem {
+func ManagerIDLTE(v types.UserID) predicate.Problem {
 	return predicate.Problem(sql.FieldLTE(FieldManagerID, v))
 }
 

@@ -13,7 +13,7 @@ import (
 	"github.com/dndev-xx/go-ninja-chat/internal/store/chat"
 	"github.com/dndev-xx/go-ninja-chat/internal/store/message"
 	"github.com/dndev-xx/go-ninja-chat/internal/store/problem"
-	"github.com/google/uuid"
+	"github.com/dndev-xx/go-ninja-chat/internal/types"
 )
 
 // ProblemCreate is the builder for creating a Problem entity.
@@ -24,21 +24,21 @@ type ProblemCreate struct {
 }
 
 // SetChatID sets the "chat_id" field.
-func (pc *ProblemCreate) SetChatID(u uuid.UUID) *ProblemCreate {
-	pc.mutation.SetChatID(u)
+func (pc *ProblemCreate) SetChatID(ti types.ChatID) *ProblemCreate {
+	pc.mutation.SetChatID(ti)
 	return pc
 }
 
 // SetManagerID sets the "manager_id" field.
-func (pc *ProblemCreate) SetManagerID(u uuid.UUID) *ProblemCreate {
-	pc.mutation.SetManagerID(u)
+func (pc *ProblemCreate) SetManagerID(ti types.UserID) *ProblemCreate {
+	pc.mutation.SetManagerID(ti)
 	return pc
 }
 
 // SetNillableManagerID sets the "manager_id" field if the given value is not nil.
-func (pc *ProblemCreate) SetNillableManagerID(u *uuid.UUID) *ProblemCreate {
-	if u != nil {
-		pc.SetManagerID(*u)
+func (pc *ProblemCreate) SetNillableManagerID(ti *types.UserID) *ProblemCreate {
+	if ti != nil {
+		pc.SetManagerID(*ti)
 	}
 	return pc
 }
@@ -72,15 +72,15 @@ func (pc *ProblemCreate) SetNillableCreatedAt(t *time.Time) *ProblemCreate {
 }
 
 // SetID sets the "id" field.
-func (pc *ProblemCreate) SetID(u uuid.UUID) *ProblemCreate {
-	pc.mutation.SetID(u)
+func (pc *ProblemCreate) SetID(ti types.ProblemID) *ProblemCreate {
+	pc.mutation.SetID(ti)
 	return pc
 }
 
 // SetNillableID sets the "id" field if the given value is not nil.
-func (pc *ProblemCreate) SetNillableID(u *uuid.UUID) *ProblemCreate {
-	if u != nil {
-		pc.SetID(*u)
+func (pc *ProblemCreate) SetNillableID(ti *types.ProblemID) *ProblemCreate {
+	if ti != nil {
+		pc.SetID(*ti)
 	}
 	return pc
 }
@@ -91,14 +91,14 @@ func (pc *ProblemCreate) SetChat(c *Chat) *ProblemCreate {
 }
 
 // AddMessageIDs adds the "messages" edge to the Message entity by IDs.
-func (pc *ProblemCreate) AddMessageIDs(ids ...uuid.UUID) *ProblemCreate {
+func (pc *ProblemCreate) AddMessageIDs(ids ...types.MessageID) *ProblemCreate {
 	pc.mutation.AddMessageIDs(ids...)
 	return pc
 }
 
 // AddMessages adds the "messages" edges to the Message entity.
 func (pc *ProblemCreate) AddMessages(m ...*Message) *ProblemCreate {
-	ids := make([]uuid.UUID, len(m))
+	ids := make([]types.MessageID, len(m))
 	for i := range m {
 		ids[i] = m[i].ID
 	}
@@ -155,8 +155,23 @@ func (pc *ProblemCreate) check() error {
 	if _, ok := pc.mutation.ChatID(); !ok {
 		return &ValidationError{Name: "chat_id", err: errors.New(`store: missing required field "Problem.chat_id"`)}
 	}
+	if v, ok := pc.mutation.ChatID(); ok {
+		if err := v.Validate(); err != nil {
+			return &ValidationError{Name: "chat_id", err: fmt.Errorf(`store: validator failed for field "Problem.chat_id": %w`, err)}
+		}
+	}
+	if v, ok := pc.mutation.ManagerID(); ok {
+		if err := v.Validate(); err != nil {
+			return &ValidationError{Name: "manager_id", err: fmt.Errorf(`store: validator failed for field "Problem.manager_id": %w`, err)}
+		}
+	}
 	if _, ok := pc.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`store: missing required field "Problem.created_at"`)}
+	}
+	if v, ok := pc.mutation.ID(); ok {
+		if err := v.Validate(); err != nil {
+			return &ValidationError{Name: "id", err: fmt.Errorf(`store: validator failed for field "Problem.id": %w`, err)}
+		}
 	}
 	if _, ok := pc.mutation.ChatID(); !ok {
 		return &ValidationError{Name: "chat", err: errors.New(`store: missing required edge "Problem.chat"`)}
@@ -176,7 +191,7 @@ func (pc *ProblemCreate) sqlSave(ctx context.Context) (*Problem, error) {
 		return nil, err
 	}
 	if _spec.ID.Value != nil {
-		if id, ok := _spec.ID.Value.(*uuid.UUID); ok {
+		if id, ok := _spec.ID.Value.(*types.ProblemID); ok {
 			_node.ID = *id
 		} else if err := _node.ID.Scan(_spec.ID.Value); err != nil {
 			return nil, err
@@ -202,7 +217,7 @@ func (pc *ProblemCreate) createSpec() (*Problem, *sqlgraph.CreateSpec) {
 	}
 	if value, ok := pc.mutation.ResolvedAt(); ok {
 		_spec.SetField(problem.FieldResolvedAt, field.TypeTime, value)
-		_node.ResolvedAt = &value
+		_node.ResolvedAt = value
 	}
 	if value, ok := pc.mutation.CreatedAt(); ok {
 		_spec.SetField(problem.FieldCreatedAt, field.TypeTime, value)

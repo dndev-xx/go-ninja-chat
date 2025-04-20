@@ -8,7 +8,7 @@ import (
 
 	"github.com/dndev-xx/go-ninja-chat/internal/store"
 	"github.com/dndev-xx/go-ninja-chat/internal/store/message"
-	"github.com/google/uuid"
+	"github.com/dndev-xx/go-ninja-chat/internal/types"
 )
 
 const (
@@ -28,7 +28,7 @@ type Cursor struct {
 
 func (r *Repo) GetClientChatMessages(
 	ctx context.Context,
-	clientID uuid.UUID,
+	clientID types.UserID,
 	pageSize int,
 	cursor *Cursor,
 ) ([]Message, *Cursor, error) {

@@ -8,8 +8,10 @@ import (
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
 	"entgo.io/ent/schema/index"
-	"github.com/google/uuid"
+	"github.com/dndev-xx/go-ninja-chat/internal/types"
 )
+
+const messageBodyMaxLength = 3000
 
 // Message holds the schema definition for the Message entity.
 type Message struct {
@@ -19,23 +21,16 @@ type Message struct {
 // Fields of the Message.
 func (Message) Fields() []ent.Field {
 	return []ent.Field{
-		field.UUID("id", uuid.UUID{}).
-			Default(uuid.New),
-		field.UUID("chat_id", uuid.UUID{}),
-		field.UUID("problem_id", uuid.UUID{}),
-		field.UUID("author_id", uuid.UUID{}),
-		field.Bool("is_visible_for_client").
-			Default(false),
-		field.Bool("is_visible_for_manager").
-			Default(true),
-		field.Text("body"),
-		field.Time("checked_at").
-			Optional().
-			Nillable(),
-		field.Bool("is_blocked").
-			Default(false),
-		field.Bool("is_service").
-			Default(false),
+		field.UUID("id", types.MessageID{}).Default(types.NewMessageID).Unique().Immutable(),
+		field.UUID("chat_id", types.ChatID{}),
+		field.UUID("problem_id", types.ProblemID{}),
+		field.UUID("author_id", types.UserID{}).Optional().Immutable(),
+		field.Bool("is_visible_for_client").Default(false),
+		field.Bool("is_visible_for_manager").Default(false),
+		field.Text("body").NotEmpty().MaxLen(messageBodyMaxLength).Immutable(),
+		field.Time("checked_at").Optional().Nillable(),
+		field.Bool("is_blocked").Default(false),
+		field.Bool("is_service").Default(false).Immutable(),
 		field.Time("created_at").
 			Default(time.Now),
 	}

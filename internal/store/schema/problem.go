@@ -1,11 +1,12 @@
 package schema
 
 import (
+	"time"
+
 	"entgo.io/ent"
 	"entgo.io/ent/schema/edge"
 	"entgo.io/ent/schema/field"
-	"time"
-	"github.com/google/uuid"
+	"github.com/dndev-xx/go-ninja-chat/internal/types"
 )
 
 // Problem holds the schema definition for the Problem entity.
@@ -16,14 +17,10 @@ type Problem struct {
 // Fields of the Problem.
 func (Problem) Fields() []ent.Field {
 	return []ent.Field{
-		field.UUID("id", uuid.UUID{}).
-			Default(uuid.New),
-		field.UUID("chat_id", uuid.UUID{}),
-		field.UUID("manager_id", uuid.UUID{}).
-			Optional(),
-		field.Time("resolved_at").
-			Optional().
-			Nillable(),
+		field.UUID("id", types.ProblemID{}).Default(types.NewProblemID).Unique().Immutable(),
+		field.UUID("chat_id", types.ChatID{}),
+		field.UUID("manager_id", types.UserID{}).Optional(),
+		field.Time("resolved_at").Optional(),
 		field.Time("created_at").
 			Default(time.Now),
 	}

@@ -13,7 +13,7 @@ import (
 	"github.com/dndev-xx/go-ninja-chat/internal/store/chat"
 	"github.com/dndev-xx/go-ninja-chat/internal/store/message"
 	"github.com/dndev-xx/go-ninja-chat/internal/store/problem"
-	"github.com/google/uuid"
+	"github.com/dndev-xx/go-ninja-chat/internal/types"
 )
 
 // MessageCreate is the builder for creating a Message entity.
@@ -24,20 +24,28 @@ type MessageCreate struct {
 }
 
 // SetChatID sets the "chat_id" field.
-func (mc *MessageCreate) SetChatID(u uuid.UUID) *MessageCreate {
-	mc.mutation.SetChatID(u)
+func (mc *MessageCreate) SetChatID(ti types.ChatID) *MessageCreate {
+	mc.mutation.SetChatID(ti)
 	return mc
 }
 
 // SetProblemID sets the "problem_id" field.
-func (mc *MessageCreate) SetProblemID(u uuid.UUID) *MessageCreate {
-	mc.mutation.SetProblemID(u)
+func (mc *MessageCreate) SetProblemID(ti types.ProblemID) *MessageCreate {
+	mc.mutation.SetProblemID(ti)
 	return mc
 }
 
 // SetAuthorID sets the "author_id" field.
-func (mc *MessageCreate) SetAuthorID(u uuid.UUID) *MessageCreate {
-	mc.mutation.SetAuthorID(u)
+func (mc *MessageCreate) SetAuthorID(ti types.UserID) *MessageCreate {
+	mc.mutation.SetAuthorID(ti)
+	return mc
+}
+
+// SetNillableAuthorID sets the "author_id" field if the given value is not nil.
+func (mc *MessageCreate) SetNillableAuthorID(ti *types.UserID) *MessageCreate {
+	if ti != nil {
+		mc.SetAuthorID(*ti)
+	}
 	return mc
 }
 
@@ -132,15 +140,15 @@ func (mc *MessageCreate) SetNillableCreatedAt(t *time.Time) *MessageCreate {
 }
 
 // SetID sets the "id" field.
-func (mc *MessageCreate) SetID(u uuid.UUID) *MessageCreate {
-	mc.mutation.SetID(u)
+func (mc *MessageCreate) SetID(ti types.MessageID) *MessageCreate {
+	mc.mutation.SetID(ti)
 	return mc
 }
 
 // SetNillableID sets the "id" field if the given value is not nil.
-func (mc *MessageCreate) SetNillableID(u *uuid.UUID) *MessageCreate {
-	if u != nil {
-		mc.SetID(*u)
+func (mc *MessageCreate) SetNillableID(ti *types.MessageID) *MessageCreate {
+	if ti != nil {
+		mc.SetID(*ti)
 	}
 	return mc
 }
@@ -221,11 +229,23 @@ func (mc *MessageCreate) check() error {
 	if _, ok := mc.mutation.ChatID(); !ok {
 		return &ValidationError{Name: "chat_id", err: errors.New(`store: missing required field "Message.chat_id"`)}
 	}
+	if v, ok := mc.mutation.ChatID(); ok {
+		if err := v.Validate(); err != nil {
+			return &ValidationError{Name: "chat_id", err: fmt.Errorf(`store: validator failed for field "Message.chat_id": %w`, err)}
+		}
+	}
 	if _, ok := mc.mutation.ProblemID(); !ok {
 		return &ValidationError{Name: "problem_id", err: errors.New(`store: missing required field "Message.problem_id"`)}
 	}
-	if _, ok := mc.mutation.AuthorID(); !ok {
-		return &ValidationError{Name: "author_id", err: errors.New(`store: missing required field "Message.author_id"`)}
+	if v, ok := mc.mutation.ProblemID(); ok {
+		if err := v.Validate(); err != nil {
+			return &ValidationError{Name: "problem_id", err: fmt.Errorf(`store: validator failed for field "Message.problem_id": %w`, err)}
+		}
+	}
+	if v, ok := mc.mutation.AuthorID(); ok {
+		if err := v.Validate(); err != nil {
+			return &ValidationError{Name: "author_id", err: fmt.Errorf(`store: validator failed for field "Message.author_id": %w`, err)}
+		}
 	}
 	if _, ok := mc.mutation.IsVisibleForClient(); !ok {
 		return &ValidationError{Name: "is_visible_for_client", err: errors.New(`store: missing required field "Message.is_visible_for_client"`)}
@@ -236,6 +256,11 @@ func (mc *MessageCreate) check() error {
 	if _, ok := mc.mutation.Body(); !ok {
 		return &ValidationError{Name: "body", err: errors.New(`store: missing required field "Message.body"`)}
 	}
+	if v, ok := mc.mutation.Body(); ok {
+		if err := message.BodyValidator(v); err != nil {
+			return &ValidationError{Name: "body", err: fmt.Errorf(`store: validator failed for field "Message.body": %w`, err)}
+		}
+	}
 	if _, ok := mc.mutation.IsBlocked(); !ok {
 		return &ValidationError{Name: "is_blocked", err: errors.New(`store: missing required field "Message.is_blocked"`)}
 	}
@@ -244,6 +269,11 @@ func (mc *MessageCreate) check() error {
 	}
 	if _, ok := mc.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`store: missing required field "Message.created_at"`)}
+	}
+	if v, ok := mc.mutation.ID(); ok {
+		if err := v.Validate(); err != nil {
+			return &ValidationError{Name: "id", err: fmt.Errorf(`store: validator failed for field "Message.id": %w`, err)}
+		}
 	}
 	if _, ok := mc.mutation.ChatID(); !ok {
 		return &ValidationError{Name: "chat", err: errors.New(`store: missing required edge "Message.chat"`)}
@@ -266,7 +296,7 @@ func (mc *MessageCreate) sqlSave(ctx context.Context) (*Message, error) {
 		return nil, err
 	}
 	if _spec.ID.Value != nil {
-		if id, ok := _spec.ID.Value.(*uuid.UUID); ok {
+		if id, ok := _spec.ID.Value.(*types.MessageID); ok {
 			_node.ID = *id
 		} else if err := _node.ID.Scan(_spec.ID.Value); err != nil {
 			return nil, err

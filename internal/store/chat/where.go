@@ -8,56 +8,56 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/dndev-xx/go-ninja-chat/internal/store/predicate"
-	"github.com/google/uuid"
+	"github.com/dndev-xx/go-ninja-chat/internal/types"
 )
 
 // ID filters vertices based on their ID field.
-func ID(id uuid.UUID) predicate.Chat {
+func ID(id types.ChatID) predicate.Chat {
 	return predicate.Chat(sql.FieldEQ(FieldID, id))
 }
 
 // IDEQ applies the EQ predicate on the ID field.
-func IDEQ(id uuid.UUID) predicate.Chat {
+func IDEQ(id types.ChatID) predicate.Chat {
 	return predicate.Chat(sql.FieldEQ(FieldID, id))
 }
 
 // IDNEQ applies the NEQ predicate on the ID field.
-func IDNEQ(id uuid.UUID) predicate.Chat {
+func IDNEQ(id types.ChatID) predicate.Chat {
 	return predicate.Chat(sql.FieldNEQ(FieldID, id))
 }
 
 // IDIn applies the In predicate on the ID field.
-func IDIn(ids ...uuid.UUID) predicate.Chat {
+func IDIn(ids ...types.ChatID) predicate.Chat {
 	return predicate.Chat(sql.FieldIn(FieldID, ids...))
 }
 
 // IDNotIn applies the NotIn predicate on the ID field.
-func IDNotIn(ids ...uuid.UUID) predicate.Chat {
+func IDNotIn(ids ...types.ChatID) predicate.Chat {
 	return predicate.Chat(sql.FieldNotIn(FieldID, ids...))
 }
 
 // IDGT applies the GT predicate on the ID field.
-func IDGT(id uuid.UUID) predicate.Chat {
+func IDGT(id types.ChatID) predicate.Chat {
 	return predicate.Chat(sql.FieldGT(FieldID, id))
 }
 
 // IDGTE applies the GTE predicate on the ID field.
-func IDGTE(id uuid.UUID) predicate.Chat {
+func IDGTE(id types.ChatID) predicate.Chat {
 	return predicate.Chat(sql.FieldGTE(FieldID, id))
 }
 
 // IDLT applies the LT predicate on the ID field.
-func IDLT(id uuid.UUID) predicate.Chat {
+func IDLT(id types.ChatID) predicate.Chat {
 	return predicate.Chat(sql.FieldLT(FieldID, id))
 }
 
 // IDLTE applies the LTE predicate on the ID field.
-func IDLTE(id uuid.UUID) predicate.Chat {
+func IDLTE(id types.ChatID) predicate.Chat {
 	return predicate.Chat(sql.FieldLTE(FieldID, id))
 }
 
 // ClientID applies equality check predicate on the "client_id" field. It's identical to ClientIDEQ.
-func ClientID(v uuid.UUID) predicate.Chat {
+func ClientID(v types.UserID) predicate.Chat {
 	return predicate.Chat(sql.FieldEQ(FieldClientID, v))
 }
 
@@ -67,42 +67,42 @@ func CreatedAt(v time.Time) predicate.Chat {
 }
 
 // ClientIDEQ applies the EQ predicate on the "client_id" field.
-func ClientIDEQ(v uuid.UUID) predicate.Chat {
+func ClientIDEQ(v types.UserID) predicate.Chat {
 	return predicate.Chat(sql.FieldEQ(FieldClientID, v))
 }
 
 // ClientIDNEQ applies the NEQ predicate on the "client_id" field.
-func ClientIDNEQ(v uuid.UUID) predicate.Chat {
+func ClientIDNEQ(v types.UserID) predicate.Chat {
 	return predicate.Chat(sql.FieldNEQ(FieldClientID, v))
 }
 
 // ClientIDIn applies the In predicate on the "client_id" field.
-func ClientIDIn(vs ...uuid.UUID) predicate.Chat {
+func ClientIDIn(vs ...types.UserID) predicate.Chat {
 	return predicate.Chat(sql.FieldIn(FieldClientID, vs...))
 }
 
 // ClientIDNotIn applies the NotIn predicate on the "client_id" field.
-func ClientIDNotIn(vs ...uuid.UUID) predicate.Chat {
+func ClientIDNotIn(vs ...types.UserID) predicate.Chat {
 	return predicate.Chat(sql.FieldNotIn(FieldClientID, vs...))
 }
 
 // ClientIDGT applies the GT predicate on the "client_id" field.
-func ClientIDGT(v uuid.UUID) predicate.Chat {
+func ClientIDGT(v types.UserID) predicate.Chat {
 	return predicate.Chat(sql.FieldGT(FieldClientID, v))
 }
 
 // ClientIDGTE applies the GTE predicate on the "client_id" field.
-func ClientIDGTE(v uuid.UUID) predicate.Chat {
+func ClientIDGTE(v types.UserID) predicate.Chat {
 	return predicate.Chat(sql.FieldGTE(FieldClientID, v))
 }
 
 // ClientIDLT applies the LT predicate on the "client_id" field.
-func ClientIDLT(v uuid.UUID) predicate.Chat {
+func ClientIDLT(v types.UserID) predicate.Chat {
 	return predicate.Chat(sql.FieldLT(FieldClientID, v))
 }
 
 // ClientIDLTE applies the LTE predicate on the "client_id" field.
-func ClientIDLTE(v uuid.UUID) predicate.Chat {
+func ClientIDLTE(v types.UserID) predicate.Chat {
 	return predicate.Chat(sql.FieldLTE(FieldClientID, v))
 }
 

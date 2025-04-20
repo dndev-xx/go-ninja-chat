@@ -7,7 +7,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"github.com/google/uuid"
+	"github.com/dndev-xx/go-ninja-chat/internal/types"
 )
 
 const (
@@ -87,6 +87,8 @@ var (
 	DefaultIsVisibleForClient bool
 	// DefaultIsVisibleForManager holds the default value on creation for the "is_visible_for_manager" field.
 	DefaultIsVisibleForManager bool
+	// BodyValidator is a validator for the "body" field. It is called by the builders before save.
+	BodyValidator func(string) error
 	// DefaultIsBlocked holds the default value on creation for the "is_blocked" field.
 	DefaultIsBlocked bool
 	// DefaultIsService holds the default value on creation for the "is_service" field.
@@ -94,7 +96,7 @@ var (
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultID holds the default value on creation for the "id" field.
-	DefaultID func() uuid.UUID
+	DefaultID func() types.MessageID
 )
 
 // OrderOption defines the ordering options for the Message queries.

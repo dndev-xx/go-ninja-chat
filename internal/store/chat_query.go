@@ -15,7 +15,7 @@ import (
 	"github.com/dndev-xx/go-ninja-chat/internal/store/message"
 	"github.com/dndev-xx/go-ninja-chat/internal/store/predicate"
 	"github.com/dndev-xx/go-ninja-chat/internal/store/problem"
-	"github.com/google/uuid"
+	"github.com/dndev-xx/go-ninja-chat/internal/types"
 )
 
 // ChatQuery is the builder for querying Chat entities.
@@ -131,8 +131,8 @@ func (cq *ChatQuery) FirstX(ctx context.Context) *Chat {
 
 // FirstID returns the first Chat ID from the query.
 // Returns a *NotFoundError when no Chat ID was found.
-func (cq *ChatQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
-	var ids []uuid.UUID
+func (cq *ChatQuery) FirstID(ctx context.Context) (id types.ChatID, err error) {
+	var ids []types.ChatID
 	if ids, err = cq.Limit(1).IDs(setContextOp(ctx, cq.ctx, "FirstID")); err != nil {
 		return
 	}
@@ -144,7 +144,7 @@ func (cq *ChatQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (cq *ChatQuery) FirstIDX(ctx context.Context) uuid.UUID {
+func (cq *ChatQuery) FirstIDX(ctx context.Context) types.ChatID {
 	id, err := cq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -182,8 +182,8 @@ func (cq *ChatQuery) OnlyX(ctx context.Context) *Chat {
 // OnlyID is like Only, but returns the only Chat ID in the query.
 // Returns a *NotSingularError when more than one Chat ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (cq *ChatQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
-	var ids []uuid.UUID
+func (cq *ChatQuery) OnlyID(ctx context.Context) (id types.ChatID, err error) {
+	var ids []types.ChatID
 	if ids, err = cq.Limit(2).IDs(setContextOp(ctx, cq.ctx, "OnlyID")); err != nil {
 		return
 	}
@@ -199,7 +199,7 @@ func (cq *ChatQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (cq *ChatQuery) OnlyIDX(ctx context.Context) uuid.UUID {
+func (cq *ChatQuery) OnlyIDX(ctx context.Context) types.ChatID {
 	id, err := cq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -227,7 +227,7 @@ func (cq *ChatQuery) AllX(ctx context.Context) []*Chat {
 }
 
 // IDs executes the query and returns a list of Chat IDs.
-func (cq *ChatQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
+func (cq *ChatQuery) IDs(ctx context.Context) (ids []types.ChatID, err error) {
 	if cq.ctx.Unique == nil && cq.path != nil {
 		cq.Unique(true)
 	}
@@ -239,7 +239,7 @@ func (cq *ChatQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (cq *ChatQuery) IDsX(ctx context.Context) []uuid.UUID {
+func (cq *ChatQuery) IDsX(ctx context.Context) []types.ChatID {
 	ids, err := cq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -335,7 +335,7 @@ func (cq *ChatQuery) WithProblems(opts ...func(*ProblemQuery)) *ChatQuery {
 // Example:
 //
 //	var v []struct {
-//		ClientID uuid.UUID `json:"client_id,omitempty"`
+//		ClientID types.UserID `json:"client_id,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
@@ -358,7 +358,7 @@ func (cq *ChatQuery) GroupBy(field string, fields ...string) *ChatGroupBy {
 // Example:
 //
 //	var v []struct {
-//		ClientID uuid.UUID `json:"client_id,omitempty"`
+//		ClientID types.UserID `json:"client_id,omitempty"`
 //	}
 //
 //	client.Chat.Query().
@@ -449,7 +449,7 @@ func (cq *ChatQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Chat, e
 
 func (cq *ChatQuery) loadMessages(ctx context.Context, query *MessageQuery, nodes []*Chat, init func(*Chat), assign func(*Chat, *Message)) error {
 	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuid.UUID]*Chat)
+	nodeids := make(map[types.ChatID]*Chat)
 	for i := range nodes {
 		fks = append(fks, nodes[i].ID)
 		nodeids[nodes[i].ID] = nodes[i]
@@ -479,7 +479,7 @@ func (cq *ChatQuery) loadMessages(ctx context.Context, query *MessageQuery, node
 }
 func (cq *ChatQuery) loadProblems(ctx context.Context, query *ProblemQuery, nodes []*Chat, init func(*Chat), assign func(*Chat, *Problem)) error {
 	fks := make([]driver.Value, 0, len(nodes))
-	nodeids := make(map[uuid.UUID]*Chat)
+	nodeids := make(map[types.ChatID]*Chat)
 	for i := range nodes {
 		fks = append(fks, nodes[i].ID)
 		nodeids[nodes[i].ID] = nodes[i]
