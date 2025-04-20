@@ -4,11 +4,9 @@ package testingh
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/dndev-xx/go-ninja-chat/internal/logger"
 	"github.com/dndev-xx/go-ninja-chat/internal/validator"
-	"github.com/joho/godotenv"
 	"github.com/kelseyhightower/envconfig"
 )
 
@@ -31,10 +29,6 @@ type config struct {
 }
 
 func init() {
-	// need path to .env file
-	if err := godotenv.Load(); err != nil {
-        log.Fatal("Error loading .env file")
-    }
 	if err := envconfig.Process("TEST", &Config); err != nil {
 		panic(fmt.Sprintf("parse testing config: %v", err))
 	}

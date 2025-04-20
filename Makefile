@@ -78,7 +78,17 @@ test-fail:
 
 test-it:
 	@echo "$(YELLOW)Running integration tests...$(RESET)"
-	go test -tags integration ./...
+	TEST_LOG_LEVEL=info \
+	TEST_PSQL_ADDRESS=localhost:5433 \
+	TEST_PSQL_USER=chat-service \
+	TEST_PSQL_PASSWORD=chat-service \
+	TEST_PSQL_DEBUG=false \
+	TEST_KEYCLOAK_REALM=Bank \
+	TEST_KEYCLOAK_CLIENT_ID=integration-testing \
+	TEST_KEYCLOAK_CLIENT_SECRET=UMvVbOXsYhdE4IoRHOQlPHJ26l4MBLnU \
+	TEST_KEYCLOAK_TEST_USER=integration-testing \
+	TEST_KEYCLOAK_TEST_PASSWORD=integration-testing \
+	go test -tags integration -count 1 -race ./...
 	@echo "$(GREEN)Tests completed successfully.$(RESET)"
 
 lint:
