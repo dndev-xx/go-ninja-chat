@@ -68,15 +68,7 @@ func (r *Repo) GetClientChatMessages(
         messages = messages[:pCurr]
     }
 
-	return r.toDto(messages), nextCursor, nil
-}
-
-func (r *Repo) toDto(entities []*store.Message) []Message {
-	rsl := make([]Message, len(entities))
-	for _, msg := range entities {
-		rsl = append(rsl, adaptStoreMessage(msg))
-	}
-	return rsl
+	return adaptStoreMessages(messages), nextCursor, nil
 }
 
 func getCurrentSize(size int) int {

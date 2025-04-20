@@ -36,3 +36,11 @@ func adaptStoreMessage(m *store.Message) Message {
 		CheckedAt:            m.CheckedAt,
 	}
 }
+
+func adaptStoreMessages(entities []*store.Message) []Message {
+	rsl := make([]Message, len(entities))
+	for _, msg := range entities {
+		rsl = append(rsl, adaptStoreMessage(msg))
+	}
+	return rsl
+}

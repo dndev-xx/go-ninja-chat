@@ -24,6 +24,7 @@ import (
 {{ range $, $typeName := .Types }}
 var {{ $typeName }}Nil = {{ $typeName }}(uuid.Nil)
 
+// {{ $typeName }}
 type {{ $typeName }} uuid.UUID
 func New{{ $typeName }}() {{ $typeName }}                           { return {{ $typeName }}(uuid.New()) }
 func (t {{ $typeName }}) String() string                   { return uuid.UUID(t).String() }
