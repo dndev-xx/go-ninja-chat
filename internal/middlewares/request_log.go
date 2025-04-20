@@ -1,45 +1,56 @@
 package middlewares
 
 import (
-	"time"
+	"net/http"
 
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"go.uber.org/zap"
-	"github.com/mssola/useragent"
 )
 
-func LoggerMiddleware(logger *zap.Logger) echo.MiddlewareFunc {
-	return func(next echo.HandlerFunc) echo.HandlerFunc {
-		return func(c echo.Context) error {
-			start := time.Now()
-			ip := c.Request().RemoteAddr
-			method := c.Request().Method
-			path := c.Request().URL.Path
-			userAgent := c.Request().UserAgent()
-			ua := useragent.New(userAgent)
-			browserName, _ := ua.Browser()
-			host := c.Request().Host
-			requestID := c.Request().Header.Get(echo.HeaderXRequestID) 
-
-			err := next(c)
-
-			latency := time.Since(start)
-			status := c.Response().Status
-
-			logger.Info("Incoming request client server",
-				zap.String("remote_ip", ip),
-				zap.String("host", host),
-				zap.String("method", method),
-				zap.String("path", path),
-				zap.String("request_id", requestID),
-				zap.String("user_agent", userAgent),
-				zap.String("os", ua.OS()),
-				zap.String("browser", browserName),
-				zap.Duration("latency", latency),
-				zap.Int("status", status),
+func NewRequestLogger(lg *zap.Logger) echo.MiddlewareFunc {
+	return middleware.RequestLoggerWithConfig(middleware.RequestLoggerConfig{
+		Skipper: func(c echo.Context) bool {
+			return c.Request().Method == http.MethodOptions
+		},
+		LogValuesFunc: func(eCtx echo.Context, v middleware.RequestLoggerValues) error {
+			lg := lg.With(
+				zap.Duration("latency", v.Latency),
+				zap.String("remote_ip", v.RemoteIP),
+				zap.String("host", v.Host),
+				zap.String("method", v.Method),
+				zap.String("path", v.URIPath),
+				zap.String("request_id", v.RequestID),
+				zap.String("user_agent", v.UserAgent),
+				zap.Int("status", v.Status),
 			)
 
-			return err
-		}
-	}
+			uid, _ := userID(eCtx)
+			lg = lg.With(zap.Stringer("user_id", uid))
+
+			if err := v.Error; err != nil {
+				lg = lg.With(zap.Error(err))
+			}
+
+			switch s := v.Status; {
+			case s >= 500:
+				lg.Error("server error")
+			case s >= 400:
+				lg.Error("client error")
+			default:
+				lg.Info("success")
+			}
+
+			return nil
+		},
+		LogLatency:   true,
+		LogRemoteIP:  true,
+		LogHost:      true,
+		LogMethod:    true,
+		LogURIPath:   true,
+		LogRequestID: true,
+		LogUserAgent: true,
+		LogStatus:    true,
+		LogError:     true,
+	})
 }
