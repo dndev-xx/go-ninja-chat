@@ -1,18 +1,26 @@
+//go:build integration
+
 package testingh
 
 import (
 	"fmt"
-	"github.com/kelseyhightower/envconfig"
-	"github.com/joho/godotenv"
+	"log"
 
 	"github.com/dndev-xx/go-ninja-chat/internal/logger"
 	"github.com/dndev-xx/go-ninja-chat/internal/validator"
+	"github.com/joho/godotenv"
+	"github.com/kelseyhightower/envconfig"
 )
 
 var Config config
 
 type config struct {
 	LogLevel string `envconfig:"LOG_LEVEL" default:"info" validate:"required,oneof=debug info warn error"`
+
+	PostgresAddress  string `envconfig:"PSQL_ADDRESS" default:"localhost:5432" validate:"required,hostname_port"`
+	PostgresUser     string `envconfig:"PSQL_USER" validate:"required"`
+	PostgresPassword string `envconfig:"PSQL_PASSWORD" validate:"required"`
+	PostgresDebug    bool   `envconfig:"PSQL_DEBUG" default:"false"`
 
 	KeycloakBasePath     string `envconfig:"KEYCLOAK_BASE_PATH" default:"http://localhost:3010" validate:"required,url"`
 	KeycloakRealm        string `envconfig:"KEYCLOAK_REALM" default:"Testing" validate:"required"`
@@ -23,11 +31,10 @@ type config struct {
 }
 
 func init() {
-	// path to .env
-    if err := godotenv.Load(); err != nil {
-        panic(fmt.Sprintf("Warning: .env not loaded: %v", err))
+	// need path to .env file
+	if err := godotenv.Load(); err != nil {
+        log.Fatal("Error loading .env file")
     }
-
 	if err := envconfig.Process("TEST", &Config); err != nil {
 		panic(fmt.Sprintf("parse testing config: %v", err))
 	}

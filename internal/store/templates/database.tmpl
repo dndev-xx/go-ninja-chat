@@ -1,0 +1,135 @@
+{{/* The line below tells Intellij/GoLand to enable the autocompletion based *gen.Type type. */}}
+{{/* gotype: entgo.io/ent/entc/gen.Graph */}}
+
+{{ define "database" }}
+
+{{ template "header" $ }}
+
+import (
+	"context"
+	"fmt"
+	"runtime"
+
+	"entgo.io/ent/dialect/sql"
+)
+
+// Database is the client that holds all ent builders.
+type Database struct {
+	client *Client
+}
+
+// NewDatabase creates a new database based on Client.
+func NewDatabase(client *Client) *Database {
+	return &Database{client: client}
+}
+
+// RunInTx runs the given function f within a transaction.
+// Inspired by https://entgo.io/docs/transactions/#best-practices.
+// If there is already a transaction in the context, then the method uses it.
+func (db *Database) RunInTx(ctx context.Context, f func(context.Context) error) (err error) {
+	// Если в ctx уже есть транзакция, используем её
+	if tx := TxFromContext(ctx); tx != nil {
+		return f(ctx)
+	}
+
+	// Создаём новую транзакцию
+	tx, err := db.client.Tx(ctx)
+	if err != nil {
+		return fmt.Errorf("starting transaction: %w", err)
+	}
+
+	// Обработка паники
+	defer func() {
+		if p := recover(); p != nil {
+			// Откатываем транзакцию при панике
+			if rerr := tx.Rollback(); rerr != nil {
+				err = fmt.Errorf("rollback failed after panic: %v, original panic: %v", rerr, p)
+			} else {
+				// Восстанавливаем панику после успешного отката
+				panic(p)
+			}
+			// Добавляем информацию о месте паники
+			buf := make([]byte, 4096)
+			runtime.Stack(buf, false)
+			err = fmt.Errorf("panic in transaction: %v\n%s", p, buf)
+		}
+	}()
+
+	// Выполняем функцию в транзакции
+	if err = f(ctx); err != nil {
+		// Откатываем при ошибке
+		if rerr := tx.Rollback(); rerr != nil {
+			return fmt.Errorf("rollback failed: %v, original error: %w", rerr, err)
+		}
+		return err
+	}
+
+	// Коммитим если всё успешно
+	if err = tx.Commit(); err != nil {
+		return fmt.Errorf("commit failed: %w", err)
+	}
+
+	return nil
+}
+
+func (db *Database) loadClient(ctx context.Context) *Client {
+	tx := TxFromContext(ctx)
+	if tx != nil {
+		return tx.Client()
+	}
+	return db.client
+}
+
+// Exec executes a query that doesn't return rows. For example, in SQL, INSERT or UPDATE.
+func (db *Database) Exec(ctx context.Context, query string, args ...any) (*sql.Result, error) {
+	var res sql.Result
+	err := db.loadClient(ctx).driver.Exec(ctx, query, args, &res)
+	if err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+// Query executes a query that returns rows, typically a SELECT in SQL.
+func (db *Database) Query(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
+	var rows sql.Rows
+	err := db.loadClient(ctx).driver.Query(ctx, query, args, &rows)
+	if err != nil {
+		return nil, err
+	}
+	return &rows, nil
+}
+
+{{ range $n := $.Nodes }}
+	{{ $client := print $n.Name "Client" }}
+	// {{ $n.Name }} is the client for interacting with the {{ $n.Name }} builders.
+	func (db *Database) {{ $n.Name }}(ctx context.Context) *{{ $client }} {
+		return db.loadClient(ctx).{{ $n.Name }}
+	}
+{{ end }}
+
+{{ end }}
+
+{{- /*
+MIT License
+
+Copyright (c) 2022 Kratos
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/ -}}
