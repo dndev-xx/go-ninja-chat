@@ -8,8 +8,6 @@ import (
 	"fmt"
 	"time"
 
-	"entgo.io/ent/dialect"
-	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
 	"github.com/dndev-xx/go-ninja-chat/internal/store/chat"
@@ -23,7 +21,6 @@ type ProblemCreate struct {
 	config
 	mutation *ProblemMutation
 	hooks    []Hook
-	conflict []sql.ConflictOption
 }
 
 // SetChatID sets the "chat_id" field.
@@ -161,7 +158,7 @@ func (pc *ProblemCreate) check() error {
 	if _, ok := pc.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`store: missing required field "Problem.created_at"`)}
 	}
-	if len(pc.mutation.ChatIDs()) == 0 {
+	if _, ok := pc.mutation.ChatID(); !ok {
 		return &ValidationError{Name: "chat", err: errors.New(`store: missing required edge "Problem.chat"`)}
 	}
 	return nil
@@ -195,7 +192,6 @@ func (pc *ProblemCreate) createSpec() (*Problem, *sqlgraph.CreateSpec) {
 		_node = &Problem{config: pc.config}
 		_spec = sqlgraph.NewCreateSpec(problem.Table, sqlgraph.NewFieldSpec(problem.FieldID, field.TypeUUID))
 	)
-	_spec.OnConflict = pc.conflict
 	if id, ok := pc.mutation.ID(); ok {
 		_node.ID = id
 		_spec.ID.Value = &id
@@ -248,277 +244,11 @@ func (pc *ProblemCreate) createSpec() (*Problem, *sqlgraph.CreateSpec) {
 	return _node, _spec
 }
 
-// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
-// of the `INSERT` statement. For example:
-//
-//	client.Problem.Create().
-//		SetChatID(v).
-//		OnConflict(
-//			// Update the row with the new values
-//			// the was proposed for insertion.
-//			sql.ResolveWithNewValues(),
-//		).
-//		// Override some of the fields with custom
-//		// update values.
-//		Update(func(u *ent.ProblemUpsert) {
-//			SetChatID(v+v).
-//		}).
-//		Exec(ctx)
-func (pc *ProblemCreate) OnConflict(opts ...sql.ConflictOption) *ProblemUpsertOne {
-	pc.conflict = opts
-	return &ProblemUpsertOne{
-		create: pc,
-	}
-}
-
-// OnConflictColumns calls `OnConflict` and configures the columns
-// as conflict target. Using this option is equivalent to using:
-//
-//	client.Problem.Create().
-//		OnConflict(sql.ConflictColumns(columns...)).
-//		Exec(ctx)
-func (pc *ProblemCreate) OnConflictColumns(columns ...string) *ProblemUpsertOne {
-	pc.conflict = append(pc.conflict, sql.ConflictColumns(columns...))
-	return &ProblemUpsertOne{
-		create: pc,
-	}
-}
-
-type (
-	// ProblemUpsertOne is the builder for "upsert"-ing
-	//  one Problem node.
-	ProblemUpsertOne struct {
-		create *ProblemCreate
-	}
-
-	// ProblemUpsert is the "OnConflict" setter.
-	ProblemUpsert struct {
-		*sql.UpdateSet
-	}
-)
-
-// SetChatID sets the "chat_id" field.
-func (u *ProblemUpsert) SetChatID(v uuid.UUID) *ProblemUpsert {
-	u.Set(problem.FieldChatID, v)
-	return u
-}
-
-// UpdateChatID sets the "chat_id" field to the value that was provided on create.
-func (u *ProblemUpsert) UpdateChatID() *ProblemUpsert {
-	u.SetExcluded(problem.FieldChatID)
-	return u
-}
-
-// SetManagerID sets the "manager_id" field.
-func (u *ProblemUpsert) SetManagerID(v uuid.UUID) *ProblemUpsert {
-	u.Set(problem.FieldManagerID, v)
-	return u
-}
-
-// UpdateManagerID sets the "manager_id" field to the value that was provided on create.
-func (u *ProblemUpsert) UpdateManagerID() *ProblemUpsert {
-	u.SetExcluded(problem.FieldManagerID)
-	return u
-}
-
-// ClearManagerID clears the value of the "manager_id" field.
-func (u *ProblemUpsert) ClearManagerID() *ProblemUpsert {
-	u.SetNull(problem.FieldManagerID)
-	return u
-}
-
-// SetResolvedAt sets the "resolved_at" field.
-func (u *ProblemUpsert) SetResolvedAt(v time.Time) *ProblemUpsert {
-	u.Set(problem.FieldResolvedAt, v)
-	return u
-}
-
-// UpdateResolvedAt sets the "resolved_at" field to the value that was provided on create.
-func (u *ProblemUpsert) UpdateResolvedAt() *ProblemUpsert {
-	u.SetExcluded(problem.FieldResolvedAt)
-	return u
-}
-
-// ClearResolvedAt clears the value of the "resolved_at" field.
-func (u *ProblemUpsert) ClearResolvedAt() *ProblemUpsert {
-	u.SetNull(problem.FieldResolvedAt)
-	return u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *ProblemUpsert) SetCreatedAt(v time.Time) *ProblemUpsert {
-	u.Set(problem.FieldCreatedAt, v)
-	return u
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *ProblemUpsert) UpdateCreatedAt() *ProblemUpsert {
-	u.SetExcluded(problem.FieldCreatedAt)
-	return u
-}
-
-// UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
-// Using this option is equivalent to using:
-//
-//	client.Problem.Create().
-//		OnConflict(
-//			sql.ResolveWithNewValues(),
-//			sql.ResolveWith(func(u *sql.UpdateSet) {
-//				u.SetIgnore(problem.FieldID)
-//			}),
-//		).
-//		Exec(ctx)
-func (u *ProblemUpsertOne) UpdateNewValues() *ProblemUpsertOne {
-	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
-	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
-		if _, exists := u.create.mutation.ID(); exists {
-			s.SetIgnore(problem.FieldID)
-		}
-	}))
-	return u
-}
-
-// Ignore sets each column to itself in case of conflict.
-// Using this option is equivalent to using:
-//
-//	client.Problem.Create().
-//	    OnConflict(sql.ResolveWithIgnore()).
-//	    Exec(ctx)
-func (u *ProblemUpsertOne) Ignore() *ProblemUpsertOne {
-	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
-	return u
-}
-
-// DoNothing configures the conflict_action to `DO NOTHING`.
-// Supported only by SQLite and PostgreSQL.
-func (u *ProblemUpsertOne) DoNothing() *ProblemUpsertOne {
-	u.create.conflict = append(u.create.conflict, sql.DoNothing())
-	return u
-}
-
-// Update allows overriding fields `UPDATE` values. See the ProblemCreate.OnConflict
-// documentation for more info.
-func (u *ProblemUpsertOne) Update(set func(*ProblemUpsert)) *ProblemUpsertOne {
-	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
-		set(&ProblemUpsert{UpdateSet: update})
-	}))
-	return u
-}
-
-// SetChatID sets the "chat_id" field.
-func (u *ProblemUpsertOne) SetChatID(v uuid.UUID) *ProblemUpsertOne {
-	return u.Update(func(s *ProblemUpsert) {
-		s.SetChatID(v)
-	})
-}
-
-// UpdateChatID sets the "chat_id" field to the value that was provided on create.
-func (u *ProblemUpsertOne) UpdateChatID() *ProblemUpsertOne {
-	return u.Update(func(s *ProblemUpsert) {
-		s.UpdateChatID()
-	})
-}
-
-// SetManagerID sets the "manager_id" field.
-func (u *ProblemUpsertOne) SetManagerID(v uuid.UUID) *ProblemUpsertOne {
-	return u.Update(func(s *ProblemUpsert) {
-		s.SetManagerID(v)
-	})
-}
-
-// UpdateManagerID sets the "manager_id" field to the value that was provided on create.
-func (u *ProblemUpsertOne) UpdateManagerID() *ProblemUpsertOne {
-	return u.Update(func(s *ProblemUpsert) {
-		s.UpdateManagerID()
-	})
-}
-
-// ClearManagerID clears the value of the "manager_id" field.
-func (u *ProblemUpsertOne) ClearManagerID() *ProblemUpsertOne {
-	return u.Update(func(s *ProblemUpsert) {
-		s.ClearManagerID()
-	})
-}
-
-// SetResolvedAt sets the "resolved_at" field.
-func (u *ProblemUpsertOne) SetResolvedAt(v time.Time) *ProblemUpsertOne {
-	return u.Update(func(s *ProblemUpsert) {
-		s.SetResolvedAt(v)
-	})
-}
-
-// UpdateResolvedAt sets the "resolved_at" field to the value that was provided on create.
-func (u *ProblemUpsertOne) UpdateResolvedAt() *ProblemUpsertOne {
-	return u.Update(func(s *ProblemUpsert) {
-		s.UpdateResolvedAt()
-	})
-}
-
-// ClearResolvedAt clears the value of the "resolved_at" field.
-func (u *ProblemUpsertOne) ClearResolvedAt() *ProblemUpsertOne {
-	return u.Update(func(s *ProblemUpsert) {
-		s.ClearResolvedAt()
-	})
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *ProblemUpsertOne) SetCreatedAt(v time.Time) *ProblemUpsertOne {
-	return u.Update(func(s *ProblemUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *ProblemUpsertOne) UpdateCreatedAt() *ProblemUpsertOne {
-	return u.Update(func(s *ProblemUpsert) {
-		s.UpdateCreatedAt()
-	})
-}
-
-// Exec executes the query.
-func (u *ProblemUpsertOne) Exec(ctx context.Context) error {
-	if len(u.create.conflict) == 0 {
-		return errors.New("store: missing options for ProblemCreate.OnConflict")
-	}
-	return u.create.Exec(ctx)
-}
-
-// ExecX is like Exec, but panics if an error occurs.
-func (u *ProblemUpsertOne) ExecX(ctx context.Context) {
-	if err := u.create.Exec(ctx); err != nil {
-		panic(err)
-	}
-}
-
-// Exec executes the UPSERT query and returns the inserted/updated ID.
-func (u *ProblemUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
-	if u.create.driver.Dialect() == dialect.MySQL {
-		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
-		// fields from the database since MySQL does not support the RETURNING clause.
-		return id, errors.New("store: ProblemUpsertOne.ID is not supported by MySQL driver. Use ProblemUpsertOne.Exec instead")
-	}
-	node, err := u.create.Save(ctx)
-	if err != nil {
-		return id, err
-	}
-	return node.ID, nil
-}
-
-// IDX is like ID, but panics if an error occurs.
-func (u *ProblemUpsertOne) IDX(ctx context.Context) uuid.UUID {
-	id, err := u.ID(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return id
-}
-
 // ProblemCreateBulk is the builder for creating many Problem entities in bulk.
 type ProblemCreateBulk struct {
 	config
 	err      error
 	builders []*ProblemCreate
-	conflict []sql.ConflictOption
 }
 
 // Save creates the Problem entities in the database.
@@ -548,7 +278,6 @@ func (pcb *ProblemCreateBulk) Save(ctx context.Context) ([]*Problem, error) {
 					_, err = mutators[i+1].Mutate(root, pcb.builders[i+1].mutation)
 				} else {
 					spec := &sqlgraph.BatchCreateSpec{Nodes: specs}
-					spec.OnConflict = pcb.conflict
 					// Invoke the actual operation on the latest mutation in the chain.
 					if err = sqlgraph.BatchCreate(ctx, pcb.driver, spec); err != nil {
 						if sqlgraph.IsConstraintError(err) {
@@ -595,190 +324,6 @@ func (pcb *ProblemCreateBulk) Exec(ctx context.Context) error {
 // ExecX is like Exec, but panics if an error occurs.
 func (pcb *ProblemCreateBulk) ExecX(ctx context.Context) {
 	if err := pcb.Exec(ctx); err != nil {
-		panic(err)
-	}
-}
-
-// OnConflict allows configuring the `ON CONFLICT` / `ON DUPLICATE KEY` clause
-// of the `INSERT` statement. For example:
-//
-//	client.Problem.CreateBulk(builders...).
-//		OnConflict(
-//			// Update the row with the new values
-//			// the was proposed for insertion.
-//			sql.ResolveWithNewValues(),
-//		).
-//		// Override some of the fields with custom
-//		// update values.
-//		Update(func(u *ent.ProblemUpsert) {
-//			SetChatID(v+v).
-//		}).
-//		Exec(ctx)
-func (pcb *ProblemCreateBulk) OnConflict(opts ...sql.ConflictOption) *ProblemUpsertBulk {
-	pcb.conflict = opts
-	return &ProblemUpsertBulk{
-		create: pcb,
-	}
-}
-
-// OnConflictColumns calls `OnConflict` and configures the columns
-// as conflict target. Using this option is equivalent to using:
-//
-//	client.Problem.Create().
-//		OnConflict(sql.ConflictColumns(columns...)).
-//		Exec(ctx)
-func (pcb *ProblemCreateBulk) OnConflictColumns(columns ...string) *ProblemUpsertBulk {
-	pcb.conflict = append(pcb.conflict, sql.ConflictColumns(columns...))
-	return &ProblemUpsertBulk{
-		create: pcb,
-	}
-}
-
-// ProblemUpsertBulk is the builder for "upsert"-ing
-// a bulk of Problem nodes.
-type ProblemUpsertBulk struct {
-	create *ProblemCreateBulk
-}
-
-// UpdateNewValues updates the mutable fields using the new values that
-// were set on create. Using this option is equivalent to using:
-//
-//	client.Problem.Create().
-//		OnConflict(
-//			sql.ResolveWithNewValues(),
-//			sql.ResolveWith(func(u *sql.UpdateSet) {
-//				u.SetIgnore(problem.FieldID)
-//			}),
-//		).
-//		Exec(ctx)
-func (u *ProblemUpsertBulk) UpdateNewValues() *ProblemUpsertBulk {
-	u.create.conflict = append(u.create.conflict, sql.ResolveWithNewValues())
-	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
-		for _, b := range u.create.builders {
-			if _, exists := b.mutation.ID(); exists {
-				s.SetIgnore(problem.FieldID)
-			}
-		}
-	}))
-	return u
-}
-
-// Ignore sets each column to itself in case of conflict.
-// Using this option is equivalent to using:
-//
-//	client.Problem.Create().
-//		OnConflict(sql.ResolveWithIgnore()).
-//		Exec(ctx)
-func (u *ProblemUpsertBulk) Ignore() *ProblemUpsertBulk {
-	u.create.conflict = append(u.create.conflict, sql.ResolveWithIgnore())
-	return u
-}
-
-// DoNothing configures the conflict_action to `DO NOTHING`.
-// Supported only by SQLite and PostgreSQL.
-func (u *ProblemUpsertBulk) DoNothing() *ProblemUpsertBulk {
-	u.create.conflict = append(u.create.conflict, sql.DoNothing())
-	return u
-}
-
-// Update allows overriding fields `UPDATE` values. See the ProblemCreateBulk.OnConflict
-// documentation for more info.
-func (u *ProblemUpsertBulk) Update(set func(*ProblemUpsert)) *ProblemUpsertBulk {
-	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(update *sql.UpdateSet) {
-		set(&ProblemUpsert{UpdateSet: update})
-	}))
-	return u
-}
-
-// SetChatID sets the "chat_id" field.
-func (u *ProblemUpsertBulk) SetChatID(v uuid.UUID) *ProblemUpsertBulk {
-	return u.Update(func(s *ProblemUpsert) {
-		s.SetChatID(v)
-	})
-}
-
-// UpdateChatID sets the "chat_id" field to the value that was provided on create.
-func (u *ProblemUpsertBulk) UpdateChatID() *ProblemUpsertBulk {
-	return u.Update(func(s *ProblemUpsert) {
-		s.UpdateChatID()
-	})
-}
-
-// SetManagerID sets the "manager_id" field.
-func (u *ProblemUpsertBulk) SetManagerID(v uuid.UUID) *ProblemUpsertBulk {
-	return u.Update(func(s *ProblemUpsert) {
-		s.SetManagerID(v)
-	})
-}
-
-// UpdateManagerID sets the "manager_id" field to the value that was provided on create.
-func (u *ProblemUpsertBulk) UpdateManagerID() *ProblemUpsertBulk {
-	return u.Update(func(s *ProblemUpsert) {
-		s.UpdateManagerID()
-	})
-}
-
-// ClearManagerID clears the value of the "manager_id" field.
-func (u *ProblemUpsertBulk) ClearManagerID() *ProblemUpsertBulk {
-	return u.Update(func(s *ProblemUpsert) {
-		s.ClearManagerID()
-	})
-}
-
-// SetResolvedAt sets the "resolved_at" field.
-func (u *ProblemUpsertBulk) SetResolvedAt(v time.Time) *ProblemUpsertBulk {
-	return u.Update(func(s *ProblemUpsert) {
-		s.SetResolvedAt(v)
-	})
-}
-
-// UpdateResolvedAt sets the "resolved_at" field to the value that was provided on create.
-func (u *ProblemUpsertBulk) UpdateResolvedAt() *ProblemUpsertBulk {
-	return u.Update(func(s *ProblemUpsert) {
-		s.UpdateResolvedAt()
-	})
-}
-
-// ClearResolvedAt clears the value of the "resolved_at" field.
-func (u *ProblemUpsertBulk) ClearResolvedAt() *ProblemUpsertBulk {
-	return u.Update(func(s *ProblemUpsert) {
-		s.ClearResolvedAt()
-	})
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *ProblemUpsertBulk) SetCreatedAt(v time.Time) *ProblemUpsertBulk {
-	return u.Update(func(s *ProblemUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *ProblemUpsertBulk) UpdateCreatedAt() *ProblemUpsertBulk {
-	return u.Update(func(s *ProblemUpsert) {
-		s.UpdateCreatedAt()
-	})
-}
-
-// Exec executes the query.
-func (u *ProblemUpsertBulk) Exec(ctx context.Context) error {
-	if u.create.err != nil {
-		return u.create.err
-	}
-	for i, b := range u.create.builders {
-		if len(b.conflict) != 0 {
-			return fmt.Errorf("store: OnConflict was set for builder %d. Set it on the ProblemCreateBulk instead", i)
-		}
-	}
-	if len(u.create.conflict) == 0 {
-		return errors.New("store: missing options for ProblemCreateBulk.OnConflict")
-	}
-	return u.create.Exec(ctx)
-}
-
-// ExecX is like Exec, but panics if an error occurs.
-func (u *ProblemUpsertBulk) ExecX(ctx context.Context) {
-	if err := u.create.Exec(ctx); err != nil {
 		panic(err)
 	}
 }

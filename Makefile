@@ -22,8 +22,8 @@ RED    := \033[31m
 RESET  := \033[0m
 
 # Phony targets declaration
-.PHONY: build run run-client gen_swagger gen_types test test-fail test-it lint tidy gen \
-        up up-db up-swagger down db_status db_logs db_stop db_clean sentry_update help
+.PHONY: build run run-client gen_swagger gen_types test test-fail test-it lint tidy gen gen_ent \
+        up up-db up-swagger down db_status db_logs db_stop db_clean sentry_updat help
 
 build:
 	@echo "$(YELLOW)Building project...$(RESET)"
@@ -47,13 +47,13 @@ gen_swagger:
       -generate types \
       -o $(GEN_TYPES_OUT) \
       $(SWAGGER_YAML)
-    
+
 	oapi-codegen \
       -package pkg \
       -generate echo-server \
       -o $(GEN_SERVER_OUT) \
       $(SWAGGER_YAML)
-    
+
 	oapi-codegen \
       -package pkg \
       -generate client \
@@ -95,6 +95,11 @@ tidy:
 gen:
 	@echo "$(YELLOW)Generating code...$(RESET)"
 	go generate ./...
+	@echo "$(GREEN)Code generation completed successfully.$(RESET)"
+
+gen_ent:
+	@echo "$(YELLOW)Generating code...$(RESET)"
+	ent generate ./internal/store/schema
 	@echo "$(GREEN)Code generation completed successfully.$(RESET)"
 # run only linux
 up:
@@ -153,6 +158,7 @@ help:
 	@echo "  $(GREEN)lint$(RESET): Lint project using golangci-lint"
 	@echo "  $(GREEN)tidy$(RESET): Tidy and vendor dependencies"
 	@echo "  $(GREEN)gen$(RESET): Generate code"
+	@echo "  $(GREEN)gen_ent$(RESET): Generate code for ent"
 	@echo "  $(GREEN)gen_swagger$(RESET): Generate code for swagger"
 	@echo "  $(GREEN)up$(RESET): Start all containers (including Sentry)"
 	@echo "  $(GREEN)up-db$(RESET): Start DB containers"

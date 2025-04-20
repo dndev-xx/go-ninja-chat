@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"math"
 
-	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
@@ -28,7 +27,6 @@ type ProblemQuery struct {
 	predicates   []predicate.Problem
 	withChat     *ChatQuery
 	withMessages *MessageQuery
-	modifiers    []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -112,7 +110,7 @@ func (pq *ProblemQuery) QueryMessages() *MessageQuery {
 // First returns the first Problem entity from the query.
 // Returns a *NotFoundError when no Problem was found.
 func (pq *ProblemQuery) First(ctx context.Context) (*Problem, error) {
-	nodes, err := pq.Limit(1).All(setContextOp(ctx, pq.ctx, ent.OpQueryFirst))
+	nodes, err := pq.Limit(1).All(setContextOp(ctx, pq.ctx, "First"))
 	if err != nil {
 		return nil, err
 	}
@@ -135,7 +133,7 @@ func (pq *ProblemQuery) FirstX(ctx context.Context) *Problem {
 // Returns a *NotFoundError when no Problem ID was found.
 func (pq *ProblemQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
-	if ids, err = pq.Limit(1).IDs(setContextOp(ctx, pq.ctx, ent.OpQueryFirstID)); err != nil {
+	if ids, err = pq.Limit(1).IDs(setContextOp(ctx, pq.ctx, "FirstID")); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -158,7 +156,7 @@ func (pq *ProblemQuery) FirstIDX(ctx context.Context) uuid.UUID {
 // Returns a *NotSingularError when more than one Problem entity is found.
 // Returns a *NotFoundError when no Problem entities are found.
 func (pq *ProblemQuery) Only(ctx context.Context) (*Problem, error) {
-	nodes, err := pq.Limit(2).All(setContextOp(ctx, pq.ctx, ent.OpQueryOnly))
+	nodes, err := pq.Limit(2).All(setContextOp(ctx, pq.ctx, "Only"))
 	if err != nil {
 		return nil, err
 	}
@@ -186,7 +184,7 @@ func (pq *ProblemQuery) OnlyX(ctx context.Context) *Problem {
 // Returns a *NotFoundError when no entities are found.
 func (pq *ProblemQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
 	var ids []uuid.UUID
-	if ids, err = pq.Limit(2).IDs(setContextOp(ctx, pq.ctx, ent.OpQueryOnlyID)); err != nil {
+	if ids, err = pq.Limit(2).IDs(setContextOp(ctx, pq.ctx, "OnlyID")); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -211,7 +209,7 @@ func (pq *ProblemQuery) OnlyIDX(ctx context.Context) uuid.UUID {
 
 // All executes the query and returns a list of Problems.
 func (pq *ProblemQuery) All(ctx context.Context) ([]*Problem, error) {
-	ctx = setContextOp(ctx, pq.ctx, ent.OpQueryAll)
+	ctx = setContextOp(ctx, pq.ctx, "All")
 	if err := pq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
@@ -233,7 +231,7 @@ func (pq *ProblemQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
 	if pq.ctx.Unique == nil && pq.path != nil {
 		pq.Unique(true)
 	}
-	ctx = setContextOp(ctx, pq.ctx, ent.OpQueryIDs)
+	ctx = setContextOp(ctx, pq.ctx, "IDs")
 	if err = pq.Select(problem.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
@@ -251,7 +249,7 @@ func (pq *ProblemQuery) IDsX(ctx context.Context) []uuid.UUID {
 
 // Count returns the count of the given query.
 func (pq *ProblemQuery) Count(ctx context.Context) (int, error) {
-	ctx = setContextOp(ctx, pq.ctx, ent.OpQueryCount)
+	ctx = setContextOp(ctx, pq.ctx, "Count")
 	if err := pq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
@@ -269,7 +267,7 @@ func (pq *ProblemQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (pq *ProblemQuery) Exist(ctx context.Context) (bool, error) {
-	ctx = setContextOp(ctx, pq.ctx, ent.OpQueryExist)
+	ctx = setContextOp(ctx, pq.ctx, "Exist")
 	switch _, err := pq.FirstID(ctx); {
 	case IsNotFound(err):
 		return false, nil
@@ -304,9 +302,8 @@ func (pq *ProblemQuery) Clone() *ProblemQuery {
 		withChat:     pq.withChat.Clone(),
 		withMessages: pq.withMessages.Clone(),
 		// clone intermediate query.
-		sql:       pq.sql.Clone(),
-		path:      pq.path,
-		modifiers: append([]func(*sql.Selector){}, pq.modifiers...),
+		sql:  pq.sql.Clone(),
+		path: pq.path,
 	}
 }
 
@@ -424,9 +421,6 @@ func (pq *ProblemQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Prob
 		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
-	if len(pq.modifiers) > 0 {
-		_spec.Modifiers = pq.modifiers
-	}
 	for i := range hooks {
 		hooks[i](ctx, _spec)
 	}
@@ -514,9 +508,6 @@ func (pq *ProblemQuery) loadMessages(ctx context.Context, query *MessageQuery, n
 
 func (pq *ProblemQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := pq.querySpec()
-	if len(pq.modifiers) > 0 {
-		_spec.Modifiers = pq.modifiers
-	}
 	_spec.Node.Columns = pq.ctx.Fields
 	if len(pq.ctx.Fields) > 0 {
 		_spec.Unique = pq.ctx.Unique != nil && *pq.ctx.Unique
@@ -582,9 +573,6 @@ func (pq *ProblemQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	if pq.ctx.Unique != nil && *pq.ctx.Unique {
 		selector.Distinct()
 	}
-	for _, m := range pq.modifiers {
-		m(selector)
-	}
 	for _, p := range pq.predicates {
 		p(selector)
 	}
@@ -602,12 +590,6 @@ func (pq *ProblemQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	return selector
 }
 
-// Modify adds a query modifier for attaching custom logic to queries.
-func (pq *ProblemQuery) Modify(modifiers ...func(s *sql.Selector)) *ProblemSelect {
-	pq.modifiers = append(pq.modifiers, modifiers...)
-	return pq.Select()
-}
-
 // ProblemGroupBy is the group-by builder for Problem entities.
 type ProblemGroupBy struct {
 	selector
@@ -622,7 +604,7 @@ func (pgb *ProblemGroupBy) Aggregate(fns ...AggregateFunc) *ProblemGroupBy {
 
 // Scan applies the selector query and scans the result into the given value.
 func (pgb *ProblemGroupBy) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, pgb.build.ctx, ent.OpQueryGroupBy)
+	ctx = setContextOp(ctx, pgb.build.ctx, "GroupBy")
 	if err := pgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
@@ -670,7 +652,7 @@ func (ps *ProblemSelect) Aggregate(fns ...AggregateFunc) *ProblemSelect {
 
 // Scan applies the selector query and scans the result into the given value.
 func (ps *ProblemSelect) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, ps.ctx, ent.OpQuerySelect)
+	ctx = setContextOp(ctx, ps.ctx, "Select")
 	if err := ps.prepareQuery(ctx); err != nil {
 		return err
 	}
@@ -696,10 +678,4 @@ func (ps *ProblemSelect) sqlScan(ctx context.Context, root *ProblemQuery, v any)
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
-}
-
-// Modify adds a query modifier for attaching custom logic to queries.
-func (ps *ProblemSelect) Modify(modifiers ...func(s *sql.Selector)) *ProblemSelect {
-	ps.modifiers = append(ps.modifiers, modifiers...)
-	return ps
 }

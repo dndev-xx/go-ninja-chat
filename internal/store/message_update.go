@@ -21,9 +21,8 @@ import (
 // MessageUpdate is the builder for updating Message entities.
 type MessageUpdate struct {
 	config
-	hooks     []Hook
-	mutation  *MessageMutation
-	modifiers []func(*sql.UpdateBuilder)
+	hooks    []Hook
+	mutation *MessageMutation
 }
 
 // Where appends a list predicates to the MessageUpdate builder.
@@ -234,19 +233,13 @@ func (mu *MessageUpdate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (mu *MessageUpdate) check() error {
-	if mu.mutation.ChatCleared() && len(mu.mutation.ChatIDs()) > 0 {
+	if _, ok := mu.mutation.ChatID(); mu.mutation.ChatCleared() && !ok {
 		return errors.New(`store: clearing a required unique edge "Message.chat"`)
 	}
-	if mu.mutation.ProblemCleared() && len(mu.mutation.ProblemIDs()) > 0 {
+	if _, ok := mu.mutation.ProblemID(); mu.mutation.ProblemCleared() && !ok {
 		return errors.New(`store: clearing a required unique edge "Message.problem"`)
 	}
 	return nil
-}
-
-// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
-func (mu *MessageUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *MessageUpdate {
-	mu.modifiers = append(mu.modifiers, modifiers...)
-	return mu
 }
 
 func (mu *MessageUpdate) sqlSave(ctx context.Context) (n int, err error) {
@@ -346,7 +339,6 @@ func (mu *MessageUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	_spec.AddModifiers(mu.modifiers...)
 	if n, err = sqlgraph.UpdateNodes(ctx, mu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{message.Label}
@@ -362,10 +354,9 @@ func (mu *MessageUpdate) sqlSave(ctx context.Context) (n int, err error) {
 // MessageUpdateOne is the builder for updating a single Message entity.
 type MessageUpdateOne struct {
 	config
-	fields    []string
-	hooks     []Hook
-	mutation  *MessageMutation
-	modifiers []func(*sql.UpdateBuilder)
+	fields   []string
+	hooks    []Hook
+	mutation *MessageMutation
 }
 
 // SetChatID sets the "chat_id" field.
@@ -583,19 +574,13 @@ func (muo *MessageUpdateOne) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (muo *MessageUpdateOne) check() error {
-	if muo.mutation.ChatCleared() && len(muo.mutation.ChatIDs()) > 0 {
+	if _, ok := muo.mutation.ChatID(); muo.mutation.ChatCleared() && !ok {
 		return errors.New(`store: clearing a required unique edge "Message.chat"`)
 	}
-	if muo.mutation.ProblemCleared() && len(muo.mutation.ProblemIDs()) > 0 {
+	if _, ok := muo.mutation.ProblemID(); muo.mutation.ProblemCleared() && !ok {
 		return errors.New(`store: clearing a required unique edge "Message.problem"`)
 	}
 	return nil
-}
-
-// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
-func (muo *MessageUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *MessageUpdateOne {
-	muo.modifiers = append(muo.modifiers, modifiers...)
-	return muo
 }
 
 func (muo *MessageUpdateOne) sqlSave(ctx context.Context) (_node *Message, err error) {
@@ -712,7 +697,6 @@ func (muo *MessageUpdateOne) sqlSave(ctx context.Context) (_node *Message, err e
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
-	_spec.AddModifiers(muo.modifiers...)
 	_node = &Message{config: muo.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues
