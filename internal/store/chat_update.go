@@ -20,8 +20,9 @@ import (
 // ChatUpdate is the builder for updating Chat entities.
 type ChatUpdate struct {
 	config
-	hooks    []Hook
-	mutation *ChatMutation
+	hooks     []Hook
+	mutation  *ChatMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the ChatUpdate builder.
@@ -134,6 +135,12 @@ func (cu *ChatUpdate) ExecX(ctx context.Context) {
 	}
 }
 
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (cu *ChatUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *ChatUpdate {
+	cu.modifiers = append(cu.modifiers, modifiers...)
+	return cu
+}
+
 func (cu *ChatUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	_spec := sqlgraph.NewUpdateSpec(chat.Table, chat.Columns, sqlgraph.NewFieldSpec(chat.FieldID, field.TypeUUID))
 	if ps := cu.mutation.predicates; len(ps) > 0 {
@@ -233,6 +240,7 @@ func (cu *ChatUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(cu.modifiers...)
 	if n, err = sqlgraph.UpdateNodes(ctx, cu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{chat.Label}
@@ -248,9 +256,10 @@ func (cu *ChatUpdate) sqlSave(ctx context.Context) (n int, err error) {
 // ChatUpdateOne is the builder for updating a single Chat entity.
 type ChatUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *ChatMutation
+	fields    []string
+	hooks     []Hook
+	mutation  *ChatMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // AddMessageIDs adds the "messages" edge to the Message entity by IDs.
@@ -370,6 +379,12 @@ func (cuo *ChatUpdateOne) ExecX(ctx context.Context) {
 	}
 }
 
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (cuo *ChatUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *ChatUpdateOne {
+	cuo.modifiers = append(cuo.modifiers, modifiers...)
+	return cuo
+}
+
 func (cuo *ChatUpdateOne) sqlSave(ctx context.Context) (_node *Chat, err error) {
 	_spec := sqlgraph.NewUpdateSpec(chat.Table, chat.Columns, sqlgraph.NewFieldSpec(chat.FieldID, field.TypeUUID))
 	id, ok := cuo.mutation.ID()
@@ -486,6 +501,7 @@ func (cuo *ChatUpdateOne) sqlSave(ctx context.Context) (_node *Chat, err error) 
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(cuo.modifiers...)
 	_node = &Chat{config: cuo.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

@@ -21,8 +21,9 @@ import (
 // ProblemUpdate is the builder for updating Problem entities.
 type ProblemUpdate struct {
 	config
-	hooks    []Hook
-	mutation *ProblemMutation
+	hooks     []Hook
+	mutation  *ProblemMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // Where appends a list predicates to the ProblemUpdate builder.
@@ -190,10 +191,16 @@ func (pu *ProblemUpdate) check() error {
 			return &ValidationError{Name: "manager_id", err: fmt.Errorf(`store: validator failed for field "Problem.manager_id": %w`, err)}
 		}
 	}
-	if _, ok := pu.mutation.ChatID(); pu.mutation.ChatCleared() && !ok {
+	if pu.mutation.ChatCleared() && len(pu.mutation.ChatIDs()) > 0 {
 		return errors.New(`store: clearing a required unique edge "Problem.chat"`)
 	}
 	return nil
+}
+
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (pu *ProblemUpdate) Modify(modifiers ...func(u *sql.UpdateBuilder)) *ProblemUpdate {
+	pu.modifiers = append(pu.modifiers, modifiers...)
+	return pu
 }
 
 func (pu *ProblemUpdate) sqlSave(ctx context.Context) (n int, err error) {
@@ -297,6 +304,7 @@ func (pu *ProblemUpdate) sqlSave(ctx context.Context) (n int, err error) {
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(pu.modifiers...)
 	if n, err = sqlgraph.UpdateNodes(ctx, pu.driver, _spec); err != nil {
 		if _, ok := err.(*sqlgraph.NotFoundError); ok {
 			err = &NotFoundError{problem.Label}
@@ -312,9 +320,10 @@ func (pu *ProblemUpdate) sqlSave(ctx context.Context) (n int, err error) {
 // ProblemUpdateOne is the builder for updating a single Problem entity.
 type ProblemUpdateOne struct {
 	config
-	fields   []string
-	hooks    []Hook
-	mutation *ProblemMutation
+	fields    []string
+	hooks     []Hook
+	mutation  *ProblemMutation
+	modifiers []func(*sql.UpdateBuilder)
 }
 
 // SetChatID sets the "chat_id" field.
@@ -489,10 +498,16 @@ func (puo *ProblemUpdateOne) check() error {
 			return &ValidationError{Name: "manager_id", err: fmt.Errorf(`store: validator failed for field "Problem.manager_id": %w`, err)}
 		}
 	}
-	if _, ok := puo.mutation.ChatID(); puo.mutation.ChatCleared() && !ok {
+	if puo.mutation.ChatCleared() && len(puo.mutation.ChatIDs()) > 0 {
 		return errors.New(`store: clearing a required unique edge "Problem.chat"`)
 	}
 	return nil
+}
+
+// Modify adds a statement modifier for attaching custom logic to the UPDATE statement.
+func (puo *ProblemUpdateOne) Modify(modifiers ...func(u *sql.UpdateBuilder)) *ProblemUpdateOne {
+	puo.modifiers = append(puo.modifiers, modifiers...)
+	return puo
 }
 
 func (puo *ProblemUpdateOne) sqlSave(ctx context.Context) (_node *Problem, err error) {
@@ -613,6 +628,7 @@ func (puo *ProblemUpdateOne) sqlSave(ctx context.Context) (_node *Problem, err e
 		}
 		_spec.Edges.Add = append(_spec.Edges.Add, edge)
 	}
+	_spec.AddModifiers(puo.modifiers...)
 	_node = &Problem{config: puo.config}
 	_spec.Assign = _node.assignValues
 	_spec.ScanValues = _node.scanValues

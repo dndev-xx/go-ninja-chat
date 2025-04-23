@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"math"
 
+	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"entgo.io/ent/schema/field"
@@ -27,6 +28,7 @@ type ChatQuery struct {
 	predicates   []predicate.Chat
 	withMessages *MessageQuery
 	withProblems *ProblemQuery
+	modifiers    []func(*sql.Selector)
 	// intermediate query (i.e. traversal path).
 	sql  *sql.Selector
 	path func(context.Context) (*sql.Selector, error)
@@ -110,7 +112,7 @@ func (cq *ChatQuery) QueryProblems() *ProblemQuery {
 // First returns the first Chat entity from the query.
 // Returns a *NotFoundError when no Chat was found.
 func (cq *ChatQuery) First(ctx context.Context) (*Chat, error) {
-	nodes, err := cq.Limit(1).All(setContextOp(ctx, cq.ctx, "First"))
+	nodes, err := cq.Limit(1).All(setContextOp(ctx, cq.ctx, ent.OpQueryFirst))
 	if err != nil {
 		return nil, err
 	}
@@ -133,7 +135,7 @@ func (cq *ChatQuery) FirstX(ctx context.Context) *Chat {
 // Returns a *NotFoundError when no Chat ID was found.
 func (cq *ChatQuery) FirstID(ctx context.Context) (id types.ChatID, err error) {
 	var ids []types.ChatID
-	if ids, err = cq.Limit(1).IDs(setContextOp(ctx, cq.ctx, "FirstID")); err != nil {
+	if ids, err = cq.Limit(1).IDs(setContextOp(ctx, cq.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
 	if len(ids) == 0 {
@@ -156,7 +158,7 @@ func (cq *ChatQuery) FirstIDX(ctx context.Context) types.ChatID {
 // Returns a *NotSingularError when more than one Chat entity is found.
 // Returns a *NotFoundError when no Chat entities are found.
 func (cq *ChatQuery) Only(ctx context.Context) (*Chat, error) {
-	nodes, err := cq.Limit(2).All(setContextOp(ctx, cq.ctx, "Only"))
+	nodes, err := cq.Limit(2).All(setContextOp(ctx, cq.ctx, ent.OpQueryOnly))
 	if err != nil {
 		return nil, err
 	}
@@ -184,7 +186,7 @@ func (cq *ChatQuery) OnlyX(ctx context.Context) *Chat {
 // Returns a *NotFoundError when no entities are found.
 func (cq *ChatQuery) OnlyID(ctx context.Context) (id types.ChatID, err error) {
 	var ids []types.ChatID
-	if ids, err = cq.Limit(2).IDs(setContextOp(ctx, cq.ctx, "OnlyID")); err != nil {
+	if ids, err = cq.Limit(2).IDs(setContextOp(ctx, cq.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
 	switch len(ids) {
@@ -209,7 +211,7 @@ func (cq *ChatQuery) OnlyIDX(ctx context.Context) types.ChatID {
 
 // All executes the query and returns a list of Chats.
 func (cq *ChatQuery) All(ctx context.Context) ([]*Chat, error) {
-	ctx = setContextOp(ctx, cq.ctx, "All")
+	ctx = setContextOp(ctx, cq.ctx, ent.OpQueryAll)
 	if err := cq.prepareQuery(ctx); err != nil {
 		return nil, err
 	}
@@ -231,7 +233,7 @@ func (cq *ChatQuery) IDs(ctx context.Context) (ids []types.ChatID, err error) {
 	if cq.ctx.Unique == nil && cq.path != nil {
 		cq.Unique(true)
 	}
-	ctx = setContextOp(ctx, cq.ctx, "IDs")
+	ctx = setContextOp(ctx, cq.ctx, ent.OpQueryIDs)
 	if err = cq.Select(chat.FieldID).Scan(ctx, &ids); err != nil {
 		return nil, err
 	}
@@ -249,7 +251,7 @@ func (cq *ChatQuery) IDsX(ctx context.Context) []types.ChatID {
 
 // Count returns the count of the given query.
 func (cq *ChatQuery) Count(ctx context.Context) (int, error) {
-	ctx = setContextOp(ctx, cq.ctx, "Count")
+	ctx = setContextOp(ctx, cq.ctx, ent.OpQueryCount)
 	if err := cq.prepareQuery(ctx); err != nil {
 		return 0, err
 	}
@@ -267,7 +269,7 @@ func (cq *ChatQuery) CountX(ctx context.Context) int {
 
 // Exist returns true if the query has elements in the graph.
 func (cq *ChatQuery) Exist(ctx context.Context) (bool, error) {
-	ctx = setContextOp(ctx, cq.ctx, "Exist")
+	ctx = setContextOp(ctx, cq.ctx, ent.OpQueryExist)
 	switch _, err := cq.FirstID(ctx); {
 	case IsNotFound(err):
 		return false, nil
@@ -302,8 +304,9 @@ func (cq *ChatQuery) Clone() *ChatQuery {
 		withMessages: cq.withMessages.Clone(),
 		withProblems: cq.withProblems.Clone(),
 		// clone intermediate query.
-		sql:  cq.sql.Clone(),
-		path: cq.path,
+		sql:       cq.sql.Clone(),
+		path:      cq.path,
+		modifiers: append([]func(*sql.Selector){}, cq.modifiers...),
 	}
 }
 
@@ -421,6 +424,9 @@ func (cq *ChatQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Chat, e
 		node.Edges.loadedTypes = loadedTypes
 		return node.assignValues(columns, values)
 	}
+	if len(cq.modifiers) > 0 {
+		_spec.Modifiers = cq.modifiers
+	}
 	for i := range hooks {
 		hooks[i](ctx, _spec)
 	}
@@ -510,6 +516,9 @@ func (cq *ChatQuery) loadProblems(ctx context.Context, query *ProblemQuery, node
 
 func (cq *ChatQuery) sqlCount(ctx context.Context) (int, error) {
 	_spec := cq.querySpec()
+	if len(cq.modifiers) > 0 {
+		_spec.Modifiers = cq.modifiers
+	}
 	_spec.Node.Columns = cq.ctx.Fields
 	if len(cq.ctx.Fields) > 0 {
 		_spec.Unique = cq.ctx.Unique != nil && *cq.ctx.Unique
@@ -572,6 +581,9 @@ func (cq *ChatQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	if cq.ctx.Unique != nil && *cq.ctx.Unique {
 		selector.Distinct()
 	}
+	for _, m := range cq.modifiers {
+		m(selector)
+	}
 	for _, p := range cq.predicates {
 		p(selector)
 	}
@@ -589,6 +601,12 @@ func (cq *ChatQuery) sqlQuery(ctx context.Context) *sql.Selector {
 	return selector
 }
 
+// Modify adds a query modifier for attaching custom logic to queries.
+func (cq *ChatQuery) Modify(modifiers ...func(s *sql.Selector)) *ChatSelect {
+	cq.modifiers = append(cq.modifiers, modifiers...)
+	return cq.Select()
+}
+
 // ChatGroupBy is the group-by builder for Chat entities.
 type ChatGroupBy struct {
 	selector
@@ -603,7 +621,7 @@ func (cgb *ChatGroupBy) Aggregate(fns ...AggregateFunc) *ChatGroupBy {
 
 // Scan applies the selector query and scans the result into the given value.
 func (cgb *ChatGroupBy) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, cgb.build.ctx, "GroupBy")
+	ctx = setContextOp(ctx, cgb.build.ctx, ent.OpQueryGroupBy)
 	if err := cgb.build.prepareQuery(ctx); err != nil {
 		return err
 	}
@@ -651,7 +669,7 @@ func (cs *ChatSelect) Aggregate(fns ...AggregateFunc) *ChatSelect {
 
 // Scan applies the selector query and scans the result into the given value.
 func (cs *ChatSelect) Scan(ctx context.Context, v any) error {
-	ctx = setContextOp(ctx, cs.ctx, "Select")
+	ctx = setContextOp(ctx, cs.ctx, ent.OpQuerySelect)
 	if err := cs.prepareQuery(ctx); err != nil {
 		return err
 	}
@@ -677,4 +695,10 @@ func (cs *ChatSelect) sqlScan(ctx context.Context, root *ChatQuery, v any) error
 	}
 	defer rows.Close()
 	return sql.ScanSlice(rows, v)
+}
+
+// Modify adds a query modifier for attaching custom logic to queries.
+func (cs *ChatSelect) Modify(modifiers ...func(s *sql.Selector)) *ChatSelect {
+	cs.modifiers = append(cs.modifiers, modifiers...)
+	return cs
 }

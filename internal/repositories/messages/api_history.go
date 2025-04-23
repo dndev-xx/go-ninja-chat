@@ -37,7 +37,7 @@ func (r *Repo) GetClientChatMessages(
 	if cursor != nil {
 		pCurr = getCurrentSize(cursor.PageSize)
 		if cursor.LastCreatedAt.IsZero() {
-			return nil, nil, fmt.Errorf("invalid date at cursor")
+			return nil, nil, ErrInvalidCursor
 		}
 		lastCreatedAt = cursor.LastCreatedAt
 	}

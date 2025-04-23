@@ -75,7 +75,7 @@ gen_types:
 
 test:
 	@echo "$(YELLOW)Running unit tests...$(RESET)"
-	go test ./... -v
+	go test -v ./...
 	@echo "$(GREEN)Tests completed successfully.$(RESET)"
 
 test-fail:
@@ -164,6 +164,16 @@ sentry_update:
 	docker compose -f $(COMPOSE_SENTRY_FILE) run --rm sentry upgrade
 	@echo "$(GREEN)Sentry migrations updated successfully.$(RESET)"
 
+heap:
+	@echo "$(YELLOW)Updating Sentry migrations...$(RESET)"
+	go tool pprof -http=:8081 http://localhost:8079/debug/pprof/heap
+	@echo "$(GREEN)Sentry migrations updated successfully.$(RESET)"
+
+goroutine:
+	@echo "$(YELLOW)Updating Sentry migrations...$(RESET)"
+	go tool pprof -http=:8081 http://localhost:8079/debug/pprof/goroutine
+	@echo "$(GREEN)Sentry migrations updated successfully.$(RESET)"
+
 help:
 	@echo "$(YELLOW)Available commands:$(RESET)"
 	@echo "  $(GREEN)build$(RESET): Build project"
@@ -186,4 +196,6 @@ help:
 	@echo "  $(GREEN)db_stop$(RESET): Stop the database container"
 	@echo "  $(GREEN)db_clean$(RESET): Clean up the database container"
 	@echo "  $(GREEN)sentry_update$(RESET): Migrate local Sentry"
+	@echo "  $(GREEN)heap$(RESET): Start for visual profile heap"
+	@echo "  $(GREEN)goroutine$(RESET): Start for visual profile goroutine"
 	@echo "  $(GREEN)gen_types$(RESET): Generate types (use TYPE=<name type> to specify type)"
