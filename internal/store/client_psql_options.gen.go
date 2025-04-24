@@ -3,6 +3,7 @@
 package store
 
 import (
+	"context"
 	fmt461e464ebed9 "fmt"
 
 	_ "github.com/jackc/pgx/v5/stdlib"
@@ -13,6 +14,7 @@ import (
 type OptPSQLOptionsSetter func(o *PSQLOptions)
 
 func NewPSQLOptions(
+	context context.Context,
 	address string,
 	username string,
 	password string,
@@ -23,6 +25,8 @@ func NewPSQLOptions(
 	o := PSQLOptions{}
 
 	// Setting defaults from field tag (if present)
+
+	o.context = context
 
 	o.address = address
 

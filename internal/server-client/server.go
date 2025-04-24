@@ -68,7 +68,7 @@ func New(opts Options) (*Server, error) {
 	recoverLog := mw.NewRecovery(lg)
 
 	v1 := e.Group("/v1",
-	mw.JSONResponseMiddleware(),
+	//mw.JSONResponseMiddleware(),
 	loggerMiddleware,
 	recoverLog,
 	authMiddleware,

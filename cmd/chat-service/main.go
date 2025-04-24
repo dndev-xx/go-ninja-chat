@@ -17,10 +17,12 @@ func main() {
 	defer cancel()
 
 	app, err := application.NewAppBuilder().
+		WithContext(ctx).
 		WithConfig().
 		WithLogger().
 		WithDebugHTTPSrv().
 		WithSwagger().
+		WithStoresDB().
 		WithClientHTTPSrv().
 		GetContext()
 
@@ -28,6 +30,8 @@ func main() {
 		log.Fatalf("Failed to build app: %v\n", err)
 		os.Exit(1)
 	}
+
+	defer app.Stores.Close()
 
 	eg, ctx := errgroup.WithContext(ctx)
 

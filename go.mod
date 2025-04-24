@@ -4,6 +4,7 @@ go 1.23.1
 
 require (
 	entgo.io/ent v0.14.4
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/getkin/kin-openapi v0.131.0
 	github.com/go-playground/validator/v10 v10.24.0
 	github.com/go-resty/resty/v2 v2.16.5

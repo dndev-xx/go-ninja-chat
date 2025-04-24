@@ -6,13 +6,23 @@ package pkg
 import (
 	"time"
 
-	"github.com/google/uuid"
-	openapi_types "github.com/oapi-codegen/runtime/types"
+	"github.com/dndev-xx/go-ninja-chat/internal/types"
 )
 
 const (
 	BearerAuthScopes = "bearerAuth.Scopes"
 )
+
+// Error defines model for Error.
+type Error struct {
+	// Code contains HTTP error codes and specific business logic error codes (the last must be >= 1000).
+	Code    ErrorCode `json:"code"`
+	Details *string   `json:"details,omitempty"`
+	Message string    `json:"message"`
+}
+
+// ErrorCode contains HTTP error codes and specific business logic error codes (the last must be >= 1000).
+type ErrorCode = int
 
 // GetHistoryRequest defines model for GetHistoryRequest.
 type GetHistoryRequest struct {
@@ -27,14 +37,14 @@ type GetHistoryResponse struct {
 
 // Message defines model for Message.
 type Message struct {
-	AuthorId uuid.UUID `json:"authorId"`
+	AuthorId types.UserID `json:"authorId"`
 
 	// Body The content of the message.
 	Body string `json:"body"`
 
 	// CreatedAt Timestamp when the message was created.
-	CreatedAt time.Time `json:"createdAt"`
-	Id        uuid.UUID `json:"id"`
+	CreatedAt time.Time       `json:"createdAt"`
+	Id        types.MessageID `json:"id"`
 }
 
 // MessagesPage defines model for MessagesPage.
@@ -46,11 +56,10 @@ type MessagesPage struct {
 }
 
 // XRequestIDHeader defines model for XRequestIDHeader.
-type XRequestIDHeader = openapi_types.UUID
+type XRequestIDHeader = types.RequestID
 
 // PostGetHistoryParams defines parameters for PostGetHistory.
 type PostGetHistoryParams struct {
-	// XRequestID Unique identifier for the request.
 	XRequestID XRequestIDHeader `json:"X-Request-ID"`
 }
 

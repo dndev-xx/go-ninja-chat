@@ -20,12 +20,24 @@ paths:
             schema:
               $ref: "#/components/schemas/GetHistoryRequest"
       responses:
-        '200':
+        "200":
           description: Messages list.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/GetHistoryResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
 security:
   - bearerAuth: []
@@ -41,11 +53,13 @@ components:
     XRequestIDHeader:
       in: header
       name: X-Request-ID
-      required: true
-      description: Unique identifier for the request.
       schema:
         type: string
         format: uuid
+        x-go-type: types.RequestID
+        x-go-import:
+          path: "github.com/dndev-xx/go-ninja-chat/internal/types"
+      required: true
 
   schemas:
     GetHistoryRequest:
@@ -57,6 +71,22 @@ components:
           maximum: 100
         cursor:
           type: string
+
+    Error:
+      required: [message, code]
+      properties:
+        code:
+          $ref: "#/components/schemas/ErrorCode"
+        message:
+          type: string
+        details:
+          type: string
+
+    ErrorCode:
+      type: integer
+      description: contains HTTP error codes and specific business logic error codes (the last must be >= 1000).
+      # TODO: Конкретные коды появятся в следующем уроке.
+      minimum: 400
 
     GetHistoryResponse:
       required: [data]
@@ -81,15 +111,15 @@ components:
         id:
           type: string
           format: uuid
-          x-go-type: uuid.UUID
-         # x-go-type-import:
-           # path: "github.com/dndev-xx/go-ninja-chat/internal/types"
+          x-go-type: types.MessageID
+          x-go-type-import:
+          path: "github.com/dndev-xx/go-ninja-chat/internal/types"
         authorId:
           type: string
           format: uuid
-          x-go-type: uuid.UUID
-          #x-go-type-import:
-            #path: "github.com/dndev-xx/go-ninja-chat/internal/types"
+          x-go-type: types.UserID
+          x-go-type-import:
+          path: "github.com/dndev-xx/go-ninja-chat/internal/types"
         body:
           type: string
           description: The content of the message.

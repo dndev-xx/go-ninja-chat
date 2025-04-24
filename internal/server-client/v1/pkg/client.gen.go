@@ -225,6 +225,8 @@ type PostGetHistoryResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *GetHistoryResponse
+	JSON400      *Error
+	JSON500      *Error
 }
 
 // Status returns HTTPResponse.Status
@@ -280,6 +282,20 @@ func ParsePostGetHistoryResponse(rsp *http.Response) (*PostGetHistoryResponse, e
 			return nil, err
 		}
 		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
 
 	}
 

@@ -8,18 +8,19 @@ import (
 )
 
 type Message struct {
-	ID                   types.MessageID
-	ChatID               types.ChatID
-	ProblemID            types.ProblemID
-	AuthorID             types.UserID
-	Body                 string
-	IsVisibleForClient   bool
-	IsVisibleForManager  bool
-	IsBlocked            bool
-	IsService            bool
-	CreatedAt            time.Time
-	CheckedAt            *time.Time
+	ID                   types.MessageID  `json:"id"`
+	ChatID               types.ChatID     `json:"chatId"`
+	ProblemID            types.ProblemID  `json:"problemId"`
+	AuthorID             types.UserID     `json:"authorId"`
+	Body                 string           `json:"body"`
+	IsVisibleForClient   bool             `json:"isVisibleForClient"`
+	IsVisibleForManager  bool             `json:"isVisibleForManager"`
+	IsBlocked            bool             `json:"isBlocked"`
+	IsService            bool             `json:"isService"`
+	CreatedAt            time.Time        `json:"createdAt"`
+	CheckedAt            *time.Time       `json:"checkedAt,omitempty"`
 }
+
 
 func adaptStoreMessage(m *store.Message) Message {
 	return Message{
@@ -38,9 +39,10 @@ func adaptStoreMessage(m *store.Message) Message {
 }
 
 func adaptStoreMessages(entities []*store.Message) []Message {
-	rsl := make([]Message, len(entities))
+	var result []Message
 	for _, msg := range entities {
-		rsl = append(rsl, adaptStoreMessage(msg))
+		adapted := adaptStoreMessage(msg)
+		result = append(result, adapted)
 	}
-	return rsl
+	return result
 }

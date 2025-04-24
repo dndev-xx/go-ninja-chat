@@ -1,17 +1,21 @@
 package store
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
+	"log"
 	"time"
 
 	"entgo.io/ent/dialect"
 	entsql "entgo.io/ent/dialect/sql"
+	"entgo.io/ent/dialect/sql/schema"
 	_ "github.com/jackc/pgx/v5/stdlib"
 )
 
 //go:generate options-gen -out-filename=client_psql_options.gen.go -from-struct=PSQLOptions
 type PSQLOptions struct {
+	context	 context.Context `option:"mandatory"`
 	address  string `option:"mandatory" validate:"required,hostname_port"`
 	username string `option:"mandatory" validate:"required"`
 	password string `option:"mandatory" validate:"required"`
@@ -36,7 +40,16 @@ func NewPSQLClient(opts PSQLOptions) (*Client, error) {
 		clientOpts = append(clientOpts, Debug())
 	}
 
-	return NewClient(clientOpts...), nil
+	client := NewClient(clientOpts...)
+	err = client.Debug().Schema.Create(
+		opts.context,
+		schema.WithDropIndex(true),
+		schema.WithDropColumn(true),
+	)
+	if err != nil {
+		log.Fatalf("failed creating schema resources: %v", err)
+	}
+	return client, nil
 }
 
 //go:generate options-gen -out-filename=client_psql_pgx_options.gen.go -from-struct=PgxOptions

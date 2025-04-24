@@ -1,16 +1,21 @@
 package context
 
 import (
+	"context"
 	"flag"
 	"fmt"
 
 	keycloakclient "github.com/dndev-xx/go-ninja-chat/internal/clients/keycloak"
 	"github.com/dndev-xx/go-ninja-chat/internal/config"
 	"github.com/dndev-xx/go-ninja-chat/internal/logger"
+	repo "github.com/dndev-xx/go-ninja-chat/internal/repositories/messages"
 	serverclient "github.com/dndev-xx/go-ninja-chat/internal/server-client"
 	h "github.com/dndev-xx/go-ninja-chat/internal/server-client/v1"
 	sw "github.com/dndev-xx/go-ninja-chat/internal/server-client/v1/pkg"
 	serverdebug "github.com/dndev-xx/go-ninja-chat/internal/server-debug"
+	"github.com/dndev-xx/go-ninja-chat/internal/store"
+	db "github.com/dndev-xx/go-ninja-chat/internal/store"
+	usecase "github.com/dndev-xx/go-ninja-chat/internal/usecase/client/get-history"
 	swag "github.com/getkin/kin-openapi/openapi3"
 	"go.uber.org/zap"
 )
@@ -18,11 +23,13 @@ import (
 var configPath = flag.String("config", "configs/config.toml", "Path to config file")
 
 type AppContext struct {
+	context			context.Context
 	Config      	*config.Config
 	Logger      	*zap.Logger
 	DebugServer 	*serverdebug.Server
 	Swagger 		*swag.T
 	ClientServer 	*serverclient.Server
+	Stores			*store.Client
 }
 
 type AppBuilder struct {
@@ -34,6 +41,11 @@ func NewAppBuilder() *AppBuilder {
 	return &AppBuilder{
 		App: &AppContext{},
 	}
+}
+
+func (b *AppBuilder) WithContext(ctx context.Context) Builder {
+	b.App.context = ctx
+	return b
 }
 
 func (b *AppBuilder) WithConfig() Builder {
@@ -81,8 +93,37 @@ func (b *AppBuilder) WithSwagger() Builder {
 	return b
 }
 
+func (b *AppBuilder) WithStoresDB() Builder {
+	client, err := db.NewPSQLClient(db.NewPSQLOptions(
+		b.App.context,
+		b.App.Config.Stores.PSQL.Addr,
+		b.App.Config.Stores.PSQL.Username,
+		b.App.Config.Stores.PSQL.Password,
+		b.App.Config.Stores.PSQL.Database,
+		b.App.Config.Stores.PSQL.Debug,
+	))
+	if err != nil {
+		b.err = fmt.Errorf("failed connect to db: %v", err)
+		return b
+	}
+	b.App.Stores = client
+	return b
+}
+
 func (b *AppBuilder) WithClientHTTPSrv() Builder {
-	handlers, err := h.NewHandlers(h.Options{})
+	repository, err := repo.New(repo.NewOptions(
+    store.NewDatabase(b.App.Stores),
+	))
+	if err != nil {
+		b.err = fmt.Errorf("create v1 repository %v", err)
+		return b
+	}
+	usecase, err := usecase.New(usecase.NewOptions(repository))
+	if err != nil {
+		b.err = fmt.Errorf("create v1 usecase %v", err)
+		return b
+	}
+	handlers, err := h.NewHandlers(h.NewOptions(usecase))
 	if err != nil {
 		b.err = fmt.Errorf("create v1 handlers %v", err)
 		return b
