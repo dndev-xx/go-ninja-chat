@@ -9,7 +9,6 @@ import (
 
 	"github.com/golang-jwt/jwt"
 	"github.com/golang/mock/gomock"
-	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -18,6 +17,7 @@ import (
 	keycloakclient "github.com/dndev-xx/go-ninja-chat/internal/clients/keycloak"
 	"github.com/dndev-xx/go-ninja-chat/internal/middlewares"
 	middlewaresmocks "github.com/dndev-xx/go-ninja-chat/internal/middlewares/mocks"
+	"github.com/dndev-xx/go-ninja-chat/internal/types"
 )
 
 const (
@@ -64,7 +64,7 @@ func (s *KeycloakTokenAuthSuite) TestValidTokenAudString() {
 
 	s.introspector.EXPECT().IntrospectToken(s.req.Context(), token).Return(&keycloakclient.IntrospectTokenResult{Active: true}, nil)
 
-	var uid *uuid.UUID
+	var uid types.UserID
 
 	err := s.authMdlwr(func(c echo.Context) error {
 		uid = middlewares.MustUserID(c)
@@ -81,7 +81,7 @@ func (s *KeycloakTokenAuthSuite) TestValidTokenAudList() {
 	s.introspector.EXPECT().IntrospectToken(s.req.Context(), token).
 		Return(&keycloakclient.IntrospectTokenResult{Active: true}, nil)
 
-	var uid *uuid.UUID
+	var uid types.UserID
 
 	err := s.authMdlwr(func(c echo.Context) error {
 		uid = middlewares.MustUserID(c)

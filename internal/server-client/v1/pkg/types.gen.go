@@ -47,12 +47,30 @@ type Message struct {
 	Id        types.MessageID `json:"id"`
 }
 
+// MessageHeader defines model for MessageHeader.
+type MessageHeader struct {
+	AuthorID  *types.UserID    `json:"authorID,omitempty"`
+	CreatedAt *time.Time       `json:"createdAt,omitempty"`
+	MessageID *types.MessageID `json:"messageID,omitempty"`
+}
+
 // MessagesPage defines model for MessagesPage.
 type MessagesPage struct {
 	Messages []Message `json:"messages"`
 
 	// TotalCount Total number of messages available.
 	TotalCount int `json:"totalCount"`
+}
+
+// SendMessageRequest defines model for SendMessageRequest.
+type SendMessageRequest struct {
+	MessageBody string `json:"messageBody" validate:"required,min=1,max=4000"`
+}
+
+// SendMessageResponse defines model for SendMessageResponse.
+type SendMessageResponse struct {
+	Data  *MessageHeader `json:"data,omitempty"`
+	Error *Error         `json:"error,omitempty"`
 }
 
 // XRequestIDHeader defines model for XRequestIDHeader.
@@ -63,5 +81,13 @@ type PostGetHistoryParams struct {
 	XRequestID XRequestIDHeader `json:"X-Request-ID"`
 }
 
+// PostSendMessageParams defines parameters for PostSendMessage.
+type PostSendMessageParams struct {
+	XRequestID XRequestIDHeader `json:"X-Request-ID"`
+}
+
 // PostGetHistoryJSONRequestBody defines body for PostGetHistory for application/json ContentType.
 type PostGetHistoryJSONRequestBody = GetHistoryRequest
+
+// PostSendMessageJSONRequestBody defines body for PostSendMessage for application/json ContentType.
+type PostSendMessageJSONRequestBody = SendMessageRequest

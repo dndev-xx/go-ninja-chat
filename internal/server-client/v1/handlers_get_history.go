@@ -1,6 +1,7 @@
 package v1
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/dndev-xx/go-ninja-chat/internal/middlewares"
@@ -15,13 +16,14 @@ import (
 func (h Handlers) PostGetHistory(eCtx echo.Context, params clientv1.PostGetHistoryParams) error {
 	ctx := eCtx.Request().Context()
 	clientID := middlewares.MustUserID(eCtx)
+	fmt.Println(clientID)
 	var req clientv1.GetHistoryRequest
 	if err := eCtx.Bind(&req); err != nil {
 		return err
 	}
 	reqUsecase := usecase.Request {
 		ID: types.RequestID(params.XRequestID),
-		ClientID: types.UserID(pointer.Indirect(clientID)),
+		ClientID: clientID,
 		PageSize: pointer.Indirect(req.PageSize),
 		Cursor: pointer.Indirect(req.Cursor),
 	}

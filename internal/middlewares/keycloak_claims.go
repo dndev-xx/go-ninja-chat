@@ -3,6 +3,7 @@ package middlewares
 import (
 	"encoding/json"
 	"errors"
+
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
 )
@@ -12,7 +13,7 @@ var (
 	ErrSubjectNotDefined  = errors.New(`"sub" is not defined`)
 )
 
-type claims struct {
+type Claims struct {
 	*jwt.StandardClaims
 	RealmAccess      struct {
         Roles []string `json:"roles"`
@@ -44,7 +45,7 @@ func (a *audience) UnmarshalJSON(data []byte) error {
 }
 
 // Valid validates the claims
-func (c *claims) Valid() error {
+func (c *Claims) Valid() error {
 	tempClaims := &jwt.StandardClaims{
 		ExpiresAt: c.ExpiresAt,
 		Id:        c.Id,
@@ -69,7 +70,7 @@ func (c *claims) Valid() error {
 	return nil
 }
 
-func (c *claims) UserID() *uuid.UUID {
+func (c *Claims) UserID() *uuid.UUID {
 	if c.Subject == "" {
 		return nil
 	}

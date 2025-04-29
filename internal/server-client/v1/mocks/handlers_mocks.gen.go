@@ -9,6 +9,7 @@ import (
 	reflect "reflect"
 
 	gethistory "github.com/dndev-xx/go-ninja-chat/internal/usecase/client/get-history"
+	sendmessage "github.com/dndev-xx/go-ninja-chat/internal/usecase/client/send-message"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -48,4 +49,42 @@ func (m *MockgetHistoryUseCase) Handle(ctx context.Context, req gethistory.Reque
 func (mr *MockgetHistoryUseCaseMockRecorder) Handle(ctx, req interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Handle", reflect.TypeOf((*MockgetHistoryUseCase)(nil).Handle), ctx, req)
+}
+
+// MocksendMsgUseCase is a mock of sendMsgUseCase interface.
+type MocksendMsgUseCase struct {
+	ctrl     *gomock.Controller
+	recorder *MocksendMsgUseCaseMockRecorder
+}
+
+// MocksendMsgUseCaseMockRecorder is the mock recorder for MocksendMsgUseCase.
+type MocksendMsgUseCaseMockRecorder struct {
+	mock *MocksendMsgUseCase
+}
+
+// NewMocksendMsgUseCase creates a new mock instance.
+func NewMocksendMsgUseCase(ctrl *gomock.Controller) *MocksendMsgUseCase {
+	mock := &MocksendMsgUseCase{ctrl: ctrl}
+	mock.recorder = &MocksendMsgUseCaseMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MocksendMsgUseCase) EXPECT() *MocksendMsgUseCaseMockRecorder {
+	return m.recorder
+}
+
+// Handle mocks base method.
+func (m *MocksendMsgUseCase) Handle(ctx context.Context, req sendmessage.Request) (sendmessage.Response, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Handle", ctx, req)
+	ret0, _ := ret[0].(sendmessage.Response)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Handle indicates an expected call of Handle.
+func (mr *MocksendMsgUseCaseMockRecorder) Handle(ctx, req interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Handle", reflect.TypeOf((*MocksendMsgUseCase)(nil).Handle), ctx, req)
 }

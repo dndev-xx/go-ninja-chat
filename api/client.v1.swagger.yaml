@@ -8,6 +8,25 @@ servers:
     description: Development server
 
 paths:
+  /sendMessage:
+    post:
+      description: Send new message to the chat.
+      parameters:
+        - $ref: "#/components/parameters/XRequestIDHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendMessageRequest"
+      responses:
+        "200":
+          description: Message created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SendMessageResponse"
+
   /getHistory:
     post:
       description: Get chat history.
@@ -62,6 +81,49 @@ components:
       required: true
 
   schemas:
+    SendMessageRequest:
+      required: [userID, messageBody]
+      type: object
+      properties:
+        # userID:
+        #   type: string
+        #   format: uuid
+        #   x-go-type: types.UserID
+        #   x-go-import:
+        #     path: "github.com/dndev-xx/go-ninja-chat/internal/types"
+        messageBody:
+          type: string
+          minLength: 1
+          maxLength: 4000
+          x-oapi-codegen-extra-tags:
+            validate: required,min=1,max=4000
+
+    SendMessageResponse:
+      properties:
+        data:
+          $ref: "#/components/schemas/MessageHeader"
+        error:
+          $ref: "#/components/schemas/Error"
+
+    MessageHeader:
+      type: object
+      properties:
+        authorID:
+          type: string
+          format: uuid
+          x-go-type: types.UserID
+          x-go-import:
+            path: "github.com/dndev-xx/go-ninja-chat/internal/types"
+        messageID:
+          type: string
+          format: uuid
+          x-go-type: types.MessageID
+          x-go-import:
+            path: "github.com/dndev-xx/go-ninja-chat/internal/types"
+        createdAt:
+          type: string
+          format: date-time
+
     GetHistoryRequest:
       type: object
       properties:

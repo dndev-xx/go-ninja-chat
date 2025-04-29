@@ -8,14 +8,19 @@ import (
 	keycloakclient "github.com/dndev-xx/go-ninja-chat/internal/clients/keycloak"
 	"github.com/dndev-xx/go-ninja-chat/internal/config"
 	"github.com/dndev-xx/go-ninja-chat/internal/logger"
+
+	repoChats "github.com/dndev-xx/go-ninja-chat/internal/repositories/chats"
 	repo "github.com/dndev-xx/go-ninja-chat/internal/repositories/messages"
+	repoProblems "github.com/dndev-xx/go-ninja-chat/internal/repositories/problems"
 	serverclient "github.com/dndev-xx/go-ninja-chat/internal/server-client"
 	h "github.com/dndev-xx/go-ninja-chat/internal/server-client/v1"
 	sw "github.com/dndev-xx/go-ninja-chat/internal/server-client/v1/pkg"
 	serverdebug "github.com/dndev-xx/go-ninja-chat/internal/server-debug"
 	"github.com/dndev-xx/go-ninja-chat/internal/store"
 	db "github.com/dndev-xx/go-ninja-chat/internal/store"
+
 	usecase "github.com/dndev-xx/go-ninja-chat/internal/usecase/client/get-history"
+	usecaseMsg "github.com/dndev-xx/go-ninja-chat/internal/usecase/client/send-message"
 	swag "github.com/getkin/kin-openapi/openapi3"
 	"go.uber.org/zap"
 )
@@ -111,19 +116,23 @@ func (b *AppBuilder) WithStoresDB() Builder {
 }
 
 func (b *AppBuilder) WithClientHTTPSrv() Builder {
-	repository, err := repo.New(repo.NewOptions(
-    store.NewDatabase(b.App.Stores),
+	db := store.NewDatabase(b.App.Stores)
+	msgRepo, err := repo.New(repo.NewOptions(
+    db,
 	))
+	chatRepo, err := repoChats.New(repoChats.NewOptions(db))
+	repoProblems, err := repoProblems.New(repoProblems.NewOptions(db))
 	if err != nil {
 		b.err = fmt.Errorf("create v1 repository %v", err)
 		return b
 	}
-	usecase, err := usecase.New(usecase.NewOptions(repository))
+	usecaseHist, err := usecase.New(usecase.NewOptions(msgRepo))
+	usecaseMsg, err := usecaseMsg.New(usecaseMsg.NewOptions(msgRepo, chatRepo, repoProblems))
 	if err != nil {
 		b.err = fmt.Errorf("create v1 usecase %v", err)
 		return b
 	}
-	handlers, err := h.NewHandlers(h.NewOptions(usecase))
+	handlers, err := h.NewHandlers(h.NewOptions(usecaseHist, usecaseMsg))
 	if err != nil {
 		b.err = fmt.Errorf("create v1 handlers %v", err)
 		return b
