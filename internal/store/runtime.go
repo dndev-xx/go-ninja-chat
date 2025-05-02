@@ -8,6 +8,7 @@ import (
 	"github.com/dndev-xx/go-ninja-chat/internal/store/chat"
 	"github.com/dndev-xx/go-ninja-chat/internal/store/message"
 	"github.com/dndev-xx/go-ninja-chat/internal/store/problem"
+	"github.com/dndev-xx/go-ninja-chat/internal/store/request"
 	"github.com/dndev-xx/go-ninja-chat/internal/store/schema"
 	"github.com/dndev-xx/go-ninja-chat/internal/types"
 )
@@ -80,4 +81,18 @@ func init() {
 	problemDescID := problemFields[0].Descriptor()
 	// problem.DefaultID holds the default value on creation for the id field.
 	problem.DefaultID = problemDescID.Default.(func() types.ProblemID)
+	requestFields := schema.Request{}.Fields()
+	_ = requestFields
+	// requestDescCreatedAt is the schema descriptor for created_at field.
+	requestDescCreatedAt := requestFields[1].Descriptor()
+	// request.DefaultCreatedAt holds the default value on creation for the created_at field.
+	request.DefaultCreatedAt = requestDescCreatedAt.Default.(func() time.Time)
+	// requestDescDeletedAt is the schema descriptor for deleted_at field.
+	requestDescDeletedAt := requestFields[2].Descriptor()
+	// request.DefaultDeletedAt holds the default value on creation for the deleted_at field.
+	request.DefaultDeletedAt = requestDescDeletedAt.Default.(func() time.Time)
+	// requestDescID is the schema descriptor for id field.
+	requestDescID := requestFields[0].Descriptor()
+	// request.DefaultID holds the default value on creation for the id field.
+	request.DefaultID = requestDescID.Default.(func() types.RequestID)
 }

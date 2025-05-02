@@ -142,6 +142,44 @@ func (mr *MockproblemsRepositoryMockRecorder) CreateIfNotExists(ctx, chatID inte
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateIfNotExists", reflect.TypeOf((*MockproblemsRepository)(nil).CreateIfNotExists), ctx, chatID)
 }
 
+// MockrequestRepository is a mock of requestRepository interface.
+type MockrequestRepository struct {
+	ctrl     *gomock.Controller
+	recorder *MockrequestRepositoryMockRecorder
+}
+
+// MockrequestRepositoryMockRecorder is the mock recorder for MockrequestRepository.
+type MockrequestRepositoryMockRecorder struct {
+	mock *MockrequestRepository
+}
+
+// NewMockrequestRepository creates a new mock instance.
+func NewMockrequestRepository(ctrl *gomock.Controller) *MockrequestRepository {
+	mock := &MockrequestRepository{ctrl: ctrl}
+	mock.recorder = &MockrequestRepositoryMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockrequestRepository) EXPECT() *MockrequestRepositoryMockRecorder {
+	return m.recorder
+}
+
+// CreateIfNotExists mocks base method.
+func (m *MockrequestRepository) CreateIfNotExists(ctx context.Context, requestID types.RequestID) (bool, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "CreateIfNotExists", ctx, requestID)
+	ret0, _ := ret[0].(bool)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// CreateIfNotExists indicates an expected call of CreateIfNotExists.
+func (mr *MockrequestRepositoryMockRecorder) CreateIfNotExists(ctx, requestID interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateIfNotExists", reflect.TypeOf((*MockrequestRepository)(nil).CreateIfNotExists), ctx, requestID)
+}
+
 // Mocktransactor is a mock of transactor interface.
 type Mocktransactor struct {
 	ctrl     *gomock.Controller

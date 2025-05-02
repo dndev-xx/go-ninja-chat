@@ -147,7 +147,27 @@ components:
     ErrorCode:
       type: integer
       description: contains HTTP error codes and specific business logic error codes (the last must be >= 1000).
-      # TODO: Конкретные коды появятся в следующем уроке.
+      enum:
+        - 400 # Bad Request
+        - 401 # Unauthorized
+        - 403 # Forbidden
+        - 404 # Not Found
+        - 500 # Internal Server Error
+        - 1000 # Custom Business Logic Error
+        - 1001 # Create Chat Error
+        - 1002 # Update Chat Error
+        - 1003 # Delete Chat Error
+        - 1004 # Message Not Found Error
+      x-enum-varnames:
+        - ErrorCodeBadRequest
+        - ErrorCodeUnauthorized
+        - ErrorCodeForbidden
+        - ErrorCodeNotFound
+        - ErrorCodeInternalServerError
+        - ErrorCodeCreateChatError
+        - ErrorCodeUpdateChatError
+        - ErrorCodeDeleteChatError
+        - ErrorCodeMessageNotFoundError
       minimum: 400
 
     GetHistoryResponse:

@@ -11,8 +11,10 @@ import (
 //go:generate mockgen -source=$GOFILE -destination=mocks/usecase_mock.gen.go -package=sendmessagemocks
 var (
 	ErrInvalidRequest    = errors.New("invalid request")
+	ErrIdempotencyKey    = errors.New("invalid idempotency key")
 	ErrChatNotCreated    = errors.New("chat not created")
 	ErrProblemNotCreated = errors.New("problem not created")
+	ErrMessageNotCreated = errors.New("message not created")
 )
 
 type chatsRepository interface {
@@ -35,6 +37,10 @@ type problemsRepository interface {
 	CreateIfNotExists(ctx context.Context, chatID types.ChatID) (types.ProblemID, error)
 }
 
+type requestRepository interface {
+	CreateIfNotExists(ctx context.Context, requestID types.RequestID) (bool, error)
+}
+
 type transactor interface {
 	RunInTx(ctx context.Context, f func(context.Context) error) error
 }
@@ -44,6 +50,8 @@ type Options struct {
 	msgRepo 	messagesRepository 		`option:"mandatory" validate:"required"`
 	chatRepo 	chatsRepository 		`option:"mandatory" validate:"required"`
 	problemRepo problemsRepository		`option:"mandatory" validate:"required"`
+	requestRepo requestRepository		`option:"mandatory" validate:"required"`
+	tx			transactor				`option:"mandatory" validate:"required"`
 }
 
 type UseCase struct {
@@ -55,14 +63,37 @@ func New(opts Options) (UseCase, error) {
 }
 
 func (u UseCase) Handle(ctx context.Context, req Request) (Response, error) {
-	// FIXME: 1) Если запрос невалиден, то возвращаем ErrInvalidRequest
-
-	// FIXME: 2) В транзакции:
-	// FIXME: 	- если есть сообщение с таким же request_id, то возвращаем его, иначе
-	// FIXME:	- создаём чат (если нужно), при ошибке возвращаем ErrChatNotCreated
-	// FIXME:	- создаём проблему (если нужно), при ошибке возвращаем ErrProblemNotCreated
-	// FIXME:	- создаём новое сообщение
-
-	// FIXME: 3) После коммита транзакции формируем Response.
-	return Response{}, nil
+	rsl := Response{}
+	if err := req.Validate(); err != nil {
+		return rsl, ErrInvalidRequest
+	}
+	err := u.tx.RunInTx(ctx, func(context.Context) error {
+		exists, err := u.requestRepo.CreateIfNotExists(ctx, req.ID)
+		if err != nil {
+			return err
+		}
+		if !exists {
+			return ErrIdempotencyKey
+		}
+		chatID, err := u.chatRepo.CreateIfNotExists(ctx, req.ClientID)
+		if err != nil {
+			return ErrChatNotCreated
+		}
+		problemID, err := u.problemRepo.CreateIfNotExists(ctx, chatID)
+		if err != nil {
+			return ErrProblemNotCreated
+		}
+		msg, err := u.msgRepo.CreateClientVisible(ctx, req.ID, problemID, chatID, req.ClientID, req.MessageBody)
+		if err != nil {
+			return ErrMessageNotCreated
+		}
+		rsl.AuthorID = msg.AuthorID
+		rsl.MessageID = msg.ID
+		rsl.CreatedAt = msg.CreatedAt
+		return nil
+	})
+	if err != nil {
+		return rsl, err
+	}
+	return rsl, nil
 }

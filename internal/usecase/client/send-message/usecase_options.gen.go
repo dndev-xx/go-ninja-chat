@@ -15,6 +15,8 @@ func NewOptions(
 	msgRepo messagesRepository,
 	chatRepo chatsRepository,
 	problemRepo problemsRepository,
+	requestRepo requestRepository,
+	tx transactor,
 	options ...OptOptionsSetter,
 ) Options {
 	o := Options{}
@@ -27,6 +29,10 @@ func NewOptions(
 
 	o.problemRepo = problemRepo
 
+	o.requestRepo = requestRepo
+
+	o.tx = tx
+
 	for _, opt := range options {
 		opt(&o)
 	}
@@ -38,6 +44,8 @@ func (o *Options) Validate() error {
 	errs.Add(errors461e464ebed9.NewValidationError("msgRepo", _validate_Options_msgRepo(o)))
 	errs.Add(errors461e464ebed9.NewValidationError("chatRepo", _validate_Options_chatRepo(o)))
 	errs.Add(errors461e464ebed9.NewValidationError("problemRepo", _validate_Options_problemRepo(o)))
+	errs.Add(errors461e464ebed9.NewValidationError("requestRepo", _validate_Options_requestRepo(o)))
+	errs.Add(errors461e464ebed9.NewValidationError("tx", _validate_Options_tx(o)))
 	return errs.AsError()
 }
 
@@ -58,6 +66,20 @@ func _validate_Options_chatRepo(o *Options) error {
 func _validate_Options_problemRepo(o *Options) error {
 	if err := validator461e464ebed9.GetValidatorFor(o).Var(o.problemRepo, "required"); err != nil {
 		return fmt461e464ebed9.Errorf("field `problemRepo` did not pass the test: %w", err)
+	}
+	return nil
+}
+
+func _validate_Options_requestRepo(o *Options) error {
+	if err := validator461e464ebed9.GetValidatorFor(o).Var(o.requestRepo, "required"); err != nil {
+		return fmt461e464ebed9.Errorf("field `requestRepo` did not pass the test: %w", err)
+	}
+	return nil
+}
+
+func _validate_Options_tx(o *Options) error {
+	if err := validator461e464ebed9.GetValidatorFor(o).Var(o.tx, "required"); err != nil {
+		return fmt461e464ebed9.Errorf("field `tx` did not pass the test: %w", err)
 	}
 	return nil
 }

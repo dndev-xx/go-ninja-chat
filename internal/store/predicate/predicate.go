@@ -14,3 +14,6 @@ type Message func(*sql.Selector)
 
 // Problem is the predicate function for problem builders.
 type Problem func(*sql.Selector)
+
+// Request is the predicate function for request builders.
+type Request func(*sql.Selector)

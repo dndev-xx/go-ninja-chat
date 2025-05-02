@@ -13,6 +13,20 @@ const (
 	BearerAuthScopes = "bearerAuth.Scopes"
 )
 
+// Defines values for ErrorCode.
+const (
+	ErrorCodeBadRequest           ErrorCode = 400
+	ErrorCodeCreateChatError      ErrorCode = 1000
+	ErrorCodeDeleteChatError      ErrorCode = 1002
+	ErrorCodeForbidden            ErrorCode = 403
+	ErrorCodeInternalServerError  ErrorCode = 500
+	ErrorCodeMessageNotFoundError ErrorCode = 1003
+	ErrorCodeNotFound             ErrorCode = 404
+	ErrorCodeUnauthorized         ErrorCode = 401
+	ErrorCodeUpdateChatError      ErrorCode = 1001
+	N1004                         ErrorCode = 1004
+)
+
 // Error defines model for Error.
 type Error struct {
 	// Code contains HTTP error codes and specific business logic error codes (the last must be >= 1000).
@@ -22,7 +36,7 @@ type Error struct {
 }
 
 // ErrorCode contains HTTP error codes and specific business logic error codes (the last must be >= 1000).
-type ErrorCode = int
+type ErrorCode int
 
 // GetHistoryRequest defines model for GetHistoryRequest.
 type GetHistoryRequest struct {

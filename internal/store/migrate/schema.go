@@ -105,11 +105,42 @@ var (
 			},
 		},
 	}
+	// RequestsColumns holds the columns for the "requests" table.
+	RequestsColumns = []*schema.Column{
+		{Name: "id", Type: field.TypeUUID, Unique: true},
+		{Name: "created_at", Type: field.TypeTime},
+		{Name: "deleted_at", Type: field.TypeTime},
+	}
+	// RequestsTable holds the schema information for the "requests" table.
+	RequestsTable = &schema.Table{
+		Name:       "requests",
+		Columns:    RequestsColumns,
+		PrimaryKey: []*schema.Column{RequestsColumns[0]},
+		Indexes: []*schema.Index{
+			{
+				Name:    "request_created_at",
+				Unique:  false,
+				Columns: []*schema.Column{RequestsColumns[1]},
+				Annotation: &entsql.IndexAnnotation{
+					Type: "BTREE",
+				},
+			},
+			{
+				Name:    "request_deleted_at",
+				Unique:  false,
+				Columns: []*schema.Column{RequestsColumns[2]},
+				Annotation: &entsql.IndexAnnotation{
+					Type: "BTREE",
+				},
+			},
+		},
+	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		ChatsTable,
 		MessagesTable,
 		ProblemsTable,
+		RequestsTable,
 	}
 )
 

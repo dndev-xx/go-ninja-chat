@@ -20,6 +20,8 @@ type Tx struct {
 	Message *MessageClient
 	// Problem is the client for interacting with the Problem builders.
 	Problem *ProblemClient
+	// Request is the client for interacting with the Request builders.
+	Request *RequestClient
 
 	// lazily loaded.
 	client     *Client
@@ -154,6 +156,7 @@ func (tx *Tx) init() {
 	tx.Chat = NewChatClient(tx.config)
 	tx.Message = NewMessageClient(tx.config)
 	tx.Problem = NewProblemClient(tx.config)
+	tx.Request = NewRequestClient(tx.config)
 }
 
 // txDriver wraps the given dialect.Tx with a nop dialect.Driver implementation.

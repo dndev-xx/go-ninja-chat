@@ -15,6 +15,7 @@ import (
 	"github.com/dndev-xx/go-ninja-chat/internal/store/chat"
 	"github.com/dndev-xx/go-ninja-chat/internal/store/message"
 	"github.com/dndev-xx/go-ninja-chat/internal/store/problem"
+	"github.com/dndev-xx/go-ninja-chat/internal/store/request"
 )
 
 // ent aliases to avoid import conflicts in user's code.
@@ -78,6 +79,7 @@ func checkColumn(table, column string) error {
 			chat.Table:    chat.ValidColumn,
 			message.Table: message.ValidColumn,
 			problem.Table: problem.ValidColumn,
+			request.Table: request.ValidColumn,
 		})
 	})
 	return columnCheck(table, column)

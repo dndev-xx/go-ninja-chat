@@ -29,9 +29,17 @@ func (h Handlers) PostSendMessage(eCtx echo.Context, params clientv1.PostSendMes
         MessageBody: req.MessageBody,
     }
 
-    resp, err := h.sendMsg.Handle(ctx, reqUsecase)
+    us, err := h.sendMsg.Handle(ctx, reqUsecase)
     if err != nil {
         return err
+    }
+
+    resp := clientv1.SendMessageResponse {
+    	Data: &clientv1.MessageHeader{
+   			AuthorID: &us.AuthorID,
+    		MessageID: &us.MessageID,
+    		CreatedAt: &us.CreatedAt,
+     },
     }
 
     return eCtx.JSON(http.StatusOK, resp)

@@ -21,7 +21,6 @@ type Message struct {
 	CheckedAt            *time.Time       `json:"checkedAt,omitempty"`
 }
 
-
 func adaptStoreMessage(m *store.Message) Message {
 	return Message{
 		ID:                   m.ID,

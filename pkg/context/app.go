@@ -12,6 +12,7 @@ import (
 	repoChats "github.com/dndev-xx/go-ninja-chat/internal/repositories/chats"
 	repo "github.com/dndev-xx/go-ninja-chat/internal/repositories/messages"
 	repoProblems "github.com/dndev-xx/go-ninja-chat/internal/repositories/problems"
+	repoRequests "github.com/dndev-xx/go-ninja-chat/internal/repositories/requests"
 	serverclient "github.com/dndev-xx/go-ninja-chat/internal/server-client"
 	h "github.com/dndev-xx/go-ninja-chat/internal/server-client/v1"
 	sw "github.com/dndev-xx/go-ninja-chat/internal/server-client/v1/pkg"
@@ -122,12 +123,13 @@ func (b *AppBuilder) WithClientHTTPSrv() Builder {
 	))
 	chatRepo, err := repoChats.New(repoChats.NewOptions(db))
 	repoProblems, err := repoProblems.New(repoProblems.NewOptions(db))
+	requestRepo, err := repoRequests.New(repoRequests.NewOptions(db))
 	if err != nil {
 		b.err = fmt.Errorf("create v1 repository %v", err)
 		return b
 	}
 	usecaseHist, err := usecase.New(usecase.NewOptions(msgRepo))
-	usecaseMsg, err := usecaseMsg.New(usecaseMsg.NewOptions(msgRepo, chatRepo, repoProblems))
+	usecaseMsg, err := usecaseMsg.New(usecaseMsg.NewOptions(msgRepo, chatRepo, repoProblems,requestRepo, db))
 	if err != nil {
 		b.err = fmt.Errorf("create v1 usecase %v", err)
 		return b

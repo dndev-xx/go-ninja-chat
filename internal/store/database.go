@@ -111,3 +111,8 @@ func (db *Database) Message(ctx context.Context) *MessageClient {
 func (db *Database) Problem(ctx context.Context) *ProblemClient {
 	return db.loadClient(ctx).Problem
 }
+
+// Request is the client for interacting with the Request builders.
+func (db *Database) Request(ctx context.Context) *RequestClient {
+	return db.loadClient(ctx).Request
+}
