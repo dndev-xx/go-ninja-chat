@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"io"
-	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -19,7 +18,7 @@ import (
 	serverdebug "github.com/dndev-xx/go-ninja-chat/internal/server-debug"
 )
 
-func TestServer_LoggerLevel(t *testing.T) {
+func TestServerLoggerLevel(t *testing.T) {
 	// Arrange.
 	err := logger.Init(logger.NewOptions("debug"))
 	require.NoError(t, err)
@@ -86,24 +85,22 @@ func TestServer_LoggerLevel(t *testing.T) {
 }
 
 func setLevel(t *testing.T, url, level string) int {
-    t.Helper()
+	t.Helper()
 
-    ctx, cancel := context.WithTimeout(context.Background(), time.Second)
-    defer cancel()
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
 
-    reqBody := fmt.Sprintf(`{"level":"%s"}`, level)
-    req, err := http.NewRequestWithContext(ctx, http.MethodPut, url,
-        io.NopCloser(strings.NewReader(reqBody)))
-    require.NoError(t, err)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPut, url,
+		io.NopCloser(strings.NewReader("level="+level)))
+	require.NoError(t, err)
 
-    req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationJSON)
+	req.Header.Set(echo.HeaderContentType, echo.MIMEApplicationForm)
 
-    resp, err := http.DefaultClient.Do(req)
-    require.NoError(t, err)
-    defer func() { require.NoError(t, resp.Body.Close()) }()
-    return resp.StatusCode
+	resp, err := http.DefaultClient.Do(req)
+	require.NoError(t, err)
+	defer func() { require.NoError(t, resp.Body.Close()) }()
+	return resp.StatusCode
 }
-
 
 func getLevel(t *testing.T, url string) string {
 	t.Helper()

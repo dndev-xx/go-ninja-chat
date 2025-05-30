@@ -3,60 +3,43 @@ package main
 import (
 	"context"
 	"errors"
-	"flag"
-	"fmt"
-	"golang.org/x/sync/errgroup"
 	"log"
+	"os"
 	"os/signal"
 	"syscall"
-	"github.com/dndev-xx/go-ninja-chat/internal/config"
-	serverdebug "github.com/dndev-xx/go-ninja-chat/internal/server-debug"
-	"github.com/dndev-xx/go-ninja-chat/internal/logger"
+
+	application "github.com/dndev-xx/go-ninja-chat/pkg/context"
+	"golang.org/x/sync/errgroup"
 )
 
-var configPath = flag.String("config", "configs/config.toml", "Path to config file")
-
 func main() {
-	if err := run(); err != nil {
-		log.Fatalf("run app: %v", err)
-	}
-}
-
-func run() (errReturned error) {
-	flag.Parse()
-
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
-	cfg, err := config.ParseAndValidate(*configPath)
+	app, err := application.NewAppBuilder().
+		WithContext(ctx).
+		WithConfig().
+		WithLogger().
+		WithDebugHTTPSrv().
+		WithSwagger().
+		WithStoresDB().
+		WithClientHTTPSrv().
+		GetContext()
+
 	if err != nil {
-		return fmt.Errorf("parse and validate config %q: %v", *configPath, err)
+		log.Fatalf("Failed to build app: %v\n", err)
+		os.Exit(1)
 	}
 
-	if err := logger.Init(logger.NewOptions(
-		cfg.Log.Level,
-		logger.WithProductionMode(false),
-	)); err != nil {
-		panic(err)
-	}
-
-	srvDebug, err := serverdebug.New(serverdebug.NewOptions(cfg.Servers.Debug.Addr))
-	if err != nil {
-		return fmt.Errorf("init debug server: %v", err)
-	}
+	defer app.Stores.Close()
 
 	eg, ctx := errgroup.WithContext(ctx)
 
-	// Run servers.
-	eg.Go(func() error { return srvDebug.Run(ctx) })
-
-	// Run services.
-	// Ждут своего часа.
-	// ...
+	eg.Go(func() error { return app.DebugServer.Run(ctx) })
+	eg.Go(func() error { return app.ClientServer.Run(ctx) })
 
 	if err = eg.Wait(); err != nil && !errors.Is(err, context.Canceled) {
-		return fmt.Errorf("wait app stop: %v", err)
+		log.Fatalf("run app: %v", err)
 	}
-
-	return nil
+	log.Println("Shutting down gracefully...")
 }

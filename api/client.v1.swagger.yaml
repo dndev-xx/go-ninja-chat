@@ -1,0 +1,205 @@
+openapi: 3.0.3
+info:
+  title: Bank Support Chat Client API
+  version: v1
+
+servers:
+  - url: http://localhost:8080/v1
+    description: Development server
+
+paths:
+  /sendMessage:
+    post:
+      description: Send new message to the chat.
+      parameters:
+        - $ref: "#/components/parameters/XRequestIDHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendMessageRequest"
+      responses:
+        "200":
+          description: Message created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SendMessageResponse"
+
+  /getHistory:
+    post:
+      description: Get chat history.
+      parameters:
+        - $ref: "#/components/parameters/XRequestIDHeader"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GetHistoryRequest"
+      responses:
+        "200":
+          description: Messages list.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetHistoryResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+security:
+  - bearerAuth: []
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    XRequestIDHeader:
+      in: header
+      name: X-Request-ID
+      schema:
+        type: string
+        format: uuid
+        x-go-type: types.RequestID
+        x-go-import:
+          path: "github.com/dndev-xx/go-ninja-chat/internal/types"
+      required: true
+
+  schemas:
+    SendMessageRequest:
+      required: [messageBody]
+      type: object
+      properties:
+        messageBody:
+          type: string
+          minLength: 1
+          maxLength: 4000
+          x-oapi-codegen-extra-tags:
+            validate: required,min=1,max=4000
+
+    SendMessageResponse:
+      properties:
+        data:
+          $ref: "#/components/schemas/MessageHeader"
+        error:
+          $ref: "#/components/schemas/Error"
+
+    MessageHeader:
+      type: object
+      properties:
+        authorID:
+          type: string
+          format: uuid
+          x-go-type: types.UserID
+          x-go-import:
+            path: "github.com/dndev-xx/go-ninja-chat/internal/types"
+        messageID:
+          type: string
+          format: uuid
+          x-go-type: types.MessageID
+          x-go-import:
+            path: "github.com/dndev-xx/go-ninja-chat/internal/types"
+        createdAt:
+          type: string
+          format: date-time
+
+    GetHistoryRequest:
+      type: object
+      properties:
+        pageSize:
+          type: integer
+          minimum: 10
+          maximum: 100
+        cursor:
+          type: string
+
+    Error:
+      required: [message, code]
+      properties:
+        code:
+          $ref: "#/components/schemas/ErrorCode"
+        message:
+          type: string
+        details:
+          type: string
+
+    ErrorCode:
+      type: integer
+      description: contains HTTP error codes and specific business logic error codes (the last must be >= 1000).
+      enum:
+        - 400 # Bad Request
+        - 401 # Unauthorized
+        - 403 # Forbidden
+        - 404 # Not Found
+        - 500 # Internal Server Error
+        - 1000 # Custom Business Logic Error
+        - 1001 # Create Chat Error
+        - 1002 # Update Chat Error
+        - 1003 # Delete Chat Error
+        - 1004 # Message Not Found Error
+      x-enum-varnames:
+        - ErrorCodeBadRequest
+        - ErrorCodeUnauthorized
+        - ErrorCodeForbidden
+        - ErrorCodeNotFound
+        - ErrorCodeInternalServerError
+        - ErrorCodeCreateChatError
+        - ErrorCodeUpdateChatError
+        - ErrorCodeDeleteChatError
+        - ErrorCodeMessageNotFoundError
+      minimum: 400
+
+    GetHistoryResponse:
+      required: [data]
+      properties:
+        data:
+          $ref: "#/components/schemas/MessagesPage"
+
+    MessagesPage:
+      required: [messages, totalCount]
+      properties:
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/Message"
+        totalCount:
+          type: integer
+          description: Total number of messages available.
+
+    Message:
+      required: [id, authorId, body, createdAt]
+      properties:
+        id:
+          type: string
+          format: uuid
+          x-go-type: types.MessageID
+          x-go-type-import:
+          path: "github.com/dndev-xx/go-ninja-chat/internal/types"
+        authorId:
+          type: string
+          format: uuid
+          x-go-type: types.UserID
+          x-go-type-import:
+          path: "github.com/dndev-xx/go-ninja-chat/internal/types"
+        body:
+          type: string
+          description: The content of the message.
+        createdAt:
+          type: string
+          format: date-time
+          description: Timestamp when the message was created.

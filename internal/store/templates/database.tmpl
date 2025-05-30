@@ -1,0 +1,120 @@
+{{/* gotype: entgo.io/ent/entc/gen.Graph */}}
+
+{{ define "database" }}
+
+{{ template "header" $ }}
+
+import (
+	"context"
+	"fmt"
+
+	"entgo.io/ent/dialect/sql"
+	"go.uber.org/zap"
+)
+
+// Database is the client that holds all ent builders.
+type Database struct {
+	client *Client
+}
+
+// NewDatabase creates a new database based on Client.
+func NewDatabase(client *Client) *Database {
+	return &Database{client: client}
+}
+
+// RunInTx runs the given function f within a transaction.
+// Inspired by https://entgo.io/docs/transactions/#best-practices.
+// If there is already a transaction in the context, then the method uses it.
+func (db *Database) RunInTx(ctx context.Context, f func(context.Context) error) (err error) {
+	tx := TxFromContext(ctx)
+	if tx != nil {
+		return f(ctx)
+	}
+
+	tx, err = db.client.Tx(ctx)
+	if err != nil {
+		return fmt.Errorf("begin tx: %w", err)
+	}
+
+	loggedRollback := func() {
+		if rErr := tx.Rollback(); rErr != nil {
+			zap.L().Named("store").Error("rollback tx", zap.Error(rErr))
+		}
+	}
+
+	defer func() {
+		if r := recover(); r != nil {
+			loggedRollback()
+			panic(r)
+		}
+
+		if err != nil {
+			loggedRollback()
+		} else if err = tx.Commit(); err != nil {
+			err = fmt.Errorf("commit tx: %w", err)
+		}
+	}()
+	return f(NewTxContext(ctx, tx))
+}
+
+func (db *Database) loadClient(ctx context.Context) *Client {
+	tx := TxFromContext(ctx)
+	if tx != nil {
+		return tx.Client()
+	}
+	return db.client
+}
+
+// Exec executes a query that doesn't return rows. For example, in SQL, INSERT or UPDATE.
+func (db *Database) Exec(ctx context.Context, query string, args ...any) (*sql.Result, error) {
+	var res sql.Result
+	err := db.loadClient(ctx).driver.Exec(ctx, query, args, &res)
+	if err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+// Query executes a query that returns rows, typically a SELECT in SQL.
+func (db *Database) Query(ctx context.Context, query string, args ...any) (*sql.Rows, error) {
+	var rows sql.Rows
+	err := db.loadClient(ctx).driver.Query(ctx, query, args, &rows)
+	if err != nil {
+		return nil, err
+	}
+	return &rows, nil
+}
+
+{{ range $n := $.Nodes }}
+	{{ $client := print $n.Name "Client" }}
+	// {{ $n.Name }} is the client for interacting with the {{ $n.Name }} builders.
+	func (db *Database) {{ $n.Name }}(ctx context.Context) *{{ $client }} {
+		return db.loadClient(ctx).{{ $n.Name }}
+	}
+{{ end }}
+
+{{- /*
+MIT License
+
+Copyright (c) 2022 Kratos
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+*/ -}}
+
+{{ end }}

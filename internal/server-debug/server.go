@@ -1,18 +1,20 @@
 package serverdebug
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
 	"net/http"
 	"net/http/pprof"
+	"sync"
 	"time"
 
-	"github.com/dndev-xx/go-ninja-chat/internal/logger"
 	"github.com/dndev-xx/go-ninja-chat/internal/buildinfo"
-	"github.com/dndev-xx/go-ninja-chat/internal/validator"
+	"github.com/dndev-xx/go-ninja-chat/internal/logger"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/mssola/useragent"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/sync/errgroup"
@@ -28,40 +30,77 @@ type Options struct {
 	addr string `option:"mandatory" validate:"required,hostname_port"`
 }
 
-var defaultOptions = Options{
-	addr: ":8080",
-}
-
-type Option func(*Options)
-
 type Server struct {
 	lg  *zap.Logger
 	srv *http.Server
+	logBuffer *logBuffer
 }
 
-func NewOptions(addr string, opts ...Option) Options {
-	options := defaultOptions
-	options.addr = addr
+type logBuffer struct {
+	buf    *bytes.Buffer
+	maxLen int
+	mu     sync.Mutex
+}
 
-	for _, opt := range opts {
-		opt(&options)
+func newLogBuffer(maxLen int) *logBuffer {
+	return &logBuffer{
+		buf:    bytes.NewBuffer(nil),
+		maxLen: maxLen,
+	}
+}
+
+func (lb *logBuffer) Write(p []byte) (int, error) {
+	lb.mu.Lock()
+	defer lb.mu.Unlock()
+
+	if lb.buf.Len()+len(p) > lb.maxLen {
+		lb.buf.Reset()
 	}
 
-	return options
+	return lb.buf.Write(p)
+}
+
+func (lb *logBuffer) String() string {
+	lb.mu.Lock()
+	defer lb.mu.Unlock()
+	return lb.buf.String()
+}
+
+func newLogBufferCore(lb *logBuffer, encoder zapcore.Encoder, enab zapcore.LevelEnabler) zapcore.Core {
+	return zapcore.NewCore(encoder, zapcore.AddSync(lb), enab)
 }
 
 func New(opts Options) (*Server, error) {
-	if err := validator.Validator.Struct(opts); err != nil {
-		return nil, fmt.Errorf("validate options: %w", err)
+	if err := opts.Validate(); err != nil {
+		return nil, fmt.Errorf("validate options: %v", err)
 	}
 
-	lg := zap.L().Named("server-debug")
+	logBuf := newLogBuffer(1 * 1024 * 1024)
+
+		// Получаем глобальный core
+	globalCore := zap.L().Core()
+
+		// Создаем encoder для буфера
+	encoderCfg := zap.NewDevelopmentEncoderConfig()
+	bufferEncoder := zapcore.NewConsoleEncoder(encoderCfg)
+
+		// Создаем core для записи в буфер
+	bufferCore := newLogBufferCore(logBuf, bufferEncoder, zapcore.DebugLevel)
+
+	// Объединяем core глобального логгера и буфера
+	dual := &dualCore{
+		core1: globalCore,
+		core2: bufferCore,
+	}
+	lg := zap.New(dual).Named("server-debug")
 
 	e := echo.New()
 	e.Use(middleware.Recover())
+	e.Use(LoggerMiddleware(lg))
 
 	s := &Server{
-		lg: lg,
+		lg:        lg,
+		logBuffer: logBuf,
 		srv: &http.Server{
 			Addr:              opts.addr,
 			Handler:           e,
@@ -72,11 +111,25 @@ func New(opts Options) (*Server, error) {
 
 	e.GET("/version", s.Version)
 	index.addPage("/version", "Get build information")
-	e.PUT("/log/level", s.logLevelHandler)
-	index.addPage("/log/level", "Change log level (PUT)")
-	e.GET("/log/level", s.getLogLevelHandler)
-	index.addPage("/log/level", "Get current log level (GET)")
-	s.setupPprof(e, index)
+
+	e.PUT("/log/level", echo.WrapHandler(logger.Level))
+	e.GET("/log/level", echo.WrapHandler(logger.Level))
+	e.GET("/schema/client", s.getOpenAPISpec)
+	index.addPage("/schema/client", "Get specification")
+	e.GET("/logs", s.AllLogs)
+	index.addPage("/logs", "Get all application logs")
+	{
+		pprofMux := http.NewServeMux()
+		pprofMux.HandleFunc("/debug/pprof/", pprof.Index)
+		pprofMux.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+		pprofMux.HandleFunc("/debug/pprof/profile", pprof.Profile)
+		pprofMux.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+		pprofMux.HandleFunc("/debug/pprof/trace", pprof.Trace)
+
+		e.GET("/debug/pprof/*", echo.WrapHandler(pprofMux))
+		index.addPage("/debug/pprof/", "Go std profiler")
+		index.addPage("/debug/pprof/profile?seconds=30", "Take half-min profile")
+	}
 
 	e.GET("/", index.handler)
 	return s, nil
@@ -95,7 +148,7 @@ func (s *Server) Run(ctx context.Context) error {
 	})
 
 	eg.Go(func() error {
-		s.lg.Info("listen and serve", zap.String("addr", s.srv.Addr))
+		s.lg.Info("debug-server", zap.String("addr", s.srv.Addr))
 
 		if err := s.srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			return fmt.Errorf("listen and serve: %v", err)
@@ -106,80 +159,27 @@ func (s *Server) Run(ctx context.Context) error {
 	return eg.Wait()
 }
 
-func (s *Server) Version(c echo.Context) error {
-	info := buildinfo.BuildInfo
+func (s *Server) Version(eCtx echo.Context) error {
+	return eCtx.JSON(http.StatusOK, buildinfo.BuildInfo)
+}
 
-	response := map[string]interface{}{
-		"go_version": info.GoVersion,
-		"path":       info.Path,
-		"main": map[string]string{
-			"path":    info.Main.Path,
-			"version": info.Main.Version,
-			"sum":     info.Main.Sum,
-		},
-		"dependencies": []map[string]string{},
-		"settings":     []map[string]string{},
-	}
-
-	for _, dep := range info.Deps {
-		depInfo := map[string]string{
-			"path":    dep.Path,
-			"version": dep.Version,
-			"sum":     dep.Sum,
+func LoggerMiddleware(logger *zap.Logger) echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			ip := c.Request().RemoteAddr
+			method := c.Request().Method
+			path := c.Request().URL.Path
+			userAgent := c.Request().UserAgent()
+			ua := useragent.New(userAgent)
+			browserName, _ := ua.Browser()
+			logger.Info("Incoming request debug server",
+				zap.String("ip", ip),
+				zap.String("method", method),
+				zap.String("path", path),
+				zap.String("os", ua.OS()),
+				zap.String("browser", browserName),
+			)
+			return next(c)
 		}
-		if dep.Replace != nil {
-			depInfo["replace"] = fmt.Sprintf("%s@%s", dep.Replace.Path, dep.Replace.Version)
-		}
-		response["dependencies"] = append(response["dependencies"].([]map[string]string), depInfo)
 	}
-
-	for _, setting := range info.Settings {
-		response["settings"] = append(response["settings"].([]map[string]string), map[string]string{
-			"key":   setting.Key,
-			"value": setting.Value,
-		})
-	}
-	return c.JSON(http.StatusOK, response)
-}
-
-func (s *Server) getLogLevelHandler(c echo.Context) error {
-	currentLevel := zap.L().Level()
-	return c.JSON(http.StatusOK, map[string]string{"level": currentLevel.String()})
-}
-
-func (s *Server) logLevelHandler(c echo.Context) error {
-	var req struct {
-		Level string `json:"level"`
-	}
-
-	if err := c.Bind(&req); err != nil || req.Level == "" {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid request"})
-	}
-
-	if _, err := zapcore.ParseLevel(req.Level); err != nil {
-		return c.JSON(http.StatusBadRequest, map[string]string{"error": "invalid level"})
-	}
-	opts := logger.NewOptions(req.Level)
-
-	if err := logger.Init(opts); err != nil {
-		return c.JSON(http.StatusInternalServerError, map[string]string{"error": "failed to change log level"})
-	}
-	zap.L().Named("change-log-level").Info("log level changed", zap.String("level", req.Level))
-
-	return c.JSON(http.StatusOK, map[string]string{"status": "ok"})
-}
-
-func (s *Server) setupPprof(e *echo.Echo, index *indexPage) {
-	e.GET("/debug/pprof/", echo.WrapHandler(http.HandlerFunc(pprof.Index)))
-	e.GET("/debug/pprof/cmdline", echo.WrapHandler(http.HandlerFunc(pprof.Cmdline)))
-	e.GET("/debug/pprof/profile", echo.WrapHandler(http.HandlerFunc(pprof.Profile)))
-	e.GET("/debug/pprof/symbol", echo.WrapHandler(http.HandlerFunc(pprof.Symbol)))
-	e.GET("/debug/pprof/trace", echo.WrapHandler(http.HandlerFunc(pprof.Trace)))
-	e.GET("/debug/pprof/:profile", echo.WrapHandler(http.HandlerFunc(pprof.Index)))
-
-	index.addPage("/debug/pprof/", "pprof index")
-	index.addPage("/debug/pprof/cmdline", "pprof cmdline")
-	index.addPage("/debug/pprof/profile", "pprof profile")
-	index.addPage("/debug/pprof/symbol", "pprof symbol")
-	index.addPage("/debug/pprof/trace", "pprof trace")
 }

@@ -1,9 +1,29 @@
 [global]
-env = "dev"
+name = "chat-service"
+env = "local"
 
 [log]
 level = "info"
 
+[sentry]
+dsn = "dsn"
+
 [servers]
 [servers.debug]
 addr = ":8079"
+
+[servers.client]
+addr = ":8080"
+alloworigins = ["http://localhost:3000", "http://localhost:3011", "https://swagger-ui.local.orb.local"]
+secwsprotocol = "chat-service-protocol"
+[servers.client.required_access]
+resource = "chat-ui-client"
+role = "support-chat-client"
+
+[servers.manager]
+addr = ":8081"
+alloworigins = ["http://localhost:3000"]
+secwsprotocol = "chat-service-protocol"
+[servers.manager.required_access]
+resource = "chat-ui-manager"
+role = "support-chat-manager"

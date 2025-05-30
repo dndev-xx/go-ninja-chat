@@ -14,7 +14,7 @@ type options struct {
 	Handler http.Handler `validate:"required"`
 }
 
-func TestValidate_TrickyNils(t *testing.T) {
+func TestValidateTrickyNils(t *testing.T) {
 	cases := []struct {
 		in      options
 		wantErr bool
