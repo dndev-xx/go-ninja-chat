@@ -128,6 +128,12 @@ func (mc *MessageCreate) SetNillableIsService(b *bool) *MessageCreate {
 	return mc
 }
 
+// SetInitialRequestID sets the "initial_request_id" field.
+func (mc *MessageCreate) SetInitialRequestID(ti types.RequestID) *MessageCreate {
+	mc.mutation.SetInitialRequestID(ti)
+	return mc
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (mc *MessageCreate) SetCreatedAt(t time.Time) *MessageCreate {
 	mc.mutation.SetCreatedAt(t)
@@ -270,6 +276,14 @@ func (mc *MessageCreate) check() error {
 	if _, ok := mc.mutation.IsService(); !ok {
 		return &ValidationError{Name: "is_service", err: errors.New(`store: missing required field "Message.is_service"`)}
 	}
+	if _, ok := mc.mutation.InitialRequestID(); !ok {
+		return &ValidationError{Name: "initial_request_id", err: errors.New(`store: missing required field "Message.initial_request_id"`)}
+	}
+	if v, ok := mc.mutation.InitialRequestID(); ok {
+		if err := v.Validate(); err != nil {
+			return &ValidationError{Name: "initial_request_id", err: fmt.Errorf(`store: validator failed for field "Message.initial_request_id": %w`, err)}
+		}
+	}
 	if _, ok := mc.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`store: missing required field "Message.created_at"`)}
 	}
@@ -347,6 +361,10 @@ func (mc *MessageCreate) createSpec() (*Message, *sqlgraph.CreateSpec) {
 	if value, ok := mc.mutation.IsService(); ok {
 		_spec.SetField(message.FieldIsService, field.TypeBool, value)
 		_node.IsService = value
+	}
+	if value, ok := mc.mutation.InitialRequestID(); ok {
+		_spec.SetField(message.FieldInitialRequestID, field.TypeUUID, value)
+		_node.InitialRequestID = value
 	}
 	if value, ok := mc.mutation.CreatedAt(); ok {
 		_spec.SetField(message.FieldCreatedAt, field.TypeTime, value)
@@ -553,6 +571,9 @@ func (u *MessageUpsertOne) UpdateNewValues() *MessageUpsertOne {
 		}
 		if _, exists := u.create.mutation.IsService(); exists {
 			s.SetIgnore(message.FieldIsService)
+		}
+		if _, exists := u.create.mutation.InitialRequestID(); exists {
+			s.SetIgnore(message.FieldInitialRequestID)
 		}
 	}))
 	return u
@@ -881,6 +902,9 @@ func (u *MessageUpsertBulk) UpdateNewValues() *MessageUpsertBulk {
 			}
 			if _, exists := b.mutation.IsService(); exists {
 				s.SetIgnore(message.FieldIsService)
+			}
+			if _, exists := b.mutation.InitialRequestID(); exists {
+				s.SetIgnore(message.FieldInitialRequestID)
 			}
 		}
 	}))

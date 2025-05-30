@@ -38,6 +38,8 @@ type Message struct {
 	IsBlocked bool `json:"is_blocked,omitempty"`
 	// IsService holds the value of the "is_service" field.
 	IsService bool `json:"is_service,omitempty"`
+	// InitialRequestID holds the value of the "initial_request_id" field.
+	InitialRequestID types.RequestID `json:"initial_request_id,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -96,6 +98,8 @@ func (*Message) scanValues(columns []string) ([]any, error) {
 			values[i] = new(types.MessageID)
 		case message.FieldProblemID:
 			values[i] = new(types.ProblemID)
+		case message.FieldInitialRequestID:
+			values[i] = new(types.RequestID)
 		case message.FieldAuthorID:
 			values[i] = new(types.UserID)
 		default:
@@ -173,6 +177,12 @@ func (m *Message) assignValues(columns []string, values []any) error {
 				return fmt.Errorf("unexpected type %T for field is_service", values[i])
 			} else if value.Valid {
 				m.IsService = value.Bool
+			}
+		case message.FieldInitialRequestID:
+			if value, ok := values[i].(*types.RequestID); !ok {
+				return fmt.Errorf("unexpected type %T for field initial_request_id", values[i])
+			} else if value != nil {
+				m.InitialRequestID = *value
 			}
 		case message.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -254,6 +264,9 @@ func (m *Message) String() string {
 	builder.WriteString(", ")
 	builder.WriteString("is_service=")
 	builder.WriteString(fmt.Sprintf("%v", m.IsService))
+	builder.WriteString(", ")
+	builder.WriteString("initial_request_id=")
+	builder.WriteString(fmt.Sprintf("%v", m.InitialRequestID))
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(m.CreatedAt.Format(time.ANSIC))

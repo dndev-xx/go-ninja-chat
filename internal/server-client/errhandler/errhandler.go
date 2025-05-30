@@ -8,8 +8,6 @@ import (
 	"go.uber.org/zap"
 )
 
-var _ echo.HTTPErrorHandler = Handler{}.Handle
-
 //go:generate options-gen -out-filename=errhandler_options.gen.go -from-struct=Options
 type Options struct {
 	logger          *zap.Logger                                    `option:"mandatory" validate:"required"`

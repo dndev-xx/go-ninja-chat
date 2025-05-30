@@ -19,7 +19,6 @@ import (
 	"github.com/dndev-xx/go-ninja-chat/internal/store/chat"
 	"github.com/dndev-xx/go-ninja-chat/internal/store/message"
 	"github.com/dndev-xx/go-ninja-chat/internal/store/problem"
-	"github.com/dndev-xx/go-ninja-chat/internal/store/request"
 
 	stdsql "database/sql"
 )
@@ -35,8 +34,6 @@ type Client struct {
 	Message *MessageClient
 	// Problem is the client for interacting with the Problem builders.
 	Problem *ProblemClient
-	// Request is the client for interacting with the Request builders.
-	Request *RequestClient
 }
 
 // NewClient creates a new client configured with the given options.
@@ -51,7 +48,6 @@ func (c *Client) init() {
 	c.Chat = NewChatClient(c.config)
 	c.Message = NewMessageClient(c.config)
 	c.Problem = NewProblemClient(c.config)
-	c.Request = NewRequestClient(c.config)
 }
 
 type (
@@ -147,7 +143,6 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 		Chat:    NewChatClient(cfg),
 		Message: NewMessageClient(cfg),
 		Problem: NewProblemClient(cfg),
-		Request: NewRequestClient(cfg),
 	}, nil
 }
 
@@ -170,7 +165,6 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 		Chat:    NewChatClient(cfg),
 		Message: NewMessageClient(cfg),
 		Problem: NewProblemClient(cfg),
-		Request: NewRequestClient(cfg),
 	}, nil
 }
 
@@ -202,7 +196,6 @@ func (c *Client) Use(hooks ...Hook) {
 	c.Chat.Use(hooks...)
 	c.Message.Use(hooks...)
 	c.Problem.Use(hooks...)
-	c.Request.Use(hooks...)
 }
 
 // Intercept adds the query interceptors to all the entity clients.
@@ -211,7 +204,6 @@ func (c *Client) Intercept(interceptors ...Interceptor) {
 	c.Chat.Intercept(interceptors...)
 	c.Message.Intercept(interceptors...)
 	c.Problem.Intercept(interceptors...)
-	c.Request.Intercept(interceptors...)
 }
 
 // Mutate implements the ent.Mutator interface.
@@ -223,8 +215,6 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 		return c.Message.mutate(ctx, m)
 	case *ProblemMutation:
 		return c.Problem.mutate(ctx, m)
-	case *RequestMutation:
-		return c.Request.mutate(ctx, m)
 	default:
 		return nil, fmt.Errorf("store: unknown mutation type %T", m)
 	}
@@ -725,146 +715,13 @@ func (c *ProblemClient) mutate(ctx context.Context, m *ProblemMutation) (Value, 
 	}
 }
 
-// RequestClient is a client for the Request schema.
-type RequestClient struct {
-	config
-}
-
-// NewRequestClient returns a client for the Request from the given config.
-func NewRequestClient(c config) *RequestClient {
-	return &RequestClient{config: c}
-}
-
-// Use adds a list of mutation hooks to the hooks stack.
-// A call to `Use(f, g, h)` equals to `request.Hooks(f(g(h())))`.
-func (c *RequestClient) Use(hooks ...Hook) {
-	c.hooks.Request = append(c.hooks.Request, hooks...)
-}
-
-// Intercept adds a list of query interceptors to the interceptors stack.
-// A call to `Intercept(f, g, h)` equals to `request.Intercept(f(g(h())))`.
-func (c *RequestClient) Intercept(interceptors ...Interceptor) {
-	c.inters.Request = append(c.inters.Request, interceptors...)
-}
-
-// Create returns a builder for creating a Request entity.
-func (c *RequestClient) Create() *RequestCreate {
-	mutation := newRequestMutation(c.config, OpCreate)
-	return &RequestCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// CreateBulk returns a builder for creating a bulk of Request entities.
-func (c *RequestClient) CreateBulk(builders ...*RequestCreate) *RequestCreateBulk {
-	return &RequestCreateBulk{config: c.config, builders: builders}
-}
-
-// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
-// a builder and applies setFunc on it.
-func (c *RequestClient) MapCreateBulk(slice any, setFunc func(*RequestCreate, int)) *RequestCreateBulk {
-	rv := reflect.ValueOf(slice)
-	if rv.Kind() != reflect.Slice {
-		return &RequestCreateBulk{err: fmt.Errorf("calling to RequestClient.MapCreateBulk with wrong type %T, need slice", slice)}
-	}
-	builders := make([]*RequestCreate, rv.Len())
-	for i := 0; i < rv.Len(); i++ {
-		builders[i] = c.Create()
-		setFunc(builders[i], i)
-	}
-	return &RequestCreateBulk{config: c.config, builders: builders}
-}
-
-// Update returns an update builder for Request.
-func (c *RequestClient) Update() *RequestUpdate {
-	mutation := newRequestMutation(c.config, OpUpdate)
-	return &RequestUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOne returns an update builder for the given entity.
-func (c *RequestClient) UpdateOne(r *Request) *RequestUpdateOne {
-	mutation := newRequestMutation(c.config, OpUpdateOne, withRequest(r))
-	return &RequestUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// UpdateOneID returns an update builder for the given id.
-func (c *RequestClient) UpdateOneID(id types.RequestID) *RequestUpdateOne {
-	mutation := newRequestMutation(c.config, OpUpdateOne, withRequestID(id))
-	return &RequestUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// Delete returns a delete builder for Request.
-func (c *RequestClient) Delete() *RequestDelete {
-	mutation := newRequestMutation(c.config, OpDelete)
-	return &RequestDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
-}
-
-// DeleteOne returns a builder for deleting the given entity.
-func (c *RequestClient) DeleteOne(r *Request) *RequestDeleteOne {
-	return c.DeleteOneID(r.ID)
-}
-
-// DeleteOneID returns a builder for deleting the given entity by its id.
-func (c *RequestClient) DeleteOneID(id types.RequestID) *RequestDeleteOne {
-	builder := c.Delete().Where(request.ID(id))
-	builder.mutation.id = &id
-	builder.mutation.op = OpDeleteOne
-	return &RequestDeleteOne{builder}
-}
-
-// Query returns a query builder for Request.
-func (c *RequestClient) Query() *RequestQuery {
-	return &RequestQuery{
-		config: c.config,
-		ctx:    &QueryContext{Type: TypeRequest},
-		inters: c.Interceptors(),
-	}
-}
-
-// Get returns a Request entity by its id.
-func (c *RequestClient) Get(ctx context.Context, id types.RequestID) (*Request, error) {
-	return c.Query().Where(request.ID(id)).Only(ctx)
-}
-
-// GetX is like Get, but panics if an error occurs.
-func (c *RequestClient) GetX(ctx context.Context, id types.RequestID) *Request {
-	obj, err := c.Get(ctx, id)
-	if err != nil {
-		panic(err)
-	}
-	return obj
-}
-
-// Hooks returns the client hooks.
-func (c *RequestClient) Hooks() []Hook {
-	return c.hooks.Request
-}
-
-// Interceptors returns the client interceptors.
-func (c *RequestClient) Interceptors() []Interceptor {
-	return c.inters.Request
-}
-
-func (c *RequestClient) mutate(ctx context.Context, m *RequestMutation) (Value, error) {
-	switch m.Op() {
-	case OpCreate:
-		return (&RequestCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdate:
-		return (&RequestUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpUpdateOne:
-		return (&RequestUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
-	case OpDelete, OpDeleteOne:
-		return (&RequestDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
-	default:
-		return nil, fmt.Errorf("store: unknown Request mutation op: %q", m.Op())
-	}
-}
-
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Chat, Message, Problem, Request []ent.Hook
+		Chat, Message, Problem []ent.Hook
 	}
 	inters struct {
-		Chat, Message, Problem, Request []ent.Interceptor
+		Chat, Message, Problem []ent.Interceptor
 	}
 )
 

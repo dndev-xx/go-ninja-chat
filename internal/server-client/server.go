@@ -34,6 +34,7 @@ type Options struct {
 	keycloakClient mw.Introspector 		  	`option:"mandatory"`
 	resource       string                   `option:"mandatory"`
 	role           string                   `option:"mandatory"`
+	errorHandler   echo.HTTPErrorHandler	`option:"mandatory"`
 }
 
 type Server struct {
@@ -47,6 +48,7 @@ func New(opts Options) (*Server, error) {
 	lg := opts.logger
 	e.HideBanner = true
 	e.HidePort = true
+	e.HTTPErrorHandler = opts.errorHandler
 
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins:     opts.allowOrigins,

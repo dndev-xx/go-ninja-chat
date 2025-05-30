@@ -82,15 +82,9 @@ components:
 
   schemas:
     SendMessageRequest:
-      required: [userID, messageBody]
+      required: [messageBody]
       type: object
       properties:
-        # userID:
-        #   type: string
-        #   format: uuid
-        #   x-go-type: types.UserID
-        #   x-go-import:
-        #     path: "github.com/dndev-xx/go-ninja-chat/internal/types"
         messageBody:
           type: string
           minLength: 1

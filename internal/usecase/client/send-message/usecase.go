@@ -3,6 +3,7 @@ package sendmessage
 import (
 	"context"
 	"errors"
+	"fmt"
 
 	messagesrepo "github.com/dndev-xx/go-ninja-chat/internal/repositories/messages"
 	"github.com/dndev-xx/go-ninja-chat/internal/types"
@@ -50,7 +51,6 @@ type Options struct {
 	msgRepo 	messagesRepository 		`option:"mandatory" validate:"required"`
 	chatRepo 	chatsRepository 		`option:"mandatory" validate:"required"`
 	problemRepo problemsRepository		`option:"mandatory" validate:"required"`
-	requestRepo requestRepository		`option:"mandatory" validate:"required"`
 	tx			transactor				`option:"mandatory" validate:"required"`
 }
 
@@ -63,37 +63,46 @@ func New(opts Options) (UseCase, error) {
 }
 
 func (u UseCase) Handle(ctx context.Context, req Request) (Response, error) {
-	rsl := Response{}
 	if err := req.Validate(); err != nil {
-		return rsl, ErrInvalidRequest
+		return Response{}, fmt.Errorf("validate request: %w: %v", ErrInvalidRequest, err)
 	}
-	err := u.tx.RunInTx(ctx, func(context.Context) error {
-		exists, err := u.requestRepo.CreateIfNotExists(ctx, req.ID)
-		if err != nil {
-			return err
+
+	var msg *messagesrepo.Message
+
+	if err := u.tx.RunInTx(ctx, func(ctx context.Context) error {
+		m, err := u.msgRepo.GetMessageByRequestID(ctx, req.ID)
+		if nil == err {
+			msg = m
+			return nil
 		}
-		if !exists {
-			return ErrIdempotencyKey
+		if !errors.Is(err, messagesrepo.ErrMsgNotFound) {
+			return fmt.Errorf("get msg by initial request id: %v", err)
 		}
+
 		chatID, err := u.chatRepo.CreateIfNotExists(ctx, req.ClientID)
 		if err != nil {
-			return ErrChatNotCreated
+			return fmt.Errorf("%w: %v", ErrChatNotCreated, err)
 		}
+
 		problemID, err := u.problemRepo.CreateIfNotExists(ctx, chatID)
 		if err != nil {
-			return ErrProblemNotCreated
+			return fmt.Errorf("%w: %v", ErrProblemNotCreated, err)
 		}
-		msg, err := u.msgRepo.CreateClientVisible(ctx, req.ID, problemID, chatID, req.ClientID, req.MessageBody)
+
+		m, err = u.msgRepo.CreateClientVisible(ctx, req.ID, problemID, chatID, req.ClientID, req.MessageBody)
 		if err != nil {
-			return ErrMessageNotCreated
+			return fmt.Errorf("create client visible message: %v", err)
 		}
-		rsl.AuthorID = msg.AuthorID
-		rsl.MessageID = msg.ID
-		rsl.CreatedAt = msg.CreatedAt
+
+		msg = m
 		return nil
-	})
-	if err != nil {
-		return rsl, err
+	}); err != nil {
+		return Response{}, fmt.Errorf("`send client message` tx: %w", err)
 	}
-	return rsl, nil
+
+	return Response{
+		AuthorID:  msg.AuthorID,
+		MessageID: msg.ID,
+		CreatedAt: msg.CreatedAt,
+	}, nil
 }

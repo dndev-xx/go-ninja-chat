@@ -31,6 +31,7 @@ var (
 		{Name: "checked_at", Type: field.TypeTime, Nullable: true},
 		{Name: "is_blocked", Type: field.TypeBool, Default: false},
 		{Name: "is_service", Type: field.TypeBool, Default: false},
+		{Name: "initial_request_id", Type: field.TypeUUID, Unique: true},
 		{Name: "created_at", Type: field.TypeTime},
 		{Name: "chat_id", Type: field.TypeUUID},
 		{Name: "problem_id", Type: field.TypeUUID},
@@ -43,13 +44,13 @@ var (
 		ForeignKeys: []*schema.ForeignKey{
 			{
 				Symbol:     "messages_chats_messages",
-				Columns:    []*schema.Column{MessagesColumns[9]},
+				Columns:    []*schema.Column{MessagesColumns[10]},
 				RefColumns: []*schema.Column{ChatsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
 			{
 				Symbol:     "messages_problems_messages",
-				Columns:    []*schema.Column{MessagesColumns[10]},
+				Columns:    []*schema.Column{MessagesColumns[11]},
 				RefColumns: []*schema.Column{ProblemsColumns[0]},
 				OnDelete:   schema.NoAction,
 			},
@@ -58,7 +59,7 @@ var (
 			{
 				Name:    "message_chat_id",
 				Unique:  false,
-				Columns: []*schema.Column{MessagesColumns[9]},
+				Columns: []*schema.Column{MessagesColumns[10]},
 				Annotation: &entsql.IndexAnnotation{
 					Type: "HASH",
 				},
@@ -66,7 +67,7 @@ var (
 			{
 				Name:    "message_chat_id_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{MessagesColumns[9], MessagesColumns[8]},
+				Columns: []*schema.Column{MessagesColumns[10], MessagesColumns[9]},
 			},
 			{
 				Name:    "message_author_id_is_visible_for_client",
@@ -76,7 +77,7 @@ var (
 			{
 				Name:    "message_created_at",
 				Unique:  false,
-				Columns: []*schema.Column{MessagesColumns[8]},
+				Columns: []*schema.Column{MessagesColumns[9]},
 				Annotation: &entsql.IndexAnnotation{
 					Type: "BTREE",
 				},
@@ -105,42 +106,11 @@ var (
 			},
 		},
 	}
-	// RequestsColumns holds the columns for the "requests" table.
-	RequestsColumns = []*schema.Column{
-		{Name: "id", Type: field.TypeUUID, Unique: true},
-		{Name: "created_at", Type: field.TypeTime},
-		{Name: "deleted_at", Type: field.TypeTime},
-	}
-	// RequestsTable holds the schema information for the "requests" table.
-	RequestsTable = &schema.Table{
-		Name:       "requests",
-		Columns:    RequestsColumns,
-		PrimaryKey: []*schema.Column{RequestsColumns[0]},
-		Indexes: []*schema.Index{
-			{
-				Name:    "request_created_at",
-				Unique:  false,
-				Columns: []*schema.Column{RequestsColumns[1]},
-				Annotation: &entsql.IndexAnnotation{
-					Type: "BTREE",
-				},
-			},
-			{
-				Name:    "request_deleted_at",
-				Unique:  false,
-				Columns: []*schema.Column{RequestsColumns[2]},
-				Annotation: &entsql.IndexAnnotation{
-					Type: "BTREE",
-				},
-			},
-		},
-	}
 	// Tables holds all the tables in the schema.
 	Tables = []*schema.Table{
 		ChatsTable,
 		MessagesTable,
 		ProblemsTable,
-		RequestsTable,
 	}
 )
 

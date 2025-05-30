@@ -5,9 +5,9 @@ package store
 import (
 	"context"
 	"fmt"
-	"runtime"
 
 	"entgo.io/ent/dialect/sql"
+	"go.uber.org/zap"
 )
 
 // Database is the client that holds all ent builders.
@@ -24,49 +24,35 @@ func NewDatabase(client *Client) *Database {
 // Inspired by https://entgo.io/docs/transactions/#best-practices.
 // If there is already a transaction in the context, then the method uses it.
 func (db *Database) RunInTx(ctx context.Context, f func(context.Context) error) (err error) {
-	// Если в ctx уже есть транзакция, используем её
-	if tx := TxFromContext(ctx); tx != nil {
+	tx := TxFromContext(ctx)
+	if tx != nil {
 		return f(ctx)
 	}
 
-	// Создаём новую транзакцию
-	tx, err := db.client.Tx(ctx)
+	tx, err = db.client.Tx(ctx)
 	if err != nil {
-		return fmt.Errorf("starting transaction: %w", err)
+		return fmt.Errorf("begin tx: %w", err)
 	}
 
-	// Обработка паники
+	loggedRollback := func() {
+		if rErr := tx.Rollback(); rErr != nil {
+			zap.L().Named("store").Error("rollback tx", zap.Error(rErr))
+		}
+	}
+
 	defer func() {
-		if p := recover(); p != nil {
-			// Откатываем транзакцию при панике
-			if rerr := tx.Rollback(); rerr != nil {
-				err = fmt.Errorf("rollback failed after panic: %v, original panic: %v", rerr, p)
-			} else {
-				// Восстанавливаем панику после успешного отката
-				panic(p)
-			}
-			// Добавляем информацию о месте паники
-			buf := make([]byte, 4096)
-			runtime.Stack(buf, false)
-			err = fmt.Errorf("panic in transaction: %v\n%s", p, buf)
+		if r := recover(); r != nil {
+			loggedRollback()
+			panic(r)
+		}
+
+		if err != nil {
+			loggedRollback()
+		} else if err = tx.Commit(); err != nil {
+			err = fmt.Errorf("commit tx: %w", err)
 		}
 	}()
-
-	// Выполняем функцию в транзакции
-	if err = f(ctx); err != nil {
-		// Откатываем при ошибке
-		if rerr := tx.Rollback(); rerr != nil {
-			return fmt.Errorf("rollback failed: %v, original error: %w", rerr, err)
-		}
-		return err
-	}
-
-	// Коммитим если всё успешно
-	if err = tx.Commit(); err != nil {
-		return fmt.Errorf("commit failed: %w", err)
-	}
-
-	return nil
+	return f(NewTxContext(ctx, tx))
 }
 
 func (db *Database) loadClient(ctx context.Context) *Client {
@@ -110,9 +96,4 @@ func (db *Database) Message(ctx context.Context) *MessageClient {
 // Problem is the client for interacting with the Problem builders.
 func (db *Database) Problem(ctx context.Context) *ProblemClient {
 	return db.loadClient(ctx).Problem
-}
-
-// Request is the client for interacting with the Request builders.
-func (db *Database) Request(ctx context.Context) *RequestClient {
-	return db.loadClient(ctx).Request
 }

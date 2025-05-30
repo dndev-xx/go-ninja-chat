@@ -12,8 +12,8 @@ import (
 	repoChats "github.com/dndev-xx/go-ninja-chat/internal/repositories/chats"
 	repo "github.com/dndev-xx/go-ninja-chat/internal/repositories/messages"
 	repoProblems "github.com/dndev-xx/go-ninja-chat/internal/repositories/problems"
-	repoRequests "github.com/dndev-xx/go-ninja-chat/internal/repositories/requests"
 	serverclient "github.com/dndev-xx/go-ninja-chat/internal/server-client"
+	servererror "github.com/dndev-xx/go-ninja-chat/internal/server-client/errhandler"
 	h "github.com/dndev-xx/go-ninja-chat/internal/server-client/v1"
 	sw "github.com/dndev-xx/go-ninja-chat/internal/server-client/v1/pkg"
 	serverdebug "github.com/dndev-xx/go-ninja-chat/internal/server-debug"
@@ -66,6 +66,9 @@ func (b *AppBuilder) WithConfig() Builder {
 }
 
 func (b *AppBuilder) WithLogger() Builder {
+	if b.err != nil {
+        return b
+    }
 	if err := logger.Init(logger.NewOptions(
 		b.App.Config.Log.Level,
 		logger.WithProductionMode(b.App.Config.Global.IsProduction()),
@@ -79,6 +82,9 @@ func (b *AppBuilder) WithLogger() Builder {
 }
 
 func (b *AppBuilder) WithDebugHTTPSrv() Builder {
+	if b.err != nil {
+        return b
+    }
 	srvDebug, err := serverdebug.New(serverdebug.NewOptions(b.App.Config.Servers.Debug.Addr))
 	if err != nil {
 		b.err = fmt.Errorf("init debug server: %v", err)
@@ -90,6 +96,9 @@ func (b *AppBuilder) WithDebugHTTPSrv() Builder {
 }
 
 func (b *AppBuilder) WithSwagger() Builder {
+	if b.err != nil {
+        return b
+    }
 	swagger, err := sw.GetSwagger()
 	if err != nil {
 		b.err = fmt.Errorf("load swagger spec: %v", err)
@@ -100,6 +109,9 @@ func (b *AppBuilder) WithSwagger() Builder {
 }
 
 func (b *AppBuilder) WithStoresDB() Builder {
+	if b.err != nil {
+        return b
+    }
 	client, err := db.NewPSQLClient(db.NewPSQLOptions(
 		b.App.context,
 		b.App.Config.Stores.PSQL.Addr,
@@ -117,22 +129,32 @@ func (b *AppBuilder) WithStoresDB() Builder {
 }
 
 func (b *AppBuilder) WithClientHTTPSrv() Builder {
+	if b.err != nil {
+        return b
+    }
 	db := store.NewDatabase(b.App.Stores)
 	msgRepo, err := repo.New(repo.NewOptions(
     db,
 	))
 	chatRepo, err := repoChats.New(repoChats.NewOptions(db))
 	repoProblems, err := repoProblems.New(repoProblems.NewOptions(db))
-	requestRepo, err := repoRequests.New(repoRequests.NewOptions(db))
 	if err != nil {
 		b.err = fmt.Errorf("create v1 repository %v", err)
 		return b
 	}
 	usecaseHist, err := usecase.New(usecase.NewOptions(msgRepo))
-	usecaseMsg, err := usecaseMsg.New(usecaseMsg.NewOptions(msgRepo, chatRepo, repoProblems,requestRepo, db))
+	usecaseMsg, err := usecaseMsg.New(usecaseMsg.NewOptions(msgRepo, chatRepo, repoProblems, db))
 	if err != nil {
 		b.err = fmt.Errorf("create v1 usecase %v", err)
 		return b
+	}
+	httpErrorHandler, err := servererror.New(servererror.NewOptions(
+		b.App.Logger,
+		b.App.Config.Global.IsProduction(),
+		servererror.ResponseBuilder,
+	))
+	if err != nil {
+		b.err = fmt.Errorf("create http error handler: %v", err)
 	}
 	handlers, err := h.NewHandlers(h.NewOptions(usecaseHist, usecaseMsg))
 	if err != nil {
@@ -159,6 +181,7 @@ func (b *AppBuilder) WithClientHTTPSrv() Builder {
 		kc,
 		b.App.Config.Servers.Client.RequiredAccess.Resource,
 		b.App.Config.Servers.Client.RequiredAccess.Role,
+		httpErrorHandler.Handle,
 	))
 	if err != nil {
 		b.err = fmt.Errorf("create server %v", err)

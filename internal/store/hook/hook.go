@@ -45,18 +45,6 @@ func (f ProblemFunc) Mutate(ctx context.Context, m store.Mutation) (store.Value,
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *store.ProblemMutation", m)
 }
 
-// The RequestFunc type is an adapter to allow the use of ordinary
-// function as Request mutator.
-type RequestFunc func(context.Context, *store.RequestMutation) (store.Value, error)
-
-// Mutate calls f(ctx, m).
-func (f RequestFunc) Mutate(ctx context.Context, m store.Mutation) (store.Value, error) {
-	if mv, ok := m.(*store.RequestMutation); ok {
-		return f(ctx, mv)
-	}
-	return nil, fmt.Errorf("unexpected mutation type %T. expect *store.RequestMutation", m)
-}
-
 // Condition is a hook condition function.
 type Condition func(context.Context, store.Mutation) bool
 
