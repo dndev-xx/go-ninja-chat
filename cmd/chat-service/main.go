@@ -1,14 +1,15 @@
 package main
 
 import (
-	"fmt"
+	"context"
+	"errors"
+	"log"
 	"os"
 	"os/signal"
 	"syscall"
-	"context"
 
 	application "github.com/dndev-xx/go-ninja-chat/pkg/context"
-	"go.uber.org/zap"
+	"golang.org/x/sync/errgroup"
 )
 
 func main() {
@@ -16,26 +17,29 @@ func main() {
 	defer cancel()
 
 	app, err := application.NewAppBuilder().
+		WithContext(ctx).
 		WithConfig().
 		WithLogger().
 		WithDebugHTTPSrv().
 		WithSwagger().
+		WithStoresDB().
 		WithClientHTTPSrv().
 		GetContext()
 
 	if err != nil {
-		fmt.Printf("Failed to build app: %v\n", err)
+		log.Fatalf("Failed to build app: %v\n", err)
 		os.Exit(1)
 	}
-	
-	go func(){ if err := app.DebugServer.Run(ctx); err != nil {
-		app.Logger.Error("Error running server", zap.String("server", "debug"), zap.String("err", err.Error()))
-	}}()
-	go func(){ if err := app.ClientServer.Run(ctx); err != nil {
-		app.Logger.Error("Error running server", zap.String("server", "client"), zap.String("err", err.Error()))
-	}}()
-	
-	<-ctx.Done()
-	fmt.Println("Shutting down gracefully...")
-}
 
+	defer app.Stores.Close()
+
+	eg, ctx := errgroup.WithContext(ctx)
+
+	eg.Go(func() error { return app.DebugServer.Run(ctx) })
+	eg.Go(func() error { return app.ClientServer.Run(ctx) })
+
+	if err = eg.Wait(); err != nil && !errors.Is(err, context.Canceled) {
+		log.Fatalf("run app: %v", err)
+	}
+	log.Println("Shutting down gracefully...")
+}

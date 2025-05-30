@@ -1,30 +1,47 @@
 package v1
 
 import (
-	"time"
+	"fmt"
+	"net/http"
 
+	"github.com/dndev-xx/go-ninja-chat/internal/middlewares"
 	clientv1 "github.com/dndev-xx/go-ninja-chat/internal/server-client/v1/pkg"
-	"github.com/google/uuid"
+	view "github.com/dndev-xx/go-ninja-chat/internal/server-client/v1/views"
+	"github.com/dndev-xx/go-ninja-chat/internal/types"
+	usecase "github.com/dndev-xx/go-ninja-chat/internal/usecase/client/get-history"
+	"github.com/dndev-xx/go-ninja-chat/pkg/pointer"
 	"github.com/labstack/echo/v4"
 )
 
-var stub = clientv1.MessagesPage{Messages: []clientv1.Message{
-	{
-		AuthorId:  uuid.New(),
-		Body:      "Здравствуйте! Разберёмся.",
-		CreatedAt: time.Now(),
-		Id:        uuid.New(),
-	},
-	{
-		AuthorId:  uuid.MustParse("7d67b14d-221e-4499-9be2-6707d7df1adc"),
-		Body:      "Привет! Не могу снять денег с карты,\nпишет 'карта заблокирована'",
-		CreatedAt: time.Now().Add(-time.Minute),
-		Id:        uuid.New(),
-	},
-
-}, TotalCount: 2,}
-
 func (h Handlers) PostGetHistory(eCtx echo.Context, params clientv1.PostGetHistoryParams) error {
-	eCtx.Set("responseData", stub)
-	return nil
+	ctx := eCtx.Request().Context()
+	clientID := middlewares.MustUserID(eCtx)
+	fmt.Println(clientID)
+	var req clientv1.GetHistoryRequest
+	if err := eCtx.Bind(&req); err != nil {
+		return err
+	}
+	reqUsecase := usecase.Request {
+		ID: types.RequestID(params.XRequestID),
+		ClientID: clientID,
+		PageSize: pointer.Indirect(req.PageSize),
+		Cursor: pointer.Indirect(req.Cursor),
+	}
+	history, err := h.getHistory.Handle(ctx, reqUsecase)
+	if err != nil {
+		return err
+	}
+	msg := make([]clientv1.Message, 0)
+	for _,cur := range history.Messages {
+		msg = append(msg, view.ConvertOriginalMessageToMessage(cur))
+	}
+	response := clientv1.GetHistoryResponse{
+		Data: clientv1.MessagesPage{
+			Messages: msg,
+			TotalCount: len(msg),
+		},
+	}
+
+	//eCtx.Set("responseData", response)
+	return eCtx.JSON(http.StatusOK, response)
 }

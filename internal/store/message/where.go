@@ -8,66 +8,66 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/dndev-xx/go-ninja-chat/internal/store/predicate"
-	"github.com/google/uuid"
+	"github.com/dndev-xx/go-ninja-chat/internal/types"
 )
 
 // ID filters vertices based on their ID field.
-func ID(id uuid.UUID) predicate.Message {
+func ID(id types.MessageID) predicate.Message {
 	return predicate.Message(sql.FieldEQ(FieldID, id))
 }
 
 // IDEQ applies the EQ predicate on the ID field.
-func IDEQ(id uuid.UUID) predicate.Message {
+func IDEQ(id types.MessageID) predicate.Message {
 	return predicate.Message(sql.FieldEQ(FieldID, id))
 }
 
 // IDNEQ applies the NEQ predicate on the ID field.
-func IDNEQ(id uuid.UUID) predicate.Message {
+func IDNEQ(id types.MessageID) predicate.Message {
 	return predicate.Message(sql.FieldNEQ(FieldID, id))
 }
 
 // IDIn applies the In predicate on the ID field.
-func IDIn(ids ...uuid.UUID) predicate.Message {
+func IDIn(ids ...types.MessageID) predicate.Message {
 	return predicate.Message(sql.FieldIn(FieldID, ids...))
 }
 
 // IDNotIn applies the NotIn predicate on the ID field.
-func IDNotIn(ids ...uuid.UUID) predicate.Message {
+func IDNotIn(ids ...types.MessageID) predicate.Message {
 	return predicate.Message(sql.FieldNotIn(FieldID, ids...))
 }
 
 // IDGT applies the GT predicate on the ID field.
-func IDGT(id uuid.UUID) predicate.Message {
+func IDGT(id types.MessageID) predicate.Message {
 	return predicate.Message(sql.FieldGT(FieldID, id))
 }
 
 // IDGTE applies the GTE predicate on the ID field.
-func IDGTE(id uuid.UUID) predicate.Message {
+func IDGTE(id types.MessageID) predicate.Message {
 	return predicate.Message(sql.FieldGTE(FieldID, id))
 }
 
 // IDLT applies the LT predicate on the ID field.
-func IDLT(id uuid.UUID) predicate.Message {
+func IDLT(id types.MessageID) predicate.Message {
 	return predicate.Message(sql.FieldLT(FieldID, id))
 }
 
 // IDLTE applies the LTE predicate on the ID field.
-func IDLTE(id uuid.UUID) predicate.Message {
+func IDLTE(id types.MessageID) predicate.Message {
 	return predicate.Message(sql.FieldLTE(FieldID, id))
 }
 
 // ChatID applies equality check predicate on the "chat_id" field. It's identical to ChatIDEQ.
-func ChatID(v uuid.UUID) predicate.Message {
+func ChatID(v types.ChatID) predicate.Message {
 	return predicate.Message(sql.FieldEQ(FieldChatID, v))
 }
 
 // ProblemID applies equality check predicate on the "problem_id" field. It's identical to ProblemIDEQ.
-func ProblemID(v uuid.UUID) predicate.Message {
+func ProblemID(v types.ProblemID) predicate.Message {
 	return predicate.Message(sql.FieldEQ(FieldProblemID, v))
 }
 
 // AuthorID applies equality check predicate on the "author_id" field. It's identical to AuthorIDEQ.
-func AuthorID(v uuid.UUID) predicate.Message {
+func AuthorID(v types.UserID) predicate.Message {
 	return predicate.Message(sql.FieldEQ(FieldAuthorID, v))
 }
 
@@ -101,89 +101,104 @@ func IsService(v bool) predicate.Message {
 	return predicate.Message(sql.FieldEQ(FieldIsService, v))
 }
 
+// InitialRequestID applies equality check predicate on the "initial_request_id" field. It's identical to InitialRequestIDEQ.
+func InitialRequestID(v types.RequestID) predicate.Message {
+	return predicate.Message(sql.FieldEQ(FieldInitialRequestID, v))
+}
+
 // CreatedAt applies equality check predicate on the "created_at" field. It's identical to CreatedAtEQ.
 func CreatedAt(v time.Time) predicate.Message {
 	return predicate.Message(sql.FieldEQ(FieldCreatedAt, v))
 }
 
 // ChatIDEQ applies the EQ predicate on the "chat_id" field.
-func ChatIDEQ(v uuid.UUID) predicate.Message {
+func ChatIDEQ(v types.ChatID) predicate.Message {
 	return predicate.Message(sql.FieldEQ(FieldChatID, v))
 }
 
 // ChatIDNEQ applies the NEQ predicate on the "chat_id" field.
-func ChatIDNEQ(v uuid.UUID) predicate.Message {
+func ChatIDNEQ(v types.ChatID) predicate.Message {
 	return predicate.Message(sql.FieldNEQ(FieldChatID, v))
 }
 
 // ChatIDIn applies the In predicate on the "chat_id" field.
-func ChatIDIn(vs ...uuid.UUID) predicate.Message {
+func ChatIDIn(vs ...types.ChatID) predicate.Message {
 	return predicate.Message(sql.FieldIn(FieldChatID, vs...))
 }
 
 // ChatIDNotIn applies the NotIn predicate on the "chat_id" field.
-func ChatIDNotIn(vs ...uuid.UUID) predicate.Message {
+func ChatIDNotIn(vs ...types.ChatID) predicate.Message {
 	return predicate.Message(sql.FieldNotIn(FieldChatID, vs...))
 }
 
 // ProblemIDEQ applies the EQ predicate on the "problem_id" field.
-func ProblemIDEQ(v uuid.UUID) predicate.Message {
+func ProblemIDEQ(v types.ProblemID) predicate.Message {
 	return predicate.Message(sql.FieldEQ(FieldProblemID, v))
 }
 
 // ProblemIDNEQ applies the NEQ predicate on the "problem_id" field.
-func ProblemIDNEQ(v uuid.UUID) predicate.Message {
+func ProblemIDNEQ(v types.ProblemID) predicate.Message {
 	return predicate.Message(sql.FieldNEQ(FieldProblemID, v))
 }
 
 // ProblemIDIn applies the In predicate on the "problem_id" field.
-func ProblemIDIn(vs ...uuid.UUID) predicate.Message {
+func ProblemIDIn(vs ...types.ProblemID) predicate.Message {
 	return predicate.Message(sql.FieldIn(FieldProblemID, vs...))
 }
 
 // ProblemIDNotIn applies the NotIn predicate on the "problem_id" field.
-func ProblemIDNotIn(vs ...uuid.UUID) predicate.Message {
+func ProblemIDNotIn(vs ...types.ProblemID) predicate.Message {
 	return predicate.Message(sql.FieldNotIn(FieldProblemID, vs...))
 }
 
 // AuthorIDEQ applies the EQ predicate on the "author_id" field.
-func AuthorIDEQ(v uuid.UUID) predicate.Message {
+func AuthorIDEQ(v types.UserID) predicate.Message {
 	return predicate.Message(sql.FieldEQ(FieldAuthorID, v))
 }
 
 // AuthorIDNEQ applies the NEQ predicate on the "author_id" field.
-func AuthorIDNEQ(v uuid.UUID) predicate.Message {
+func AuthorIDNEQ(v types.UserID) predicate.Message {
 	return predicate.Message(sql.FieldNEQ(FieldAuthorID, v))
 }
 
 // AuthorIDIn applies the In predicate on the "author_id" field.
-func AuthorIDIn(vs ...uuid.UUID) predicate.Message {
+func AuthorIDIn(vs ...types.UserID) predicate.Message {
 	return predicate.Message(sql.FieldIn(FieldAuthorID, vs...))
 }
 
 // AuthorIDNotIn applies the NotIn predicate on the "author_id" field.
-func AuthorIDNotIn(vs ...uuid.UUID) predicate.Message {
+func AuthorIDNotIn(vs ...types.UserID) predicate.Message {
 	return predicate.Message(sql.FieldNotIn(FieldAuthorID, vs...))
 }
 
 // AuthorIDGT applies the GT predicate on the "author_id" field.
-func AuthorIDGT(v uuid.UUID) predicate.Message {
+func AuthorIDGT(v types.UserID) predicate.Message {
 	return predicate.Message(sql.FieldGT(FieldAuthorID, v))
 }
 
 // AuthorIDGTE applies the GTE predicate on the "author_id" field.
-func AuthorIDGTE(v uuid.UUID) predicate.Message {
+func AuthorIDGTE(v types.UserID) predicate.Message {
 	return predicate.Message(sql.FieldGTE(FieldAuthorID, v))
 }
 
 // AuthorIDLT applies the LT predicate on the "author_id" field.
-func AuthorIDLT(v uuid.UUID) predicate.Message {
+func AuthorIDLT(v types.UserID) predicate.Message {
 	return predicate.Message(sql.FieldLT(FieldAuthorID, v))
 }
 
 // AuthorIDLTE applies the LTE predicate on the "author_id" field.
-func AuthorIDLTE(v uuid.UUID) predicate.Message {
+func AuthorIDLTE(v types.UserID) predicate.Message {
 	return predicate.Message(sql.FieldLTE(FieldAuthorID, v))
+}
+
+// AuthorIDIsNil applies the IsNil predicate on the "author_id" field.
+func AuthorIDIsNil() predicate.Message {
+	return predicate.Message(sql.FieldIsNull(FieldAuthorID))
+}
+
+// AuthorIDNotNil applies the NotNil predicate on the "author_id" field.
+func AuthorIDNotNil() predicate.Message {
+	return predicate.Message(sql.FieldNotNull(FieldAuthorID))
 }
 
 // IsVisibleForClientEQ applies the EQ predicate on the "is_visible_for_client" field.
@@ -339,6 +354,46 @@ func IsServiceEQ(v bool) predicate.Message {
 // IsServiceNEQ applies the NEQ predicate on the "is_service" field.
 func IsServiceNEQ(v bool) predicate.Message {
 	return predicate.Message(sql.FieldNEQ(FieldIsService, v))
+}
+
+// InitialRequestIDEQ applies the EQ predicate on the "initial_request_id" field.
+func InitialRequestIDEQ(v types.RequestID) predicate.Message {
+	return predicate.Message(sql.FieldEQ(FieldInitialRequestID, v))
+}
+
+// InitialRequestIDNEQ applies the NEQ predicate on the "initial_request_id" field.
+func InitialRequestIDNEQ(v types.RequestID) predicate.Message {
+	return predicate.Message(sql.FieldNEQ(FieldInitialRequestID, v))
+}
+
+// InitialRequestIDIn applies the In predicate on the "initial_request_id" field.
+func InitialRequestIDIn(vs ...types.RequestID) predicate.Message {
+	return predicate.Message(sql.FieldIn(FieldInitialRequestID, vs...))
+}
+
+// InitialRequestIDNotIn applies the NotIn predicate on the "initial_request_id" field.
+func InitialRequestIDNotIn(vs ...types.RequestID) predicate.Message {
+	return predicate.Message(sql.FieldNotIn(FieldInitialRequestID, vs...))
+}
+
+// InitialRequestIDGT applies the GT predicate on the "initial_request_id" field.
+func InitialRequestIDGT(v types.RequestID) predicate.Message {
+	return predicate.Message(sql.FieldGT(FieldInitialRequestID, v))
+}
+
+// InitialRequestIDGTE applies the GTE predicate on the "initial_request_id" field.
+func InitialRequestIDGTE(v types.RequestID) predicate.Message {
+	return predicate.Message(sql.FieldGTE(FieldInitialRequestID, v))
+}
+
+// InitialRequestIDLT applies the LT predicate on the "initial_request_id" field.
+func InitialRequestIDLT(v types.RequestID) predicate.Message {
+	return predicate.Message(sql.FieldLT(FieldInitialRequestID, v))
+}
+
+// InitialRequestIDLTE applies the LTE predicate on the "initial_request_id" field.
+func InitialRequestIDLTE(v types.RequestID) predicate.Message {
+	return predicate.Message(sql.FieldLTE(FieldInitialRequestID, v))
 }
 
 // CreatedAtEQ applies the EQ predicate on the "created_at" field.

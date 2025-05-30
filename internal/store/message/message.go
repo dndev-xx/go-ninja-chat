@@ -7,7 +7,7 @@ import (
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
-	"github.com/google/uuid"
+	"github.com/dndev-xx/go-ninja-chat/internal/types"
 )
 
 const (
@@ -33,6 +33,8 @@ const (
 	FieldIsBlocked = "is_blocked"
 	// FieldIsService holds the string denoting the is_service field in the database.
 	FieldIsService = "is_service"
+	// FieldInitialRequestID holds the string denoting the initial_request_id field in the database.
+	FieldInitialRequestID = "initial_request_id"
 	// FieldCreatedAt holds the string denoting the created_at field in the database.
 	FieldCreatedAt = "created_at"
 	// EdgeChat holds the string denoting the chat edge name in mutations.
@@ -69,6 +71,7 @@ var Columns = []string{
 	FieldCheckedAt,
 	FieldIsBlocked,
 	FieldIsService,
+	FieldInitialRequestID,
 	FieldCreatedAt,
 }
 
@@ -87,6 +90,8 @@ var (
 	DefaultIsVisibleForClient bool
 	// DefaultIsVisibleForManager holds the default value on creation for the "is_visible_for_manager" field.
 	DefaultIsVisibleForManager bool
+	// BodyValidator is a validator for the "body" field. It is called by the builders before save.
+	BodyValidator func(string) error
 	// DefaultIsBlocked holds the default value on creation for the "is_blocked" field.
 	DefaultIsBlocked bool
 	// DefaultIsService holds the default value on creation for the "is_service" field.
@@ -94,7 +99,7 @@ var (
 	// DefaultCreatedAt holds the default value on creation for the "created_at" field.
 	DefaultCreatedAt func() time.Time
 	// DefaultID holds the default value on creation for the "id" field.
-	DefaultID func() uuid.UUID
+	DefaultID func() types.MessageID
 )
 
 // OrderOption defines the ordering options for the Message queries.
@@ -148,6 +153,11 @@ func ByIsBlocked(opts ...sql.OrderTermOption) OrderOption {
 // ByIsService orders the results by the is_service field.
 func ByIsService(opts ...sql.OrderTermOption) OrderOption {
 	return sql.OrderByField(FieldIsService, opts...).ToFunc()
+}
+
+// ByInitialRequestID orders the results by the initial_request_id field.
+func ByInitialRequestID(opts ...sql.OrderTermOption) OrderOption {
+	return sql.OrderByField(FieldInitialRequestID, opts...).ToFunc()
 }
 
 // ByCreatedAt orders the results by the created_at field.

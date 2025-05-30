@@ -11,20 +11,20 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"github.com/dndev-xx/go-ninja-chat/internal/store/chat"
 	"github.com/dndev-xx/go-ninja-chat/internal/store/problem"
-	"github.com/google/uuid"
+	"github.com/dndev-xx/go-ninja-chat/internal/types"
 )
 
 // Problem is the model entity for the Problem schema.
 type Problem struct {
 	config `json:"-"`
 	// ID of the ent.
-	ID uuid.UUID `json:"id,omitempty"`
+	ID types.ProblemID `json:"id,omitempty"`
 	// ChatID holds the value of the "chat_id" field.
-	ChatID uuid.UUID `json:"chat_id,omitempty"`
+	ChatID types.ChatID `json:"chat_id,omitempty"`
 	// ManagerID holds the value of the "manager_id" field.
-	ManagerID uuid.UUID `json:"manager_id,omitempty"`
+	ManagerID types.UserID `json:"manager_id,omitempty"`
 	// ResolvedAt holds the value of the "resolved_at" field.
-	ResolvedAt *time.Time `json:"resolved_at,omitempty"`
+	ResolvedAt time.Time `json:"resolved_at,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -71,8 +71,12 @@ func (*Problem) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case problem.FieldResolvedAt, problem.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
-		case problem.FieldID, problem.FieldChatID, problem.FieldManagerID:
-			values[i] = new(uuid.UUID)
+		case problem.FieldChatID:
+			values[i] = new(types.ChatID)
+		case problem.FieldID:
+			values[i] = new(types.ProblemID)
+		case problem.FieldManagerID:
+			values[i] = new(types.UserID)
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -89,19 +93,19 @@ func (pr *Problem) assignValues(columns []string, values []any) error {
 	for i := range columns {
 		switch columns[i] {
 		case problem.FieldID:
-			if value, ok := values[i].(*uuid.UUID); !ok {
+			if value, ok := values[i].(*types.ProblemID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
 				pr.ID = *value
 			}
 		case problem.FieldChatID:
-			if value, ok := values[i].(*uuid.UUID); !ok {
+			if value, ok := values[i].(*types.ChatID); !ok {
 				return fmt.Errorf("unexpected type %T for field chat_id", values[i])
 			} else if value != nil {
 				pr.ChatID = *value
 			}
 		case problem.FieldManagerID:
-			if value, ok := values[i].(*uuid.UUID); !ok {
+			if value, ok := values[i].(*types.UserID); !ok {
 				return fmt.Errorf("unexpected type %T for field manager_id", values[i])
 			} else if value != nil {
 				pr.ManagerID = *value
@@ -110,8 +114,7 @@ func (pr *Problem) assignValues(columns []string, values []any) error {
 			if value, ok := values[i].(*sql.NullTime); !ok {
 				return fmt.Errorf("unexpected type %T for field resolved_at", values[i])
 			} else if value.Valid {
-				pr.ResolvedAt = new(time.Time)
-				*pr.ResolvedAt = value.Time
+				pr.ResolvedAt = value.Time
 			}
 		case problem.FieldCreatedAt:
 			if value, ok := values[i].(*sql.NullTime); !ok {
@@ -171,10 +174,8 @@ func (pr *Problem) String() string {
 	builder.WriteString("manager_id=")
 	builder.WriteString(fmt.Sprintf("%v", pr.ManagerID))
 	builder.WriteString(", ")
-	if v := pr.ResolvedAt; v != nil {
-		builder.WriteString("resolved_at=")
-		builder.WriteString(v.Format(time.ANSIC))
-	}
+	builder.WriteString("resolved_at=")
+	builder.WriteString(pr.ResolvedAt.Format(time.ANSIC))
 	builder.WriteString(", ")
 	builder.WriteString("created_at=")
 	builder.WriteString(pr.CreatedAt.Format(time.ANSIC))

@@ -6,13 +6,37 @@ package pkg
 import (
 	"time"
 
-	"github.com/google/uuid"
-	openapi_types "github.com/oapi-codegen/runtime/types"
+	"github.com/dndev-xx/go-ninja-chat/internal/types"
 )
 
 const (
 	BearerAuthScopes = "bearerAuth.Scopes"
 )
+
+// Defines values for ErrorCode.
+const (
+	ErrorCodeBadRequest           ErrorCode = 400
+	ErrorCodeCreateChatError      ErrorCode = 1000
+	ErrorCodeDeleteChatError      ErrorCode = 1002
+	ErrorCodeForbidden            ErrorCode = 403
+	ErrorCodeInternalServerError  ErrorCode = 500
+	ErrorCodeMessageNotFoundError ErrorCode = 1003
+	ErrorCodeNotFound             ErrorCode = 404
+	ErrorCodeUnauthorized         ErrorCode = 401
+	ErrorCodeUpdateChatError      ErrorCode = 1001
+	N1004                         ErrorCode = 1004
+)
+
+// Error defines model for Error.
+type Error struct {
+	// Code contains HTTP error codes and specific business logic error codes (the last must be >= 1000).
+	Code    ErrorCode `json:"code"`
+	Details *string   `json:"details,omitempty"`
+	Message string    `json:"message"`
+}
+
+// ErrorCode contains HTTP error codes and specific business logic error codes (the last must be >= 1000).
+type ErrorCode int
 
 // GetHistoryRequest defines model for GetHistoryRequest.
 type GetHistoryRequest struct {
@@ -27,14 +51,21 @@ type GetHistoryResponse struct {
 
 // Message defines model for Message.
 type Message struct {
-	AuthorId uuid.UUID `json:"authorId"`
+	AuthorId types.UserID `json:"authorId"`
 
 	// Body The content of the message.
 	Body string `json:"body"`
 
 	// CreatedAt Timestamp when the message was created.
-	CreatedAt time.Time `json:"createdAt"`
-	Id        uuid.UUID `json:"id"`
+	CreatedAt time.Time       `json:"createdAt"`
+	Id        types.MessageID `json:"id"`
+}
+
+// MessageHeader defines model for MessageHeader.
+type MessageHeader struct {
+	AuthorID  *types.UserID    `json:"authorID,omitempty"`
+	CreatedAt *time.Time       `json:"createdAt,omitempty"`
+	MessageID *types.MessageID `json:"messageID,omitempty"`
 }
 
 // MessagesPage defines model for MessagesPage.
@@ -45,14 +76,32 @@ type MessagesPage struct {
 	TotalCount int `json:"totalCount"`
 }
 
+// SendMessageRequest defines model for SendMessageRequest.
+type SendMessageRequest struct {
+	MessageBody string `json:"messageBody" validate:"required,min=1,max=4000"`
+}
+
+// SendMessageResponse defines model for SendMessageResponse.
+type SendMessageResponse struct {
+	Data  *MessageHeader `json:"data,omitempty"`
+	Error *Error         `json:"error,omitempty"`
+}
+
 // XRequestIDHeader defines model for XRequestIDHeader.
-type XRequestIDHeader = openapi_types.UUID
+type XRequestIDHeader = types.RequestID
 
 // PostGetHistoryParams defines parameters for PostGetHistory.
 type PostGetHistoryParams struct {
-	// XRequestID Unique identifier for the request.
+	XRequestID XRequestIDHeader `json:"X-Request-ID"`
+}
+
+// PostSendMessageParams defines parameters for PostSendMessage.
+type PostSendMessageParams struct {
 	XRequestID XRequestIDHeader `json:"X-Request-ID"`
 }
 
 // PostGetHistoryJSONRequestBody defines body for PostGetHistory for application/json ContentType.
 type PostGetHistoryJSONRequestBody = GetHistoryRequest
+
+// PostSendMessageJSONRequestBody defines body for PostSendMessage for application/json ContentType.
+type PostSendMessageJSONRequestBody = SendMessageRequest

@@ -15,8 +15,8 @@ import (
 	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 
-	clientv1 "github.com/dndev-xx/go-ninja-chat/internal/server-client/v1/pkg"
 	mw "github.com/dndev-xx/go-ninja-chat/internal/middlewares"
+	clientv1 "github.com/dndev-xx/go-ninja-chat/internal/server-client/v1/pkg"
 )
 
 const (
@@ -34,6 +34,7 @@ type Options struct {
 	keycloakClient mw.Introspector 		  	`option:"mandatory"`
 	resource       string                   `option:"mandatory"`
 	role           string                   `option:"mandatory"`
+	errorHandler   echo.HTTPErrorHandler	`option:"mandatory"`
 }
 
 type Server struct {
@@ -47,6 +48,7 @@ func New(opts Options) (*Server, error) {
 	lg := opts.logger
 	e.HideBanner = true
 	e.HidePort = true
+	e.HTTPErrorHandler = opts.errorHandler
 
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins:     opts.allowOrigins,
@@ -64,11 +66,11 @@ func New(opts Options) (*Server, error) {
 		MaxAge:           3600,
 	}))
 	authMiddleware := mw.NewKeycloakTokenAuth(opts.keycloakClient, opts.resource, opts.role)
-	loggerMiddleware := mw.LoggerMiddleware(lg)
-	recoverLog := mw.RecoveryMiddleware(lg)
+	loggerMiddleware := mw.NewRequestLogger(lg)
+	recoverLog := mw.NewRecovery(lg)
 
 	v1 := e.Group("/v1",
-	mw.JSONResponseMiddleware(),
+	//mw.JSONResponseMiddleware(),
 	loggerMiddleware,
 	recoverLog,
 	authMiddleware,

@@ -1,27 +1,41 @@
 package context
 
 import (
+	"context"
 	"flag"
 	"fmt"
 
+	keycloakclient "github.com/dndev-xx/go-ninja-chat/internal/clients/keycloak"
 	"github.com/dndev-xx/go-ninja-chat/internal/config"
 	"github.com/dndev-xx/go-ninja-chat/internal/logger"
-	swag "github.com/getkin/kin-openapi/openapi3"
-	serverdebug "github.com/dndev-xx/go-ninja-chat/internal/server-debug"
+
+	repoChats "github.com/dndev-xx/go-ninja-chat/internal/repositories/chats"
+	repo "github.com/dndev-xx/go-ninja-chat/internal/repositories/messages"
+	repoProblems "github.com/dndev-xx/go-ninja-chat/internal/repositories/problems"
 	serverclient "github.com/dndev-xx/go-ninja-chat/internal/server-client"
+	servererror "github.com/dndev-xx/go-ninja-chat/internal/server-client/errhandler"
 	h "github.com/dndev-xx/go-ninja-chat/internal/server-client/v1"
+	sw "github.com/dndev-xx/go-ninja-chat/internal/server-client/v1/pkg"
+	serverdebug "github.com/dndev-xx/go-ninja-chat/internal/server-debug"
+	"github.com/dndev-xx/go-ninja-chat/internal/store"
+	db "github.com/dndev-xx/go-ninja-chat/internal/store"
+
+	usecase "github.com/dndev-xx/go-ninja-chat/internal/usecase/client/get-history"
+	usecaseMsg "github.com/dndev-xx/go-ninja-chat/internal/usecase/client/send-message"
+	swag "github.com/getkin/kin-openapi/openapi3"
 	"go.uber.org/zap"
-	keycloakclient "github.com/dndev-xx/go-ninja-chat/internal/clients/keycloak"
 )
 
 var configPath = flag.String("config", "configs/config.toml", "Path to config file")
 
 type AppContext struct {
+	context			context.Context
 	Config      	*config.Config
 	Logger      	*zap.Logger
 	DebugServer 	*serverdebug.Server
 	Swagger 		*swag.T
 	ClientServer 	*serverclient.Server
+	Stores			*store.Client
 }
 
 type AppBuilder struct {
@@ -33,6 +47,11 @@ func NewAppBuilder() *AppBuilder {
 	return &AppBuilder{
 		App: &AppContext{},
 	}
+}
+
+func (b *AppBuilder) WithContext(ctx context.Context) Builder {
+	b.App.context = ctx
+	return b
 }
 
 func (b *AppBuilder) WithConfig() Builder {
@@ -47,6 +66,9 @@ func (b *AppBuilder) WithConfig() Builder {
 }
 
 func (b *AppBuilder) WithLogger() Builder {
+	if b.err != nil {
+        return b
+    }
 	if err := logger.Init(logger.NewOptions(
 		b.App.Config.Log.Level,
 		logger.WithProductionMode(b.App.Config.Global.IsProduction()),
@@ -60,6 +82,9 @@ func (b *AppBuilder) WithLogger() Builder {
 }
 
 func (b *AppBuilder) WithDebugHTTPSrv() Builder {
+	if b.err != nil {
+        return b
+    }
 	srvDebug, err := serverdebug.New(serverdebug.NewOptions(b.App.Config.Servers.Debug.Addr))
 	if err != nil {
 		b.err = fmt.Errorf("init debug server: %v", err)
@@ -71,7 +96,10 @@ func (b *AppBuilder) WithDebugHTTPSrv() Builder {
 }
 
 func (b *AppBuilder) WithSwagger() Builder {
-	swagger, err := swag.NewLoader().LoadFromFile("api/client.v1.swagger.yaml")
+	if b.err != nil {
+        return b
+    }
+	swagger, err := sw.GetSwagger()
 	if err != nil {
 		b.err = fmt.Errorf("load swagger spec: %v", err)
 		return b
@@ -80,8 +108,55 @@ func (b *AppBuilder) WithSwagger() Builder {
 	return b
 }
 
+func (b *AppBuilder) WithStoresDB() Builder {
+	if b.err != nil {
+        return b
+    }
+	client, err := db.NewPSQLClient(db.NewPSQLOptions(
+		b.App.context,
+		b.App.Config.Stores.PSQL.Addr,
+		b.App.Config.Stores.PSQL.Username,
+		b.App.Config.Stores.PSQL.Password,
+		b.App.Config.Stores.PSQL.Database,
+		b.App.Config.Stores.PSQL.Debug,
+	))
+	if err != nil {
+		b.err = fmt.Errorf("failed connect to db: %v", err)
+		return b
+	}
+	b.App.Stores = client
+	return b
+}
+
 func (b *AppBuilder) WithClientHTTPSrv() Builder {
-	handlers, err := h.NewHandlers(h.Options{})
+	if b.err != nil {
+        return b
+    }
+	db := store.NewDatabase(b.App.Stores)
+	msgRepo, err := repo.New(repo.NewOptions(
+    db,
+	))
+	chatRepo, err := repoChats.New(repoChats.NewOptions(db))
+	repoProblems, err := repoProblems.New(repoProblems.NewOptions(db))
+	if err != nil {
+		b.err = fmt.Errorf("create v1 repository %v", err)
+		return b
+	}
+	usecaseHist, err := usecase.New(usecase.NewOptions(msgRepo))
+	usecaseMsg, err := usecaseMsg.New(usecaseMsg.NewOptions(msgRepo, chatRepo, repoProblems, db))
+	if err != nil {
+		b.err = fmt.Errorf("create v1 usecase %v", err)
+		return b
+	}
+	httpErrorHandler, err := servererror.New(servererror.NewOptions(
+		b.App.Logger,
+		b.App.Config.Global.IsProduction(),
+		servererror.ResponseBuilder,
+	))
+	if err != nil {
+		b.err = fmt.Errorf("create http error handler: %v", err)
+	}
+	handlers, err := h.NewHandlers(h.NewOptions(usecaseHist, usecaseMsg))
 	if err != nil {
 		b.err = fmt.Errorf("create v1 handlers %v", err)
 		return b
@@ -106,6 +181,7 @@ func (b *AppBuilder) WithClientHTTPSrv() Builder {
 		kc,
 		b.App.Config.Servers.Client.RequiredAccess.Resource,
 		b.App.Config.Servers.Client.RequiredAccess.Role,
+		httpErrorHandler.Handle,
 	))
 	if err != nil {
 		b.err = fmt.Errorf("create server %v", err)

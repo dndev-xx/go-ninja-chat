@@ -10,6 +10,7 @@ import (
 	"github.com/getkin/kin-openapi/openapi3"
 	errors461e464ebed9 "github.com/kazhuravlev/options-gen/pkg/errors"
 	validator461e464ebed9 "github.com/kazhuravlev/options-gen/pkg/validator"
+	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 )
 
@@ -24,6 +25,7 @@ func NewOptions(
 	keycloakClient mw.Introspector,
 	resource string,
 	role string,
+	errorHandler echo.HTTPErrorHandler,
 	options ...OptOptionsSetter,
 ) Options {
 	o := Options{}
@@ -45,6 +47,8 @@ func NewOptions(
 	o.resource = resource
 
 	o.role = role
+
+	o.errorHandler = errorHandler
 
 	for _, opt := range options {
 		opt(&o)

@@ -15,7 +15,7 @@ import (
 	"github.com/dndev-xx/go-ninja-chat/internal/store/message"
 	"github.com/dndev-xx/go-ninja-chat/internal/store/predicate"
 	"github.com/dndev-xx/go-ninja-chat/internal/store/problem"
-	"github.com/google/uuid"
+	"github.com/dndev-xx/go-ninja-chat/internal/types"
 )
 
 // MessageQuery is the builder for querying Message entities.
@@ -132,8 +132,8 @@ func (mq *MessageQuery) FirstX(ctx context.Context) *Message {
 
 // FirstID returns the first Message ID from the query.
 // Returns a *NotFoundError when no Message ID was found.
-func (mq *MessageQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
-	var ids []uuid.UUID
+func (mq *MessageQuery) FirstID(ctx context.Context) (id types.MessageID, err error) {
+	var ids []types.MessageID
 	if ids, err = mq.Limit(1).IDs(setContextOp(ctx, mq.ctx, ent.OpQueryFirstID)); err != nil {
 		return
 	}
@@ -145,7 +145,7 @@ func (mq *MessageQuery) FirstID(ctx context.Context) (id uuid.UUID, err error) {
 }
 
 // FirstIDX is like FirstID, but panics if an error occurs.
-func (mq *MessageQuery) FirstIDX(ctx context.Context) uuid.UUID {
+func (mq *MessageQuery) FirstIDX(ctx context.Context) types.MessageID {
 	id, err := mq.FirstID(ctx)
 	if err != nil && !IsNotFound(err) {
 		panic(err)
@@ -183,8 +183,8 @@ func (mq *MessageQuery) OnlyX(ctx context.Context) *Message {
 // OnlyID is like Only, but returns the only Message ID in the query.
 // Returns a *NotSingularError when more than one Message ID is found.
 // Returns a *NotFoundError when no entities are found.
-func (mq *MessageQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
-	var ids []uuid.UUID
+func (mq *MessageQuery) OnlyID(ctx context.Context) (id types.MessageID, err error) {
+	var ids []types.MessageID
 	if ids, err = mq.Limit(2).IDs(setContextOp(ctx, mq.ctx, ent.OpQueryOnlyID)); err != nil {
 		return
 	}
@@ -200,7 +200,7 @@ func (mq *MessageQuery) OnlyID(ctx context.Context) (id uuid.UUID, err error) {
 }
 
 // OnlyIDX is like OnlyID, but panics if an error occurs.
-func (mq *MessageQuery) OnlyIDX(ctx context.Context) uuid.UUID {
+func (mq *MessageQuery) OnlyIDX(ctx context.Context) types.MessageID {
 	id, err := mq.OnlyID(ctx)
 	if err != nil {
 		panic(err)
@@ -228,7 +228,7 @@ func (mq *MessageQuery) AllX(ctx context.Context) []*Message {
 }
 
 // IDs executes the query and returns a list of Message IDs.
-func (mq *MessageQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
+func (mq *MessageQuery) IDs(ctx context.Context) (ids []types.MessageID, err error) {
 	if mq.ctx.Unique == nil && mq.path != nil {
 		mq.Unique(true)
 	}
@@ -240,7 +240,7 @@ func (mq *MessageQuery) IDs(ctx context.Context) (ids []uuid.UUID, err error) {
 }
 
 // IDsX is like IDs, but panics if an error occurs.
-func (mq *MessageQuery) IDsX(ctx context.Context) []uuid.UUID {
+func (mq *MessageQuery) IDsX(ctx context.Context) []types.MessageID {
 	ids, err := mq.IDs(ctx)
 	if err != nil {
 		panic(err)
@@ -337,7 +337,7 @@ func (mq *MessageQuery) WithProblem(opts ...func(*ProblemQuery)) *MessageQuery {
 // Example:
 //
 //	var v []struct {
-//		ChatID uuid.UUID `json:"chat_id,omitempty"`
+//		ChatID types.ChatID `json:"chat_id,omitempty"`
 //		Count int `json:"count,omitempty"`
 //	}
 //
@@ -360,7 +360,7 @@ func (mq *MessageQuery) GroupBy(field string, fields ...string) *MessageGroupBy 
 // Example:
 //
 //	var v []struct {
-//		ChatID uuid.UUID `json:"chat_id,omitempty"`
+//		ChatID types.ChatID `json:"chat_id,omitempty"`
 //	}
 //
 //	client.Message.Query().
@@ -451,8 +451,8 @@ func (mq *MessageQuery) sqlAll(ctx context.Context, hooks ...queryHook) ([]*Mess
 }
 
 func (mq *MessageQuery) loadChat(ctx context.Context, query *ChatQuery, nodes []*Message, init func(*Message), assign func(*Message, *Chat)) error {
-	ids := make([]uuid.UUID, 0, len(nodes))
-	nodeids := make(map[uuid.UUID][]*Message)
+	ids := make([]types.ChatID, 0, len(nodes))
+	nodeids := make(map[types.ChatID][]*Message)
 	for i := range nodes {
 		fk := nodes[i].ChatID
 		if _, ok := nodeids[fk]; !ok {
@@ -480,8 +480,8 @@ func (mq *MessageQuery) loadChat(ctx context.Context, query *ChatQuery, nodes []
 	return nil
 }
 func (mq *MessageQuery) loadProblem(ctx context.Context, query *ProblemQuery, nodes []*Message, init func(*Message), assign func(*Message, *Problem)) error {
-	ids := make([]uuid.UUID, 0, len(nodes))
-	nodeids := make(map[uuid.UUID][]*Message)
+	ids := make([]types.ProblemID, 0, len(nodes))
+	nodeids := make(map[types.ProblemID][]*Message)
 	for i := range nodes {
 		fk := nodes[i].ProblemID
 		if _, ok := nodeids[fk]; !ok {

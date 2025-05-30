@@ -2,25 +2,19 @@ package serverdebug
 
 import (
 	"encoding/json"
-	"io/ioutil"
 	"net/http"
 
+	"github.com/dndev-xx/go-ninja-chat/internal/server-client/v1/pkg"
 	"github.com/labstack/echo/v4"
-	"github.com/oasdiff/yaml"
 )
 
 func (s *Server) getOpenAPISpec(c echo.Context) error {
-	yamlFile, err := ioutil.ReadFile("./api/client.v1.swagger.yaml")
+	swagger, err := pkg.GetSwagger()
 	if err != nil {
-		return c.String(http.StatusInternalServerError, "Error reading OpenAPI specification file")
+		return c.String(http.StatusInternalServerError, "Error loading OpenAPI specification")
 	}
 
-	var spec interface{}
-	if err := yaml.Unmarshal(yamlFile, &spec); err != nil {
-		return c.String(http.StatusInternalServerError, "Error parsing YAML")
-	}
-
-	jsonData, err := json.Marshal(spec)
+	jsonData, err := json.Marshal(swagger)
 	if err != nil {
 		return c.String(http.StatusInternalServerError, "Error generating JSON")
 	}

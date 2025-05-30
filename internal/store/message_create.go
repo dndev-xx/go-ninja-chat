@@ -15,7 +15,7 @@ import (
 	"github.com/dndev-xx/go-ninja-chat/internal/store/chat"
 	"github.com/dndev-xx/go-ninja-chat/internal/store/message"
 	"github.com/dndev-xx/go-ninja-chat/internal/store/problem"
-	"github.com/google/uuid"
+	"github.com/dndev-xx/go-ninja-chat/internal/types"
 )
 
 // MessageCreate is the builder for creating a Message entity.
@@ -27,20 +27,28 @@ type MessageCreate struct {
 }
 
 // SetChatID sets the "chat_id" field.
-func (mc *MessageCreate) SetChatID(u uuid.UUID) *MessageCreate {
-	mc.mutation.SetChatID(u)
+func (mc *MessageCreate) SetChatID(ti types.ChatID) *MessageCreate {
+	mc.mutation.SetChatID(ti)
 	return mc
 }
 
 // SetProblemID sets the "problem_id" field.
-func (mc *MessageCreate) SetProblemID(u uuid.UUID) *MessageCreate {
-	mc.mutation.SetProblemID(u)
+func (mc *MessageCreate) SetProblemID(ti types.ProblemID) *MessageCreate {
+	mc.mutation.SetProblemID(ti)
 	return mc
 }
 
 // SetAuthorID sets the "author_id" field.
-func (mc *MessageCreate) SetAuthorID(u uuid.UUID) *MessageCreate {
-	mc.mutation.SetAuthorID(u)
+func (mc *MessageCreate) SetAuthorID(ti types.UserID) *MessageCreate {
+	mc.mutation.SetAuthorID(ti)
+	return mc
+}
+
+// SetNillableAuthorID sets the "author_id" field if the given value is not nil.
+func (mc *MessageCreate) SetNillableAuthorID(ti *types.UserID) *MessageCreate {
+	if ti != nil {
+		mc.SetAuthorID(*ti)
+	}
 	return mc
 }
 
@@ -120,6 +128,12 @@ func (mc *MessageCreate) SetNillableIsService(b *bool) *MessageCreate {
 	return mc
 }
 
+// SetInitialRequestID sets the "initial_request_id" field.
+func (mc *MessageCreate) SetInitialRequestID(ti types.RequestID) *MessageCreate {
+	mc.mutation.SetInitialRequestID(ti)
+	return mc
+}
+
 // SetCreatedAt sets the "created_at" field.
 func (mc *MessageCreate) SetCreatedAt(t time.Time) *MessageCreate {
 	mc.mutation.SetCreatedAt(t)
@@ -135,15 +149,15 @@ func (mc *MessageCreate) SetNillableCreatedAt(t *time.Time) *MessageCreate {
 }
 
 // SetID sets the "id" field.
-func (mc *MessageCreate) SetID(u uuid.UUID) *MessageCreate {
-	mc.mutation.SetID(u)
+func (mc *MessageCreate) SetID(ti types.MessageID) *MessageCreate {
+	mc.mutation.SetID(ti)
 	return mc
 }
 
 // SetNillableID sets the "id" field if the given value is not nil.
-func (mc *MessageCreate) SetNillableID(u *uuid.UUID) *MessageCreate {
-	if u != nil {
-		mc.SetID(*u)
+func (mc *MessageCreate) SetNillableID(ti *types.MessageID) *MessageCreate {
+	if ti != nil {
+		mc.SetID(*ti)
 	}
 	return mc
 }
@@ -224,11 +238,23 @@ func (mc *MessageCreate) check() error {
 	if _, ok := mc.mutation.ChatID(); !ok {
 		return &ValidationError{Name: "chat_id", err: errors.New(`store: missing required field "Message.chat_id"`)}
 	}
+	if v, ok := mc.mutation.ChatID(); ok {
+		if err := v.Validate(); err != nil {
+			return &ValidationError{Name: "chat_id", err: fmt.Errorf(`store: validator failed for field "Message.chat_id": %w`, err)}
+		}
+	}
 	if _, ok := mc.mutation.ProblemID(); !ok {
 		return &ValidationError{Name: "problem_id", err: errors.New(`store: missing required field "Message.problem_id"`)}
 	}
-	if _, ok := mc.mutation.AuthorID(); !ok {
-		return &ValidationError{Name: "author_id", err: errors.New(`store: missing required field "Message.author_id"`)}
+	if v, ok := mc.mutation.ProblemID(); ok {
+		if err := v.Validate(); err != nil {
+			return &ValidationError{Name: "problem_id", err: fmt.Errorf(`store: validator failed for field "Message.problem_id": %w`, err)}
+		}
+	}
+	if v, ok := mc.mutation.AuthorID(); ok {
+		if err := v.Validate(); err != nil {
+			return &ValidationError{Name: "author_id", err: fmt.Errorf(`store: validator failed for field "Message.author_id": %w`, err)}
+		}
 	}
 	if _, ok := mc.mutation.IsVisibleForClient(); !ok {
 		return &ValidationError{Name: "is_visible_for_client", err: errors.New(`store: missing required field "Message.is_visible_for_client"`)}
@@ -239,14 +265,32 @@ func (mc *MessageCreate) check() error {
 	if _, ok := mc.mutation.Body(); !ok {
 		return &ValidationError{Name: "body", err: errors.New(`store: missing required field "Message.body"`)}
 	}
+	if v, ok := mc.mutation.Body(); ok {
+		if err := message.BodyValidator(v); err != nil {
+			return &ValidationError{Name: "body", err: fmt.Errorf(`store: validator failed for field "Message.body": %w`, err)}
+		}
+	}
 	if _, ok := mc.mutation.IsBlocked(); !ok {
 		return &ValidationError{Name: "is_blocked", err: errors.New(`store: missing required field "Message.is_blocked"`)}
 	}
 	if _, ok := mc.mutation.IsService(); !ok {
 		return &ValidationError{Name: "is_service", err: errors.New(`store: missing required field "Message.is_service"`)}
 	}
+	if _, ok := mc.mutation.InitialRequestID(); !ok {
+		return &ValidationError{Name: "initial_request_id", err: errors.New(`store: missing required field "Message.initial_request_id"`)}
+	}
+	if v, ok := mc.mutation.InitialRequestID(); ok {
+		if err := v.Validate(); err != nil {
+			return &ValidationError{Name: "initial_request_id", err: fmt.Errorf(`store: validator failed for field "Message.initial_request_id": %w`, err)}
+		}
+	}
 	if _, ok := mc.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`store: missing required field "Message.created_at"`)}
+	}
+	if v, ok := mc.mutation.ID(); ok {
+		if err := v.Validate(); err != nil {
+			return &ValidationError{Name: "id", err: fmt.Errorf(`store: validator failed for field "Message.id": %w`, err)}
+		}
 	}
 	if len(mc.mutation.ChatIDs()) == 0 {
 		return &ValidationError{Name: "chat", err: errors.New(`store: missing required edge "Message.chat"`)}
@@ -269,7 +313,7 @@ func (mc *MessageCreate) sqlSave(ctx context.Context) (*Message, error) {
 		return nil, err
 	}
 	if _spec.ID.Value != nil {
-		if id, ok := _spec.ID.Value.(*uuid.UUID); ok {
+		if id, ok := _spec.ID.Value.(*types.MessageID); ok {
 			_node.ID = *id
 		} else if err := _node.ID.Scan(_spec.ID.Value); err != nil {
 			return nil, err
@@ -317,6 +361,10 @@ func (mc *MessageCreate) createSpec() (*Message, *sqlgraph.CreateSpec) {
 	if value, ok := mc.mutation.IsService(); ok {
 		_spec.SetField(message.FieldIsService, field.TypeBool, value)
 		_node.IsService = value
+	}
+	if value, ok := mc.mutation.InitialRequestID(); ok {
+		_spec.SetField(message.FieldInitialRequestID, field.TypeUUID, value)
+		_node.InitialRequestID = value
 	}
 	if value, ok := mc.mutation.CreatedAt(); ok {
 		_spec.SetField(message.FieldCreatedAt, field.TypeTime, value)
@@ -409,7 +457,7 @@ type (
 )
 
 // SetChatID sets the "chat_id" field.
-func (u *MessageUpsert) SetChatID(v uuid.UUID) *MessageUpsert {
+func (u *MessageUpsert) SetChatID(v types.ChatID) *MessageUpsert {
 	u.Set(message.FieldChatID, v)
 	return u
 }
@@ -421,7 +469,7 @@ func (u *MessageUpsert) UpdateChatID() *MessageUpsert {
 }
 
 // SetProblemID sets the "problem_id" field.
-func (u *MessageUpsert) SetProblemID(v uuid.UUID) *MessageUpsert {
+func (u *MessageUpsert) SetProblemID(v types.ProblemID) *MessageUpsert {
 	u.Set(message.FieldProblemID, v)
 	return u
 }
@@ -429,18 +477,6 @@ func (u *MessageUpsert) SetProblemID(v uuid.UUID) *MessageUpsert {
 // UpdateProblemID sets the "problem_id" field to the value that was provided on create.
 func (u *MessageUpsert) UpdateProblemID() *MessageUpsert {
 	u.SetExcluded(message.FieldProblemID)
-	return u
-}
-
-// SetAuthorID sets the "author_id" field.
-func (u *MessageUpsert) SetAuthorID(v uuid.UUID) *MessageUpsert {
-	u.Set(message.FieldAuthorID, v)
-	return u
-}
-
-// UpdateAuthorID sets the "author_id" field to the value that was provided on create.
-func (u *MessageUpsert) UpdateAuthorID() *MessageUpsert {
-	u.SetExcluded(message.FieldAuthorID)
 	return u
 }
 
@@ -465,18 +501,6 @@ func (u *MessageUpsert) SetIsVisibleForManager(v bool) *MessageUpsert {
 // UpdateIsVisibleForManager sets the "is_visible_for_manager" field to the value that was provided on create.
 func (u *MessageUpsert) UpdateIsVisibleForManager() *MessageUpsert {
 	u.SetExcluded(message.FieldIsVisibleForManager)
-	return u
-}
-
-// SetBody sets the "body" field.
-func (u *MessageUpsert) SetBody(v string) *MessageUpsert {
-	u.Set(message.FieldBody, v)
-	return u
-}
-
-// UpdateBody sets the "body" field to the value that was provided on create.
-func (u *MessageUpsert) UpdateBody() *MessageUpsert {
-	u.SetExcluded(message.FieldBody)
 	return u
 }
 
@@ -510,18 +534,6 @@ func (u *MessageUpsert) UpdateIsBlocked() *MessageUpsert {
 	return u
 }
 
-// SetIsService sets the "is_service" field.
-func (u *MessageUpsert) SetIsService(v bool) *MessageUpsert {
-	u.Set(message.FieldIsService, v)
-	return u
-}
-
-// UpdateIsService sets the "is_service" field to the value that was provided on create.
-func (u *MessageUpsert) UpdateIsService() *MessageUpsert {
-	u.SetExcluded(message.FieldIsService)
-	return u
-}
-
 // SetCreatedAt sets the "created_at" field.
 func (u *MessageUpsert) SetCreatedAt(v time.Time) *MessageUpsert {
 	u.Set(message.FieldCreatedAt, v)
@@ -550,6 +562,18 @@ func (u *MessageUpsertOne) UpdateNewValues() *MessageUpsertOne {
 	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
 		if _, exists := u.create.mutation.ID(); exists {
 			s.SetIgnore(message.FieldID)
+		}
+		if _, exists := u.create.mutation.AuthorID(); exists {
+			s.SetIgnore(message.FieldAuthorID)
+		}
+		if _, exists := u.create.mutation.Body(); exists {
+			s.SetIgnore(message.FieldBody)
+		}
+		if _, exists := u.create.mutation.IsService(); exists {
+			s.SetIgnore(message.FieldIsService)
+		}
+		if _, exists := u.create.mutation.InitialRequestID(); exists {
+			s.SetIgnore(message.FieldInitialRequestID)
 		}
 	}))
 	return u
@@ -583,7 +607,7 @@ func (u *MessageUpsertOne) Update(set func(*MessageUpsert)) *MessageUpsertOne {
 }
 
 // SetChatID sets the "chat_id" field.
-func (u *MessageUpsertOne) SetChatID(v uuid.UUID) *MessageUpsertOne {
+func (u *MessageUpsertOne) SetChatID(v types.ChatID) *MessageUpsertOne {
 	return u.Update(func(s *MessageUpsert) {
 		s.SetChatID(v)
 	})
@@ -597,7 +621,7 @@ func (u *MessageUpsertOne) UpdateChatID() *MessageUpsertOne {
 }
 
 // SetProblemID sets the "problem_id" field.
-func (u *MessageUpsertOne) SetProblemID(v uuid.UUID) *MessageUpsertOne {
+func (u *MessageUpsertOne) SetProblemID(v types.ProblemID) *MessageUpsertOne {
 	return u.Update(func(s *MessageUpsert) {
 		s.SetProblemID(v)
 	})
@@ -607,20 +631,6 @@ func (u *MessageUpsertOne) SetProblemID(v uuid.UUID) *MessageUpsertOne {
 func (u *MessageUpsertOne) UpdateProblemID() *MessageUpsertOne {
 	return u.Update(func(s *MessageUpsert) {
 		s.UpdateProblemID()
-	})
-}
-
-// SetAuthorID sets the "author_id" field.
-func (u *MessageUpsertOne) SetAuthorID(v uuid.UUID) *MessageUpsertOne {
-	return u.Update(func(s *MessageUpsert) {
-		s.SetAuthorID(v)
-	})
-}
-
-// UpdateAuthorID sets the "author_id" field to the value that was provided on create.
-func (u *MessageUpsertOne) UpdateAuthorID() *MessageUpsertOne {
-	return u.Update(func(s *MessageUpsert) {
-		s.UpdateAuthorID()
 	})
 }
 
@@ -649,20 +659,6 @@ func (u *MessageUpsertOne) SetIsVisibleForManager(v bool) *MessageUpsertOne {
 func (u *MessageUpsertOne) UpdateIsVisibleForManager() *MessageUpsertOne {
 	return u.Update(func(s *MessageUpsert) {
 		s.UpdateIsVisibleForManager()
-	})
-}
-
-// SetBody sets the "body" field.
-func (u *MessageUpsertOne) SetBody(v string) *MessageUpsertOne {
-	return u.Update(func(s *MessageUpsert) {
-		s.SetBody(v)
-	})
-}
-
-// UpdateBody sets the "body" field to the value that was provided on create.
-func (u *MessageUpsertOne) UpdateBody() *MessageUpsertOne {
-	return u.Update(func(s *MessageUpsert) {
-		s.UpdateBody()
 	})
 }
 
@@ -701,20 +697,6 @@ func (u *MessageUpsertOne) UpdateIsBlocked() *MessageUpsertOne {
 	})
 }
 
-// SetIsService sets the "is_service" field.
-func (u *MessageUpsertOne) SetIsService(v bool) *MessageUpsertOne {
-	return u.Update(func(s *MessageUpsert) {
-		s.SetIsService(v)
-	})
-}
-
-// UpdateIsService sets the "is_service" field to the value that was provided on create.
-func (u *MessageUpsertOne) UpdateIsService() *MessageUpsertOne {
-	return u.Update(func(s *MessageUpsert) {
-		s.UpdateIsService()
-	})
-}
-
 // SetCreatedAt sets the "created_at" field.
 func (u *MessageUpsertOne) SetCreatedAt(v time.Time) *MessageUpsertOne {
 	return u.Update(func(s *MessageUpsert) {
@@ -745,7 +727,7 @@ func (u *MessageUpsertOne) ExecX(ctx context.Context) {
 }
 
 // Exec executes the UPSERT query and returns the inserted/updated ID.
-func (u *MessageUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+func (u *MessageUpsertOne) ID(ctx context.Context) (id types.MessageID, err error) {
 	if u.create.driver.Dialect() == dialect.MySQL {
 		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
 		// fields from the database since MySQL does not support the RETURNING clause.
@@ -759,7 +741,7 @@ func (u *MessageUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
 }
 
 // IDX is like ID, but panics if an error occurs.
-func (u *MessageUpsertOne) IDX(ctx context.Context) uuid.UUID {
+func (u *MessageUpsertOne) IDX(ctx context.Context) types.MessageID {
 	id, err := u.ID(ctx)
 	if err != nil {
 		panic(err)
@@ -912,6 +894,18 @@ func (u *MessageUpsertBulk) UpdateNewValues() *MessageUpsertBulk {
 			if _, exists := b.mutation.ID(); exists {
 				s.SetIgnore(message.FieldID)
 			}
+			if _, exists := b.mutation.AuthorID(); exists {
+				s.SetIgnore(message.FieldAuthorID)
+			}
+			if _, exists := b.mutation.Body(); exists {
+				s.SetIgnore(message.FieldBody)
+			}
+			if _, exists := b.mutation.IsService(); exists {
+				s.SetIgnore(message.FieldIsService)
+			}
+			if _, exists := b.mutation.InitialRequestID(); exists {
+				s.SetIgnore(message.FieldInitialRequestID)
+			}
 		}
 	}))
 	return u
@@ -945,7 +939,7 @@ func (u *MessageUpsertBulk) Update(set func(*MessageUpsert)) *MessageUpsertBulk 
 }
 
 // SetChatID sets the "chat_id" field.
-func (u *MessageUpsertBulk) SetChatID(v uuid.UUID) *MessageUpsertBulk {
+func (u *MessageUpsertBulk) SetChatID(v types.ChatID) *MessageUpsertBulk {
 	return u.Update(func(s *MessageUpsert) {
 		s.SetChatID(v)
 	})
@@ -959,7 +953,7 @@ func (u *MessageUpsertBulk) UpdateChatID() *MessageUpsertBulk {
 }
 
 // SetProblemID sets the "problem_id" field.
-func (u *MessageUpsertBulk) SetProblemID(v uuid.UUID) *MessageUpsertBulk {
+func (u *MessageUpsertBulk) SetProblemID(v types.ProblemID) *MessageUpsertBulk {
 	return u.Update(func(s *MessageUpsert) {
 		s.SetProblemID(v)
 	})
@@ -969,20 +963,6 @@ func (u *MessageUpsertBulk) SetProblemID(v uuid.UUID) *MessageUpsertBulk {
 func (u *MessageUpsertBulk) UpdateProblemID() *MessageUpsertBulk {
 	return u.Update(func(s *MessageUpsert) {
 		s.UpdateProblemID()
-	})
-}
-
-// SetAuthorID sets the "author_id" field.
-func (u *MessageUpsertBulk) SetAuthorID(v uuid.UUID) *MessageUpsertBulk {
-	return u.Update(func(s *MessageUpsert) {
-		s.SetAuthorID(v)
-	})
-}
-
-// UpdateAuthorID sets the "author_id" field to the value that was provided on create.
-func (u *MessageUpsertBulk) UpdateAuthorID() *MessageUpsertBulk {
-	return u.Update(func(s *MessageUpsert) {
-		s.UpdateAuthorID()
 	})
 }
 
@@ -1011,20 +991,6 @@ func (u *MessageUpsertBulk) SetIsVisibleForManager(v bool) *MessageUpsertBulk {
 func (u *MessageUpsertBulk) UpdateIsVisibleForManager() *MessageUpsertBulk {
 	return u.Update(func(s *MessageUpsert) {
 		s.UpdateIsVisibleForManager()
-	})
-}
-
-// SetBody sets the "body" field.
-func (u *MessageUpsertBulk) SetBody(v string) *MessageUpsertBulk {
-	return u.Update(func(s *MessageUpsert) {
-		s.SetBody(v)
-	})
-}
-
-// UpdateBody sets the "body" field to the value that was provided on create.
-func (u *MessageUpsertBulk) UpdateBody() *MessageUpsertBulk {
-	return u.Update(func(s *MessageUpsert) {
-		s.UpdateBody()
 	})
 }
 
@@ -1060,20 +1026,6 @@ func (u *MessageUpsertBulk) SetIsBlocked(v bool) *MessageUpsertBulk {
 func (u *MessageUpsertBulk) UpdateIsBlocked() *MessageUpsertBulk {
 	return u.Update(func(s *MessageUpsert) {
 		s.UpdateIsBlocked()
-	})
-}
-
-// SetIsService sets the "is_service" field.
-func (u *MessageUpsertBulk) SetIsService(v bool) *MessageUpsertBulk {
-	return u.Update(func(s *MessageUpsert) {
-		s.SetIsService(v)
-	})
-}
-
-// UpdateIsService sets the "is_service" field to the value that was provided on create.
-func (u *MessageUpsertBulk) UpdateIsService() *MessageUpsertBulk {
-	return u.Update(func(s *MessageUpsert) {
-		s.UpdateIsService()
 	})
 }
 

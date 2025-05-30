@@ -9,7 +9,7 @@ import (
 	"github.com/dndev-xx/go-ninja-chat/internal/store/message"
 	"github.com/dndev-xx/go-ninja-chat/internal/store/problem"
 	"github.com/dndev-xx/go-ninja-chat/internal/store/schema"
-	"github.com/google/uuid"
+	"github.com/dndev-xx/go-ninja-chat/internal/types"
 )
 
 // The init function reads all schema descriptors with runtime code
@@ -25,7 +25,7 @@ func init() {
 	// chatDescID is the schema descriptor for id field.
 	chatDescID := chatFields[0].Descriptor()
 	// chat.DefaultID holds the default value on creation for the id field.
-	chat.DefaultID = chatDescID.Default.(func() uuid.UUID)
+	chat.DefaultID = chatDescID.Default.(func() types.ChatID)
 	messageFields := schema.Message{}.Fields()
 	_ = messageFields
 	// messageDescIsVisibleForClient is the schema descriptor for is_visible_for_client field.
@@ -36,6 +36,24 @@ func init() {
 	messageDescIsVisibleForManager := messageFields[5].Descriptor()
 	// message.DefaultIsVisibleForManager holds the default value on creation for the is_visible_for_manager field.
 	message.DefaultIsVisibleForManager = messageDescIsVisibleForManager.Default.(bool)
+	// messageDescBody is the schema descriptor for body field.
+	messageDescBody := messageFields[6].Descriptor()
+	// message.BodyValidator is a validator for the "body" field. It is called by the builders before save.
+	message.BodyValidator = func() func(string) error {
+		validators := messageDescBody.Validators
+		fns := [...]func(string) error{
+			validators[0].(func(string) error),
+			validators[1].(func(string) error),
+		}
+		return func(body string) error {
+			for _, fn := range fns {
+				if err := fn(body); err != nil {
+					return err
+				}
+			}
+			return nil
+		}
+	}()
 	// messageDescIsBlocked is the schema descriptor for is_blocked field.
 	messageDescIsBlocked := messageFields[8].Descriptor()
 	// message.DefaultIsBlocked holds the default value on creation for the is_blocked field.
@@ -45,13 +63,13 @@ func init() {
 	// message.DefaultIsService holds the default value on creation for the is_service field.
 	message.DefaultIsService = messageDescIsService.Default.(bool)
 	// messageDescCreatedAt is the schema descriptor for created_at field.
-	messageDescCreatedAt := messageFields[10].Descriptor()
+	messageDescCreatedAt := messageFields[11].Descriptor()
 	// message.DefaultCreatedAt holds the default value on creation for the created_at field.
 	message.DefaultCreatedAt = messageDescCreatedAt.Default.(func() time.Time)
 	// messageDescID is the schema descriptor for id field.
 	messageDescID := messageFields[0].Descriptor()
 	// message.DefaultID holds the default value on creation for the id field.
-	message.DefaultID = messageDescID.Default.(func() uuid.UUID)
+	message.DefaultID = messageDescID.Default.(func() types.MessageID)
 	problemFields := schema.Problem{}.Fields()
 	_ = problemFields
 	// problemDescCreatedAt is the schema descriptor for created_at field.
@@ -61,5 +79,5 @@ func init() {
 	// problemDescID is the schema descriptor for id field.
 	problemDescID := problemFields[0].Descriptor()
 	// problem.DefaultID holds the default value on creation for the id field.
-	problem.DefaultID = problemDescID.Default.(func() uuid.UUID)
+	problem.DefaultID = problemDescID.Default.(func() types.ProblemID)
 }

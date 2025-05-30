@@ -15,7 +15,7 @@ import (
 	"github.com/dndev-xx/go-ninja-chat/internal/store/message"
 	"github.com/dndev-xx/go-ninja-chat/internal/store/predicate"
 	"github.com/dndev-xx/go-ninja-chat/internal/store/problem"
-	"github.com/google/uuid"
+	"github.com/dndev-xx/go-ninja-chat/internal/types"
 )
 
 // ProblemUpdate is the builder for updating Problem entities.
@@ -33,29 +33,29 @@ func (pu *ProblemUpdate) Where(ps ...predicate.Problem) *ProblemUpdate {
 }
 
 // SetChatID sets the "chat_id" field.
-func (pu *ProblemUpdate) SetChatID(u uuid.UUID) *ProblemUpdate {
-	pu.mutation.SetChatID(u)
+func (pu *ProblemUpdate) SetChatID(ti types.ChatID) *ProblemUpdate {
+	pu.mutation.SetChatID(ti)
 	return pu
 }
 
 // SetNillableChatID sets the "chat_id" field if the given value is not nil.
-func (pu *ProblemUpdate) SetNillableChatID(u *uuid.UUID) *ProblemUpdate {
-	if u != nil {
-		pu.SetChatID(*u)
+func (pu *ProblemUpdate) SetNillableChatID(ti *types.ChatID) *ProblemUpdate {
+	if ti != nil {
+		pu.SetChatID(*ti)
 	}
 	return pu
 }
 
 // SetManagerID sets the "manager_id" field.
-func (pu *ProblemUpdate) SetManagerID(u uuid.UUID) *ProblemUpdate {
-	pu.mutation.SetManagerID(u)
+func (pu *ProblemUpdate) SetManagerID(ti types.UserID) *ProblemUpdate {
+	pu.mutation.SetManagerID(ti)
 	return pu
 }
 
 // SetNillableManagerID sets the "manager_id" field if the given value is not nil.
-func (pu *ProblemUpdate) SetNillableManagerID(u *uuid.UUID) *ProblemUpdate {
-	if u != nil {
-		pu.SetManagerID(*u)
+func (pu *ProblemUpdate) SetNillableManagerID(ti *types.UserID) *ProblemUpdate {
+	if ti != nil {
+		pu.SetManagerID(*ti)
 	}
 	return pu
 }
@@ -106,14 +106,14 @@ func (pu *ProblemUpdate) SetChat(c *Chat) *ProblemUpdate {
 }
 
 // AddMessageIDs adds the "messages" edge to the Message entity by IDs.
-func (pu *ProblemUpdate) AddMessageIDs(ids ...uuid.UUID) *ProblemUpdate {
+func (pu *ProblemUpdate) AddMessageIDs(ids ...types.MessageID) *ProblemUpdate {
 	pu.mutation.AddMessageIDs(ids...)
 	return pu
 }
 
 // AddMessages adds the "messages" edges to the Message entity.
 func (pu *ProblemUpdate) AddMessages(m ...*Message) *ProblemUpdate {
-	ids := make([]uuid.UUID, len(m))
+	ids := make([]types.MessageID, len(m))
 	for i := range m {
 		ids[i] = m[i].ID
 	}
@@ -138,14 +138,14 @@ func (pu *ProblemUpdate) ClearMessages() *ProblemUpdate {
 }
 
 // RemoveMessageIDs removes the "messages" edge to Message entities by IDs.
-func (pu *ProblemUpdate) RemoveMessageIDs(ids ...uuid.UUID) *ProblemUpdate {
+func (pu *ProblemUpdate) RemoveMessageIDs(ids ...types.MessageID) *ProblemUpdate {
 	pu.mutation.RemoveMessageIDs(ids...)
 	return pu
 }
 
 // RemoveMessages removes "messages" edges to Message entities.
 func (pu *ProblemUpdate) RemoveMessages(m ...*Message) *ProblemUpdate {
-	ids := make([]uuid.UUID, len(m))
+	ids := make([]types.MessageID, len(m))
 	for i := range m {
 		ids[i] = m[i].ID
 	}
@@ -181,6 +181,16 @@ func (pu *ProblemUpdate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (pu *ProblemUpdate) check() error {
+	if v, ok := pu.mutation.ChatID(); ok {
+		if err := v.Validate(); err != nil {
+			return &ValidationError{Name: "chat_id", err: fmt.Errorf(`store: validator failed for field "Problem.chat_id": %w`, err)}
+		}
+	}
+	if v, ok := pu.mutation.ManagerID(); ok {
+		if err := v.Validate(); err != nil {
+			return &ValidationError{Name: "manager_id", err: fmt.Errorf(`store: validator failed for field "Problem.manager_id": %w`, err)}
+		}
+	}
 	if pu.mutation.ChatCleared() && len(pu.mutation.ChatIDs()) > 0 {
 		return errors.New(`store: clearing a required unique edge "Problem.chat"`)
 	}
@@ -317,29 +327,29 @@ type ProblemUpdateOne struct {
 }
 
 // SetChatID sets the "chat_id" field.
-func (puo *ProblemUpdateOne) SetChatID(u uuid.UUID) *ProblemUpdateOne {
-	puo.mutation.SetChatID(u)
+func (puo *ProblemUpdateOne) SetChatID(ti types.ChatID) *ProblemUpdateOne {
+	puo.mutation.SetChatID(ti)
 	return puo
 }
 
 // SetNillableChatID sets the "chat_id" field if the given value is not nil.
-func (puo *ProblemUpdateOne) SetNillableChatID(u *uuid.UUID) *ProblemUpdateOne {
-	if u != nil {
-		puo.SetChatID(*u)
+func (puo *ProblemUpdateOne) SetNillableChatID(ti *types.ChatID) *ProblemUpdateOne {
+	if ti != nil {
+		puo.SetChatID(*ti)
 	}
 	return puo
 }
 
 // SetManagerID sets the "manager_id" field.
-func (puo *ProblemUpdateOne) SetManagerID(u uuid.UUID) *ProblemUpdateOne {
-	puo.mutation.SetManagerID(u)
+func (puo *ProblemUpdateOne) SetManagerID(ti types.UserID) *ProblemUpdateOne {
+	puo.mutation.SetManagerID(ti)
 	return puo
 }
 
 // SetNillableManagerID sets the "manager_id" field if the given value is not nil.
-func (puo *ProblemUpdateOne) SetNillableManagerID(u *uuid.UUID) *ProblemUpdateOne {
-	if u != nil {
-		puo.SetManagerID(*u)
+func (puo *ProblemUpdateOne) SetNillableManagerID(ti *types.UserID) *ProblemUpdateOne {
+	if ti != nil {
+		puo.SetManagerID(*ti)
 	}
 	return puo
 }
@@ -390,14 +400,14 @@ func (puo *ProblemUpdateOne) SetChat(c *Chat) *ProblemUpdateOne {
 }
 
 // AddMessageIDs adds the "messages" edge to the Message entity by IDs.
-func (puo *ProblemUpdateOne) AddMessageIDs(ids ...uuid.UUID) *ProblemUpdateOne {
+func (puo *ProblemUpdateOne) AddMessageIDs(ids ...types.MessageID) *ProblemUpdateOne {
 	puo.mutation.AddMessageIDs(ids...)
 	return puo
 }
 
 // AddMessages adds the "messages" edges to the Message entity.
 func (puo *ProblemUpdateOne) AddMessages(m ...*Message) *ProblemUpdateOne {
-	ids := make([]uuid.UUID, len(m))
+	ids := make([]types.MessageID, len(m))
 	for i := range m {
 		ids[i] = m[i].ID
 	}
@@ -422,14 +432,14 @@ func (puo *ProblemUpdateOne) ClearMessages() *ProblemUpdateOne {
 }
 
 // RemoveMessageIDs removes the "messages" edge to Message entities by IDs.
-func (puo *ProblemUpdateOne) RemoveMessageIDs(ids ...uuid.UUID) *ProblemUpdateOne {
+func (puo *ProblemUpdateOne) RemoveMessageIDs(ids ...types.MessageID) *ProblemUpdateOne {
 	puo.mutation.RemoveMessageIDs(ids...)
 	return puo
 }
 
 // RemoveMessages removes "messages" edges to Message entities.
 func (puo *ProblemUpdateOne) RemoveMessages(m ...*Message) *ProblemUpdateOne {
-	ids := make([]uuid.UUID, len(m))
+	ids := make([]types.MessageID, len(m))
 	for i := range m {
 		ids[i] = m[i].ID
 	}
@@ -478,6 +488,16 @@ func (puo *ProblemUpdateOne) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (puo *ProblemUpdateOne) check() error {
+	if v, ok := puo.mutation.ChatID(); ok {
+		if err := v.Validate(); err != nil {
+			return &ValidationError{Name: "chat_id", err: fmt.Errorf(`store: validator failed for field "Problem.chat_id": %w`, err)}
+		}
+	}
+	if v, ok := puo.mutation.ManagerID(); ok {
+		if err := v.Validate(); err != nil {
+			return &ValidationError{Name: "manager_id", err: fmt.Errorf(`store: validator failed for field "Problem.manager_id": %w`, err)}
+		}
+	}
 	if puo.mutation.ChatCleared() && len(puo.mutation.ChatIDs()) > 0 {
 		return errors.New(`store: clearing a required unique edge "Problem.chat"`)
 	}

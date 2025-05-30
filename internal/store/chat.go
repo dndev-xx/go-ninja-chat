@@ -10,16 +10,16 @@ import (
 	"entgo.io/ent"
 	"entgo.io/ent/dialect/sql"
 	"github.com/dndev-xx/go-ninja-chat/internal/store/chat"
-	"github.com/google/uuid"
+	"github.com/dndev-xx/go-ninja-chat/internal/types"
 )
 
 // Chat is the model entity for the Chat schema.
 type Chat struct {
 	config `json:"-"`
 	// ID of the ent.
-	ID uuid.UUID `json:"id,omitempty"`
+	ID types.ChatID `json:"id,omitempty"`
 	// ClientID holds the value of the "client_id" field.
-	ClientID uuid.UUID `json:"client_id,omitempty"`
+	ClientID types.UserID `json:"client_id,omitempty"`
 	// CreatedAt holds the value of the "created_at" field.
 	CreatedAt time.Time `json:"created_at,omitempty"`
 	// Edges holds the relations/edges for other nodes in the graph.
@@ -64,8 +64,10 @@ func (*Chat) scanValues(columns []string) ([]any, error) {
 		switch columns[i] {
 		case chat.FieldCreatedAt:
 			values[i] = new(sql.NullTime)
-		case chat.FieldID, chat.FieldClientID:
-			values[i] = new(uuid.UUID)
+		case chat.FieldID:
+			values[i] = new(types.ChatID)
+		case chat.FieldClientID:
+			values[i] = new(types.UserID)
 		default:
 			values[i] = new(sql.UnknownType)
 		}
@@ -82,13 +84,13 @@ func (c *Chat) assignValues(columns []string, values []any) error {
 	for i := range columns {
 		switch columns[i] {
 		case chat.FieldID:
-			if value, ok := values[i].(*uuid.UUID); !ok {
+			if value, ok := values[i].(*types.ChatID); !ok {
 				return fmt.Errorf("unexpected type %T for field id", values[i])
 			} else if value != nil {
 				c.ID = *value
 			}
 		case chat.FieldClientID:
-			if value, ok := values[i].(*uuid.UUID); !ok {
+			if value, ok := values[i].(*types.UserID); !ok {
 				return fmt.Errorf("unexpected type %T for field client_id", values[i])
 			} else if value != nil {
 				c.ClientID = *value

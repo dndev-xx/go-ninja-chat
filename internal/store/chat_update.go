@@ -6,7 +6,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
@@ -15,7 +14,7 @@ import (
 	"github.com/dndev-xx/go-ninja-chat/internal/store/message"
 	"github.com/dndev-xx/go-ninja-chat/internal/store/predicate"
 	"github.com/dndev-xx/go-ninja-chat/internal/store/problem"
-	"github.com/google/uuid"
+	"github.com/dndev-xx/go-ninja-chat/internal/types"
 )
 
 // ChatUpdate is the builder for updating Chat entities.
@@ -32,43 +31,15 @@ func (cu *ChatUpdate) Where(ps ...predicate.Chat) *ChatUpdate {
 	return cu
 }
 
-// SetClientID sets the "client_id" field.
-func (cu *ChatUpdate) SetClientID(u uuid.UUID) *ChatUpdate {
-	cu.mutation.SetClientID(u)
-	return cu
-}
-
-// SetNillableClientID sets the "client_id" field if the given value is not nil.
-func (cu *ChatUpdate) SetNillableClientID(u *uuid.UUID) *ChatUpdate {
-	if u != nil {
-		cu.SetClientID(*u)
-	}
-	return cu
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (cu *ChatUpdate) SetCreatedAt(t time.Time) *ChatUpdate {
-	cu.mutation.SetCreatedAt(t)
-	return cu
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (cu *ChatUpdate) SetNillableCreatedAt(t *time.Time) *ChatUpdate {
-	if t != nil {
-		cu.SetCreatedAt(*t)
-	}
-	return cu
-}
-
 // AddMessageIDs adds the "messages" edge to the Message entity by IDs.
-func (cu *ChatUpdate) AddMessageIDs(ids ...uuid.UUID) *ChatUpdate {
+func (cu *ChatUpdate) AddMessageIDs(ids ...types.MessageID) *ChatUpdate {
 	cu.mutation.AddMessageIDs(ids...)
 	return cu
 }
 
 // AddMessages adds the "messages" edges to the Message entity.
 func (cu *ChatUpdate) AddMessages(m ...*Message) *ChatUpdate {
-	ids := make([]uuid.UUID, len(m))
+	ids := make([]types.MessageID, len(m))
 	for i := range m {
 		ids[i] = m[i].ID
 	}
@@ -76,14 +47,14 @@ func (cu *ChatUpdate) AddMessages(m ...*Message) *ChatUpdate {
 }
 
 // AddProblemIDs adds the "problems" edge to the Problem entity by IDs.
-func (cu *ChatUpdate) AddProblemIDs(ids ...uuid.UUID) *ChatUpdate {
+func (cu *ChatUpdate) AddProblemIDs(ids ...types.ProblemID) *ChatUpdate {
 	cu.mutation.AddProblemIDs(ids...)
 	return cu
 }
 
 // AddProblems adds the "problems" edges to the Problem entity.
 func (cu *ChatUpdate) AddProblems(p ...*Problem) *ChatUpdate {
-	ids := make([]uuid.UUID, len(p))
+	ids := make([]types.ProblemID, len(p))
 	for i := range p {
 		ids[i] = p[i].ID
 	}
@@ -102,14 +73,14 @@ func (cu *ChatUpdate) ClearMessages() *ChatUpdate {
 }
 
 // RemoveMessageIDs removes the "messages" edge to Message entities by IDs.
-func (cu *ChatUpdate) RemoveMessageIDs(ids ...uuid.UUID) *ChatUpdate {
+func (cu *ChatUpdate) RemoveMessageIDs(ids ...types.MessageID) *ChatUpdate {
 	cu.mutation.RemoveMessageIDs(ids...)
 	return cu
 }
 
 // RemoveMessages removes "messages" edges to Message entities.
 func (cu *ChatUpdate) RemoveMessages(m ...*Message) *ChatUpdate {
-	ids := make([]uuid.UUID, len(m))
+	ids := make([]types.MessageID, len(m))
 	for i := range m {
 		ids[i] = m[i].ID
 	}
@@ -123,14 +94,14 @@ func (cu *ChatUpdate) ClearProblems() *ChatUpdate {
 }
 
 // RemoveProblemIDs removes the "problems" edge to Problem entities by IDs.
-func (cu *ChatUpdate) RemoveProblemIDs(ids ...uuid.UUID) *ChatUpdate {
+func (cu *ChatUpdate) RemoveProblemIDs(ids ...types.ProblemID) *ChatUpdate {
 	cu.mutation.RemoveProblemIDs(ids...)
 	return cu
 }
 
 // RemoveProblems removes "problems" edges to Problem entities.
 func (cu *ChatUpdate) RemoveProblems(p ...*Problem) *ChatUpdate {
-	ids := make([]uuid.UUID, len(p))
+	ids := make([]types.ProblemID, len(p))
 	for i := range p {
 		ids[i] = p[i].ID
 	}
@@ -178,12 +149,6 @@ func (cu *ChatUpdate) sqlSave(ctx context.Context) (n int, err error) {
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := cu.mutation.ClientID(); ok {
-		_spec.SetField(chat.FieldClientID, field.TypeUUID, value)
-	}
-	if value, ok := cu.mutation.CreatedAt(); ok {
-		_spec.SetField(chat.FieldCreatedAt, field.TypeTime, value)
 	}
 	if cu.mutation.MessagesCleared() {
 		edge := &sqlgraph.EdgeSpec{
@@ -297,43 +262,15 @@ type ChatUpdateOne struct {
 	modifiers []func(*sql.UpdateBuilder)
 }
 
-// SetClientID sets the "client_id" field.
-func (cuo *ChatUpdateOne) SetClientID(u uuid.UUID) *ChatUpdateOne {
-	cuo.mutation.SetClientID(u)
-	return cuo
-}
-
-// SetNillableClientID sets the "client_id" field if the given value is not nil.
-func (cuo *ChatUpdateOne) SetNillableClientID(u *uuid.UUID) *ChatUpdateOne {
-	if u != nil {
-		cuo.SetClientID(*u)
-	}
-	return cuo
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (cuo *ChatUpdateOne) SetCreatedAt(t time.Time) *ChatUpdateOne {
-	cuo.mutation.SetCreatedAt(t)
-	return cuo
-}
-
-// SetNillableCreatedAt sets the "created_at" field if the given value is not nil.
-func (cuo *ChatUpdateOne) SetNillableCreatedAt(t *time.Time) *ChatUpdateOne {
-	if t != nil {
-		cuo.SetCreatedAt(*t)
-	}
-	return cuo
-}
-
 // AddMessageIDs adds the "messages" edge to the Message entity by IDs.
-func (cuo *ChatUpdateOne) AddMessageIDs(ids ...uuid.UUID) *ChatUpdateOne {
+func (cuo *ChatUpdateOne) AddMessageIDs(ids ...types.MessageID) *ChatUpdateOne {
 	cuo.mutation.AddMessageIDs(ids...)
 	return cuo
 }
 
 // AddMessages adds the "messages" edges to the Message entity.
 func (cuo *ChatUpdateOne) AddMessages(m ...*Message) *ChatUpdateOne {
-	ids := make([]uuid.UUID, len(m))
+	ids := make([]types.MessageID, len(m))
 	for i := range m {
 		ids[i] = m[i].ID
 	}
@@ -341,14 +278,14 @@ func (cuo *ChatUpdateOne) AddMessages(m ...*Message) *ChatUpdateOne {
 }
 
 // AddProblemIDs adds the "problems" edge to the Problem entity by IDs.
-func (cuo *ChatUpdateOne) AddProblemIDs(ids ...uuid.UUID) *ChatUpdateOne {
+func (cuo *ChatUpdateOne) AddProblemIDs(ids ...types.ProblemID) *ChatUpdateOne {
 	cuo.mutation.AddProblemIDs(ids...)
 	return cuo
 }
 
 // AddProblems adds the "problems" edges to the Problem entity.
 func (cuo *ChatUpdateOne) AddProblems(p ...*Problem) *ChatUpdateOne {
-	ids := make([]uuid.UUID, len(p))
+	ids := make([]types.ProblemID, len(p))
 	for i := range p {
 		ids[i] = p[i].ID
 	}
@@ -367,14 +304,14 @@ func (cuo *ChatUpdateOne) ClearMessages() *ChatUpdateOne {
 }
 
 // RemoveMessageIDs removes the "messages" edge to Message entities by IDs.
-func (cuo *ChatUpdateOne) RemoveMessageIDs(ids ...uuid.UUID) *ChatUpdateOne {
+func (cuo *ChatUpdateOne) RemoveMessageIDs(ids ...types.MessageID) *ChatUpdateOne {
 	cuo.mutation.RemoveMessageIDs(ids...)
 	return cuo
 }
 
 // RemoveMessages removes "messages" edges to Message entities.
 func (cuo *ChatUpdateOne) RemoveMessages(m ...*Message) *ChatUpdateOne {
-	ids := make([]uuid.UUID, len(m))
+	ids := make([]types.MessageID, len(m))
 	for i := range m {
 		ids[i] = m[i].ID
 	}
@@ -388,14 +325,14 @@ func (cuo *ChatUpdateOne) ClearProblems() *ChatUpdateOne {
 }
 
 // RemoveProblemIDs removes the "problems" edge to Problem entities by IDs.
-func (cuo *ChatUpdateOne) RemoveProblemIDs(ids ...uuid.UUID) *ChatUpdateOne {
+func (cuo *ChatUpdateOne) RemoveProblemIDs(ids ...types.ProblemID) *ChatUpdateOne {
 	cuo.mutation.RemoveProblemIDs(ids...)
 	return cuo
 }
 
 // RemoveProblems removes "problems" edges to Problem entities.
 func (cuo *ChatUpdateOne) RemoveProblems(p ...*Problem) *ChatUpdateOne {
-	ids := make([]uuid.UUID, len(p))
+	ids := make([]types.ProblemID, len(p))
 	for i := range p {
 		ids[i] = p[i].ID
 	}
@@ -473,12 +410,6 @@ func (cuo *ChatUpdateOne) sqlSave(ctx context.Context) (_node *Chat, err error) 
 				ps[i](selector)
 			}
 		}
-	}
-	if value, ok := cuo.mutation.ClientID(); ok {
-		_spec.SetField(chat.FieldClientID, field.TypeUUID, value)
-	}
-	if value, ok := cuo.mutation.CreatedAt(); ok {
-		_spec.SetField(chat.FieldCreatedAt, field.TypeTime, value)
 	}
 	if cuo.mutation.MessagesCleared() {
 		edge := &sqlgraph.EdgeSpec{

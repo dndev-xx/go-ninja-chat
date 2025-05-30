@@ -15,7 +15,7 @@ import (
 	"github.com/dndev-xx/go-ninja-chat/internal/store/chat"
 	"github.com/dndev-xx/go-ninja-chat/internal/store/message"
 	"github.com/dndev-xx/go-ninja-chat/internal/store/problem"
-	"github.com/google/uuid"
+	"github.com/dndev-xx/go-ninja-chat/internal/types"
 )
 
 // ChatCreate is the builder for creating a Chat entity.
@@ -27,8 +27,8 @@ type ChatCreate struct {
 }
 
 // SetClientID sets the "client_id" field.
-func (cc *ChatCreate) SetClientID(u uuid.UUID) *ChatCreate {
-	cc.mutation.SetClientID(u)
+func (cc *ChatCreate) SetClientID(ti types.UserID) *ChatCreate {
+	cc.mutation.SetClientID(ti)
 	return cc
 }
 
@@ -47,28 +47,28 @@ func (cc *ChatCreate) SetNillableCreatedAt(t *time.Time) *ChatCreate {
 }
 
 // SetID sets the "id" field.
-func (cc *ChatCreate) SetID(u uuid.UUID) *ChatCreate {
-	cc.mutation.SetID(u)
+func (cc *ChatCreate) SetID(ti types.ChatID) *ChatCreate {
+	cc.mutation.SetID(ti)
 	return cc
 }
 
 // SetNillableID sets the "id" field if the given value is not nil.
-func (cc *ChatCreate) SetNillableID(u *uuid.UUID) *ChatCreate {
-	if u != nil {
-		cc.SetID(*u)
+func (cc *ChatCreate) SetNillableID(ti *types.ChatID) *ChatCreate {
+	if ti != nil {
+		cc.SetID(*ti)
 	}
 	return cc
 }
 
 // AddMessageIDs adds the "messages" edge to the Message entity by IDs.
-func (cc *ChatCreate) AddMessageIDs(ids ...uuid.UUID) *ChatCreate {
+func (cc *ChatCreate) AddMessageIDs(ids ...types.MessageID) *ChatCreate {
 	cc.mutation.AddMessageIDs(ids...)
 	return cc
 }
 
 // AddMessages adds the "messages" edges to the Message entity.
 func (cc *ChatCreate) AddMessages(m ...*Message) *ChatCreate {
-	ids := make([]uuid.UUID, len(m))
+	ids := make([]types.MessageID, len(m))
 	for i := range m {
 		ids[i] = m[i].ID
 	}
@@ -76,14 +76,14 @@ func (cc *ChatCreate) AddMessages(m ...*Message) *ChatCreate {
 }
 
 // AddProblemIDs adds the "problems" edge to the Problem entity by IDs.
-func (cc *ChatCreate) AddProblemIDs(ids ...uuid.UUID) *ChatCreate {
+func (cc *ChatCreate) AddProblemIDs(ids ...types.ProblemID) *ChatCreate {
 	cc.mutation.AddProblemIDs(ids...)
 	return cc
 }
 
 // AddProblems adds the "problems" edges to the Problem entity.
 func (cc *ChatCreate) AddProblems(p ...*Problem) *ChatCreate {
-	ids := make([]uuid.UUID, len(p))
+	ids := make([]types.ProblemID, len(p))
 	for i := range p {
 		ids[i] = p[i].ID
 	}
@@ -140,8 +140,18 @@ func (cc *ChatCreate) check() error {
 	if _, ok := cc.mutation.ClientID(); !ok {
 		return &ValidationError{Name: "client_id", err: errors.New(`store: missing required field "Chat.client_id"`)}
 	}
+	if v, ok := cc.mutation.ClientID(); ok {
+		if err := v.Validate(); err != nil {
+			return &ValidationError{Name: "client_id", err: fmt.Errorf(`store: validator failed for field "Chat.client_id": %w`, err)}
+		}
+	}
 	if _, ok := cc.mutation.CreatedAt(); !ok {
 		return &ValidationError{Name: "created_at", err: errors.New(`store: missing required field "Chat.created_at"`)}
+	}
+	if v, ok := cc.mutation.ID(); ok {
+		if err := v.Validate(); err != nil {
+			return &ValidationError{Name: "id", err: fmt.Errorf(`store: validator failed for field "Chat.id": %w`, err)}
+		}
 	}
 	return nil
 }
@@ -158,7 +168,7 @@ func (cc *ChatCreate) sqlSave(ctx context.Context) (*Chat, error) {
 		return nil, err
 	}
 	if _spec.ID.Value != nil {
-		if id, ok := _spec.ID.Value.(*uuid.UUID); ok {
+		if id, ok := _spec.ID.Value.(*types.ChatID); ok {
 			_node.ID = *id
 		} else if err := _node.ID.Scan(_spec.ID.Value); err != nil {
 			return nil, err
@@ -271,30 +281,6 @@ type (
 	}
 )
 
-// SetClientID sets the "client_id" field.
-func (u *ChatUpsert) SetClientID(v uuid.UUID) *ChatUpsert {
-	u.Set(chat.FieldClientID, v)
-	return u
-}
-
-// UpdateClientID sets the "client_id" field to the value that was provided on create.
-func (u *ChatUpsert) UpdateClientID() *ChatUpsert {
-	u.SetExcluded(chat.FieldClientID)
-	return u
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *ChatUpsert) SetCreatedAt(v time.Time) *ChatUpsert {
-	u.Set(chat.FieldCreatedAt, v)
-	return u
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *ChatUpsert) UpdateCreatedAt() *ChatUpsert {
-	u.SetExcluded(chat.FieldCreatedAt)
-	return u
-}
-
 // UpdateNewValues updates the mutable fields using the new values that were set on create except the ID field.
 // Using this option is equivalent to using:
 //
@@ -311,6 +297,12 @@ func (u *ChatUpsertOne) UpdateNewValues() *ChatUpsertOne {
 	u.create.conflict = append(u.create.conflict, sql.ResolveWith(func(s *sql.UpdateSet) {
 		if _, exists := u.create.mutation.ID(); exists {
 			s.SetIgnore(chat.FieldID)
+		}
+		if _, exists := u.create.mutation.ClientID(); exists {
+			s.SetIgnore(chat.FieldClientID)
+		}
+		if _, exists := u.create.mutation.CreatedAt(); exists {
+			s.SetIgnore(chat.FieldCreatedAt)
 		}
 	}))
 	return u
@@ -343,34 +335,6 @@ func (u *ChatUpsertOne) Update(set func(*ChatUpsert)) *ChatUpsertOne {
 	return u
 }
 
-// SetClientID sets the "client_id" field.
-func (u *ChatUpsertOne) SetClientID(v uuid.UUID) *ChatUpsertOne {
-	return u.Update(func(s *ChatUpsert) {
-		s.SetClientID(v)
-	})
-}
-
-// UpdateClientID sets the "client_id" field to the value that was provided on create.
-func (u *ChatUpsertOne) UpdateClientID() *ChatUpsertOne {
-	return u.Update(func(s *ChatUpsert) {
-		s.UpdateClientID()
-	})
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *ChatUpsertOne) SetCreatedAt(v time.Time) *ChatUpsertOne {
-	return u.Update(func(s *ChatUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *ChatUpsertOne) UpdateCreatedAt() *ChatUpsertOne {
-	return u.Update(func(s *ChatUpsert) {
-		s.UpdateCreatedAt()
-	})
-}
-
 // Exec executes the query.
 func (u *ChatUpsertOne) Exec(ctx context.Context) error {
 	if len(u.create.conflict) == 0 {
@@ -387,7 +351,7 @@ func (u *ChatUpsertOne) ExecX(ctx context.Context) {
 }
 
 // Exec executes the UPSERT query and returns the inserted/updated ID.
-func (u *ChatUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
+func (u *ChatUpsertOne) ID(ctx context.Context) (id types.ChatID, err error) {
 	if u.create.driver.Dialect() == dialect.MySQL {
 		// In case of "ON CONFLICT", there is no way to get back non-numeric ID
 		// fields from the database since MySQL does not support the RETURNING clause.
@@ -401,7 +365,7 @@ func (u *ChatUpsertOne) ID(ctx context.Context) (id uuid.UUID, err error) {
 }
 
 // IDX is like ID, but panics if an error occurs.
-func (u *ChatUpsertOne) IDX(ctx context.Context) uuid.UUID {
+func (u *ChatUpsertOne) IDX(ctx context.Context) types.ChatID {
 	id, err := u.ID(ctx)
 	if err != nil {
 		panic(err)
@@ -554,6 +518,12 @@ func (u *ChatUpsertBulk) UpdateNewValues() *ChatUpsertBulk {
 			if _, exists := b.mutation.ID(); exists {
 				s.SetIgnore(chat.FieldID)
 			}
+			if _, exists := b.mutation.ClientID(); exists {
+				s.SetIgnore(chat.FieldClientID)
+			}
+			if _, exists := b.mutation.CreatedAt(); exists {
+				s.SetIgnore(chat.FieldCreatedAt)
+			}
 		}
 	}))
 	return u
@@ -584,34 +554,6 @@ func (u *ChatUpsertBulk) Update(set func(*ChatUpsert)) *ChatUpsertBulk {
 		set(&ChatUpsert{UpdateSet: update})
 	}))
 	return u
-}
-
-// SetClientID sets the "client_id" field.
-func (u *ChatUpsertBulk) SetClientID(v uuid.UUID) *ChatUpsertBulk {
-	return u.Update(func(s *ChatUpsert) {
-		s.SetClientID(v)
-	})
-}
-
-// UpdateClientID sets the "client_id" field to the value that was provided on create.
-func (u *ChatUpsertBulk) UpdateClientID() *ChatUpsertBulk {
-	return u.Update(func(s *ChatUpsert) {
-		s.UpdateClientID()
-	})
-}
-
-// SetCreatedAt sets the "created_at" field.
-func (u *ChatUpsertBulk) SetCreatedAt(v time.Time) *ChatUpsertBulk {
-	return u.Update(func(s *ChatUpsert) {
-		s.SetCreatedAt(v)
-	})
-}
-
-// UpdateCreatedAt sets the "created_at" field to the value that was provided on create.
-func (u *ChatUpsertBulk) UpdateCreatedAt() *ChatUpsertBulk {
-	return u.Update(func(s *ChatUpsert) {
-		s.UpdateCreatedAt()
-	})
 }
 
 // Exec executes the query.

@@ -14,6 +14,7 @@ SWAGGER_YAML := "./api/client.v1.swagger.yaml"
 GEN_TYPES_OUT = internal/server-client/v1/pkg/types.gen.go
 GEN_SERVER_OUT = internal/server-client/v1/pkg/server.gen.go
 GEN_CLIENT_OUT = internal/server-client/v1/pkg/client.gen.go
+GEN_SPEC_OUT = internal/server-client/v1/pkg/spec.gen.go
 
 # ANSI color codes for better output
 GREEN  := \033[32m
@@ -22,8 +23,8 @@ RED    := \033[31m
 RESET  := \033[0m
 
 # Phony targets declaration
-.PHONY: build run run-client gen_swagger gen_types test test-fail test-it lint tidy gen \
-        up up-db up-swagger down db_status db_logs db_stop db_clean sentry_update help
+.PHONY: build run run-client gen_swagger gen_types test test-fail test-it lint tidy gen gen_ent \
+        up up-db up-swagger down db_status db_logs db_stop db_clean sentry_updat help
 
 build:
 	@echo "$(YELLOW)Building project...$(RESET)"
@@ -47,17 +48,23 @@ gen_swagger:
       -generate types \
       -o $(GEN_TYPES_OUT) \
       $(SWAGGER_YAML)
-    
+
 	oapi-codegen \
       -package pkg \
       -generate echo-server \
       -o $(GEN_SERVER_OUT) \
       $(SWAGGER_YAML)
-    
+
 	oapi-codegen \
       -package pkg \
       -generate client \
       -o $(GEN_CLIENT_OUT) \
+      $(SWAGGER_YAML)
+
+	oapi-codegen \
+	  -package pkg \
+	  -generate spec \
+      -o $(GEN_SPEC_OUT) \
       $(SWAGGER_YAML)
 	@echo "$(GREEN)Execution completed.$(RESET)"
 
@@ -68,7 +75,7 @@ gen_types:
 
 test:
 	@echo "$(YELLOW)Running unit tests...$(RESET)"
-	go test ./... -v
+	go test -v ./...
 	@echo "$(GREEN)Tests completed successfully.$(RESET)"
 
 test-fail:
@@ -78,7 +85,17 @@ test-fail:
 
 test-it:
 	@echo "$(YELLOW)Running integration tests...$(RESET)"
-	go test -tags integration ./...
+	TEST_LOG_LEVEL=info \
+	TEST_PSQL_ADDRESS=localhost:5433 \
+	TEST_PSQL_USER=chat-service \
+	TEST_PSQL_PASSWORD=chat-service \
+	TEST_PSQL_DEBUG=false \
+	TEST_KEYCLOAK_REALM=Bank \
+	TEST_KEYCLOAK_CLIENT_ID=integration-testing \
+	TEST_KEYCLOAK_CLIENT_SECRET=UMvVbOXsYhdE4IoRHOQlPHJ26l4MBLnU \
+	TEST_KEYCLOAK_TEST_USER=integration-testing \
+	TEST_KEYCLOAK_TEST_PASSWORD=integration-testing \
+	go test -tags integration -count 1 -race ./...
 	@echo "$(GREEN)Tests completed successfully.$(RESET)"
 
 lint:
@@ -95,6 +112,11 @@ tidy:
 gen:
 	@echo "$(YELLOW)Generating code...$(RESET)"
 	go generate ./...
+	@echo "$(GREEN)Code generation completed successfully.$(RESET)"
+
+gen_ent:
+	@echo "$(YELLOW)Generating code...$(RESET)"
+	ent generate ./internal/store/schema
 	@echo "$(GREEN)Code generation completed successfully.$(RESET)"
 # run only linux
 up:
@@ -142,6 +164,16 @@ sentry_update:
 	docker compose -f $(COMPOSE_SENTRY_FILE) run --rm sentry upgrade
 	@echo "$(GREEN)Sentry migrations updated successfully.$(RESET)"
 
+heap:
+	@echo "$(YELLOW)Updating Sentry migrations...$(RESET)"
+	go tool pprof -http=:8081 http://localhost:8079/debug/pprof/heap
+	@echo "$(GREEN)Sentry migrations updated successfully.$(RESET)"
+
+goroutine:
+	@echo "$(YELLOW)Updating Sentry migrations...$(RESET)"
+	go tool pprof -http=:8081 http://localhost:8079/debug/pprof/goroutine
+	@echo "$(GREEN)Sentry migrations updated successfully.$(RESET)"
+
 help:
 	@echo "$(YELLOW)Available commands:$(RESET)"
 	@echo "  $(GREEN)build$(RESET): Build project"
@@ -153,6 +185,7 @@ help:
 	@echo "  $(GREEN)lint$(RESET): Lint project using golangci-lint"
 	@echo "  $(GREEN)tidy$(RESET): Tidy and vendor dependencies"
 	@echo "  $(GREEN)gen$(RESET): Generate code"
+	@echo "  $(GREEN)gen_ent$(RESET): Generate code for ent"
 	@echo "  $(GREEN)gen_swagger$(RESET): Generate code for swagger"
 	@echo "  $(GREEN)up$(RESET): Start all containers (including Sentry)"
 	@echo "  $(GREEN)up-db$(RESET): Start DB containers"
@@ -163,4 +196,6 @@ help:
 	@echo "  $(GREEN)db_stop$(RESET): Stop the database container"
 	@echo "  $(GREEN)db_clean$(RESET): Clean up the database container"
 	@echo "  $(GREEN)sentry_update$(RESET): Migrate local Sentry"
+	@echo "  $(GREEN)heap$(RESET): Start for visual profile heap"
+	@echo "  $(GREEN)goroutine$(RESET): Start for visual profile goroutine"
 	@echo "  $(GREEN)gen_types$(RESET): Generate types (use TYPE=<name type> to specify type)"

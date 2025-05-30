@@ -5,13 +5,13 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/google/uuid"
 	"github.com/labstack/echo/v4"
 
 	"github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4/middleware"
 
 	keycloakclient "github.com/dndev-xx/go-ninja-chat/internal/clients/keycloak"
+	"github.com/dndev-xx/go-ninja-chat/internal/types"
 )
 
 //go:generate mockgen -source=$GOFILE -destination=mocks/introspector_mock.gen.go -package=middlewaresmocks Introspector
@@ -38,13 +38,13 @@ func NewKeycloakTokenAuth(introspector Introspector, resource, role string) echo
 
 			// Parse token without signature verification
 			parser := jwt.Parser{SkipClaimsValidation: true}
-			token, _, err := parser.ParseUnverified(tokenStr, &claims{})
+			token, _, err := parser.ParseUnverified(tokenStr, &Claims{})
 			if err != nil {
 				return false, echo.NewHTTPError(http.StatusUnauthorized, err.Error())
 			}
 
 			// Validate claims
-			cl, ok := token.Claims.(*claims)
+			cl, ok := token.Claims.(*Claims)
 			if !ok {
 				return false, echo.NewHTTPError(http.StatusUnauthorized, "invalid token claims")
 			}
@@ -76,7 +76,7 @@ func NewKeycloakTokenAuth(introspector Introspector, resource, role string) echo
 	})
 }
 
-func hasResourceRole(cl *claims, resource, role string) bool {
+func hasResourceRole(cl *Claims, resource, role string) bool {
 	if resourceAccess, ok := cl.ResourceAccess[resource]; ok {
 		for _, r := range resourceAccess.Roles {
 			if r == role {
@@ -87,7 +87,7 @@ func hasResourceRole(cl *claims, resource, role string) bool {
 	return false
 }
 
-func MustUserID(eCtx echo.Context) *uuid.UUID {
+func MustUserID(eCtx echo.Context) types.UserID {
 	uid, ok := userID(eCtx)
 	if !ok {
 		panic("no user token in request context")
@@ -95,19 +95,19 @@ func MustUserID(eCtx echo.Context) *uuid.UUID {
 	return uid
 }
 
-func userID(eCtx echo.Context) (*uuid.UUID, bool) {
+func userID(eCtx echo.Context) (types.UserID, bool) {
 	t := eCtx.Get(tokenCtxKey)
 	if t == nil {
-		return nil, false
+		return types.UserIDNil, false
 	}
 
 	tt, ok := t.(*jwt.Token)
 	if !ok {
-		return nil, false
+		return types.UserIDNil, false
 	}
 
-	if claims, ok := tt.Claims.(*claims); ok {
-		return claims.UserID(), true
+	if claims, ok := tt.Claims.(*Claims); ok {
+		return types.UserID(*claims.UserID()), true
 	}
-	return nil, false
+	return types.UserIDNil, false
 }

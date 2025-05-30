@@ -4,7 +4,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/google/uuid"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -14,6 +13,7 @@ import (
 	"github.com/dndev-xx/go-ninja-chat/internal/store/enttest"
 	"github.com/dndev-xx/go-ninja-chat/internal/store/message"
 	"github.com/dndev-xx/go-ninja-chat/internal/store/problem"
+	"github.com/dndev-xx/go-ninja-chat/internal/types"
 )
 
 func TestChatServiceSchema(t *testing.T) {
@@ -26,10 +26,11 @@ func TestChatServiceSchema(t *testing.T) {
 		"file:schema_test.TestChatServiceSchema?mode=memory&cache=shared&_fk=1")
 	defer func() { require.NoError(t, client.Close()) }()
 
-	clientID := uuid.New()
-	managerID := uuid.New()
+	clientID := types.NewUserID()
+	managerID := types.NewUserID()
 
-	// Init chat and problems
+	// Init.
+
 	chat := client.Chat.
 		Create().
 		SetClientID(clientID).
@@ -41,15 +42,15 @@ func TestChatServiceSchema(t *testing.T) {
 				Create().
 				SetChatID(chat.ID).
 				SetManagerID(managerID),
+
 			client.Problem.
 				Create().
 				SetChatID(chat.ID).
 				SetManagerID(managerID),
 		).SaveX(ctx)
 
-	// Create messages
-	messages := client.Message.CreateBulk(
-		// First problem messages
+	_ = client.Message.CreateBulk(
+		// Dialog 1.
 		client.Message.
 			Create().
 			SetChatID(chat.ID).
@@ -57,17 +58,22 @@ func TestChatServiceSchema(t *testing.T) {
 			SetAuthorID(clientID).
 			SetIsVisibleForClient(true).
 			SetIsVisibleForManager(true).
-			SetBody("Client message 1"),
-		client.Message.
-			Create().
-			SetChatID(chat.ID).
-			SetProblemID(problems[0].ID).
-			SetAuthorID(managerID).
-			SetIsVisibleForClient(true).
-			SetIsVisibleForManager(true).
-			SetBody("Manager reply 1"),
+			SetIsBlocked(false).
+			SetIsService(false).
+			SetBody("Hello, manager!"),
 
-		// Second problem messages
+		client.Message.
+			Create().
+			SetChatID(chat.ID).
+			SetProblemID(problems[0].ID).
+			SetAuthorID(managerID).
+			SetIsVisibleForClient(true).
+			SetIsVisibleForManager(true).
+			SetIsBlocked(false).
+			SetIsService(false).
+			SetBody("Hello, client!"),
+
+		// Dialog 2.
 		client.Message.
 			Create().
 			SetChatID(chat.ID).
@@ -75,7 +81,10 @@ func TestChatServiceSchema(t *testing.T) {
 			SetAuthorID(clientID).
 			SetIsVisibleForClient(true).
 			SetIsVisibleForManager(true).
-			SetBody("Client message 2"),
+			SetIsBlocked(false).
+			SetIsService(false).
+			SetBody("I lost my money."),
+
 		client.Message.
 			Create().
 			SetChatID(chat.ID).
@@ -83,105 +92,76 @@ func TestChatServiceSchema(t *testing.T) {
 			SetAuthorID(managerID).
 			SetIsVisibleForClient(true).
 			SetIsVisibleForManager(true).
-			SetBody("Manager reply 2"),
+			SetIsBlocked(false).
+			SetIsService(false).
+			SetBody("No money, no honey."),
 	).SaveX(ctx)
 
-	t.Run("check chat relationships", func(t *testing.T) {
-		// Query chat with related entities
-		queriedChat := client.Chat.Query().
+	// Querying.
+	var chatProblemIDs []types.ProblemID
+	client.Chat.QueryProblems(chat).Select(problem.FieldID).ScanX(ctx, &chatProblemIDs)
+	assert.Equal(t, []types.ProblemID{problems[0].ID, problems[1].ID}, chatProblemIDs)
+
+	p1messages := client.Problem.QueryMessages(problems[0]).Select(message.FieldBody).StringsX(ctx)
+	assert.Equal(t, []string{"Hello, manager!", "Hello, client!"}, p1messages)
+
+	p2messages := client.Problem.QueryMessages(problems[1]).Select(message.FieldBody).StringsX(ctx)
+	assert.Equal(t, []string{"I lost my money.", "No money, no honey."}, p2messages)
+
+	t.Run("assert edges", func(t *testing.T) {
+		chat := client.Chat.Query().
 			Where(storechat.ID(chat.ID)).
-			WithProblems(func(q *store.ProblemQuery) {
-				q.WithMessages()
-			}).
 			WithMessages().
+			WithProblems(func(query *store.ProblemQuery) {
+				query.
+					WithChat().
+					WithMessages(func(query *store.MessageQuery) {
+						query.
+							WithProblem().
+							WithChat()
+					})
+			}).
 			OnlyX(ctx)
 
-		// Verify chat fields
-		assert.Equal(t, clientID, queriedChat.ClientID)
-		assert.NotZero(t, queriedChat.CreatedAt)
+		assert.Len(t, chat.Edges.Problems, 2)
+		assert.Len(t, chat.Edges.Messages, 4)
 
-		// Verify problems
-		require.Len(t, queriedChat.Edges.Problems, 2)
-		assert.Equal(t, problems[0].ID, queriedChat.Edges.Problems[0].ID)
-		assert.Equal(t, problems[1].ID, queriedChat.Edges.Problems[1].ID)
+		p1, p2 := chat.Edges.Problems[0], chat.Edges.Problems[1]
+		{
+			require.NotNil(t, p1.Edges.Chat)
+			assert.Equal(t, chat.ID, p1.Edges.Chat.ID)
+			assert.Len(t, p1.Edges.Messages, 2)
 
-		// Verify messages
-		require.Len(t, queriedChat.Edges.Messages, 4)
-		for _, msg := range queriedChat.Edges.Messages {
-			assert.Equal(t, chat.ID, msg.ChatID)
+			require.NotNil(t, p2.Edges.Chat)
+			assert.Equal(t, chat.ID, p2.Edges.Chat.ID)
+			assert.Len(t, p2.Edges.Messages, 2)
 		}
 
-		// Verify problem messages
-		for _, prob := range queriedChat.Edges.Problems {
-			assert.Len(t, prob.Edges.Messages, 2)
-			for _, msg := range prob.Edges.Messages {
-				assert.Equal(t, prob.ID, msg.ProblemID)
-			}
-		}
-	})
+		m11, m21 := p1.Edges.Messages[0], p2.Edges.Messages[1]
+		{
+			require.NotNil(t, m11.Edges.Chat)
+			assert.Equal(t, chat.ID, m11.Edges.Chat.ID)
+			require.NotNil(t, m11.Edges.Problem)
+			assert.Equal(t, p1.ID, m11.Edges.Problem.ID)
 
-	t.Run("check problem relationships", func(t *testing.T) {
-		for _, prob := range problems {
-			queriedProblem := client.Problem.Query().
-				Where(problem.ID(prob.ID)).
-				WithChat().
-				WithMessages().
-				OnlyX(ctx)
-
-			// Verify problem fields
-			assert.Equal(t, chat.ID, queriedProblem.ChatID)
-			assert.Equal(t, managerID, queriedProblem.ManagerID)
-			assert.NotZero(t, queriedProblem.CreatedAt)
-
-			// Verify chat relationship
-			require.NotNil(t, queriedProblem.Edges.Chat)
-			assert.Equal(t, chat.ID, queriedProblem.Edges.Chat.ID)
-
-			// Verify messages
-			require.Len(t, queriedProblem.Edges.Messages, 2)
-			for _, msg := range queriedProblem.Edges.Messages {
-				assert.Equal(t, prob.ID, msg.ProblemID)
-			}
+			require.NotNil(t, m21.Edges.Chat)
+			assert.Equal(t, chat.ID, m21.Edges.Chat.ID)
+			require.NotNil(t, m21.Edges.Problem)
+			assert.Equal(t, p2.ID, m21.Edges.Problem.ID)
 		}
 	})
 
-	t.Run("check message relationships", func(t *testing.T) {
-		for _, msg := range messages {
-			queriedMessage := client.Message.Query().
-				Where(message.ID(msg.ID)).
-				WithChat().
-				WithProblem().
-				OnlyX(ctx)
-
-			// Verify message fields
-			assert.Equal(t, chat.ID, queriedMessage.ChatID)
-			assert.True(t, queriedMessage.IsVisibleForClient)
-			assert.True(t, queriedMessage.IsVisibleForManager)
-			assert.NotZero(t, queriedMessage.CreatedAt)
-
-			// Verify chat relationship
-			require.NotNil(t, queriedMessage.Edges.Chat)
-			assert.Equal(t, chat.ID, queriedMessage.Edges.Chat.ID)
-
-			// Verify problem relationship
-			require.NotNil(t, queriedMessage.Edges.Problem)
-			assert.Contains(t, []uuid.UUID{problems[0].ID, problems[1].ID}, queriedMessage.Edges.Problem.ID)
-		}
-	})
-
-	t.Run("unique client constraint", func(t *testing.T) {
-		_, err := client.Chat.
-			Create().
-			SetClientID(clientID).
-			Save(ctx)
+	t.Run("client must has only one chat", func(t *testing.T) {
+		_, err := client.Chat.Create().SetClientID(clientID).Save(ctx)
+		t.Log(err)
 		require.Error(t, err)
 	})
-	
-	t.Run("non-zero client ID required", func(t *testing.T) {
-		_, err := client.Chat.
-			Create().
-			SetClientID(uuid.Nil).
+
+	t.Run("do not accept zero ids", func(t *testing.T) {
+		_, err := client.Chat.Create().
+			SetClientID(types.UserID{}).
 			Save(ctx)
-		require.NoError(t, err)
+		t.Log(err)
+		require.Error(t, err)
 	})
 }

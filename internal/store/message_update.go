@@ -15,7 +15,7 @@ import (
 	"github.com/dndev-xx/go-ninja-chat/internal/store/message"
 	"github.com/dndev-xx/go-ninja-chat/internal/store/predicate"
 	"github.com/dndev-xx/go-ninja-chat/internal/store/problem"
-	"github.com/google/uuid"
+	"github.com/dndev-xx/go-ninja-chat/internal/types"
 )
 
 // MessageUpdate is the builder for updating Message entities.
@@ -33,43 +33,29 @@ func (mu *MessageUpdate) Where(ps ...predicate.Message) *MessageUpdate {
 }
 
 // SetChatID sets the "chat_id" field.
-func (mu *MessageUpdate) SetChatID(u uuid.UUID) *MessageUpdate {
-	mu.mutation.SetChatID(u)
+func (mu *MessageUpdate) SetChatID(ti types.ChatID) *MessageUpdate {
+	mu.mutation.SetChatID(ti)
 	return mu
 }
 
 // SetNillableChatID sets the "chat_id" field if the given value is not nil.
-func (mu *MessageUpdate) SetNillableChatID(u *uuid.UUID) *MessageUpdate {
-	if u != nil {
-		mu.SetChatID(*u)
+func (mu *MessageUpdate) SetNillableChatID(ti *types.ChatID) *MessageUpdate {
+	if ti != nil {
+		mu.SetChatID(*ti)
 	}
 	return mu
 }
 
 // SetProblemID sets the "problem_id" field.
-func (mu *MessageUpdate) SetProblemID(u uuid.UUID) *MessageUpdate {
-	mu.mutation.SetProblemID(u)
+func (mu *MessageUpdate) SetProblemID(ti types.ProblemID) *MessageUpdate {
+	mu.mutation.SetProblemID(ti)
 	return mu
 }
 
 // SetNillableProblemID sets the "problem_id" field if the given value is not nil.
-func (mu *MessageUpdate) SetNillableProblemID(u *uuid.UUID) *MessageUpdate {
-	if u != nil {
-		mu.SetProblemID(*u)
-	}
-	return mu
-}
-
-// SetAuthorID sets the "author_id" field.
-func (mu *MessageUpdate) SetAuthorID(u uuid.UUID) *MessageUpdate {
-	mu.mutation.SetAuthorID(u)
-	return mu
-}
-
-// SetNillableAuthorID sets the "author_id" field if the given value is not nil.
-func (mu *MessageUpdate) SetNillableAuthorID(u *uuid.UUID) *MessageUpdate {
-	if u != nil {
-		mu.SetAuthorID(*u)
+func (mu *MessageUpdate) SetNillableProblemID(ti *types.ProblemID) *MessageUpdate {
+	if ti != nil {
+		mu.SetProblemID(*ti)
 	}
 	return mu
 }
@@ -98,20 +84,6 @@ func (mu *MessageUpdate) SetIsVisibleForManager(b bool) *MessageUpdate {
 func (mu *MessageUpdate) SetNillableIsVisibleForManager(b *bool) *MessageUpdate {
 	if b != nil {
 		mu.SetIsVisibleForManager(*b)
-	}
-	return mu
-}
-
-// SetBody sets the "body" field.
-func (mu *MessageUpdate) SetBody(s string) *MessageUpdate {
-	mu.mutation.SetBody(s)
-	return mu
-}
-
-// SetNillableBody sets the "body" field if the given value is not nil.
-func (mu *MessageUpdate) SetNillableBody(s *string) *MessageUpdate {
-	if s != nil {
-		mu.SetBody(*s)
 	}
 	return mu
 }
@@ -146,20 +118,6 @@ func (mu *MessageUpdate) SetIsBlocked(b bool) *MessageUpdate {
 func (mu *MessageUpdate) SetNillableIsBlocked(b *bool) *MessageUpdate {
 	if b != nil {
 		mu.SetIsBlocked(*b)
-	}
-	return mu
-}
-
-// SetIsService sets the "is_service" field.
-func (mu *MessageUpdate) SetIsService(b bool) *MessageUpdate {
-	mu.mutation.SetIsService(b)
-	return mu
-}
-
-// SetNillableIsService sets the "is_service" field if the given value is not nil.
-func (mu *MessageUpdate) SetNillableIsService(b *bool) *MessageUpdate {
-	if b != nil {
-		mu.SetIsService(*b)
 	}
 	return mu
 }
@@ -234,6 +192,16 @@ func (mu *MessageUpdate) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (mu *MessageUpdate) check() error {
+	if v, ok := mu.mutation.ChatID(); ok {
+		if err := v.Validate(); err != nil {
+			return &ValidationError{Name: "chat_id", err: fmt.Errorf(`store: validator failed for field "Message.chat_id": %w`, err)}
+		}
+	}
+	if v, ok := mu.mutation.ProblemID(); ok {
+		if err := v.Validate(); err != nil {
+			return &ValidationError{Name: "problem_id", err: fmt.Errorf(`store: validator failed for field "Message.problem_id": %w`, err)}
+		}
+	}
 	if mu.mutation.ChatCleared() && len(mu.mutation.ChatIDs()) > 0 {
 		return errors.New(`store: clearing a required unique edge "Message.chat"`)
 	}
@@ -261,17 +229,14 @@ func (mu *MessageUpdate) sqlSave(ctx context.Context) (n int, err error) {
 			}
 		}
 	}
-	if value, ok := mu.mutation.AuthorID(); ok {
-		_spec.SetField(message.FieldAuthorID, field.TypeUUID, value)
+	if mu.mutation.AuthorIDCleared() {
+		_spec.ClearField(message.FieldAuthorID, field.TypeUUID)
 	}
 	if value, ok := mu.mutation.IsVisibleForClient(); ok {
 		_spec.SetField(message.FieldIsVisibleForClient, field.TypeBool, value)
 	}
 	if value, ok := mu.mutation.IsVisibleForManager(); ok {
 		_spec.SetField(message.FieldIsVisibleForManager, field.TypeBool, value)
-	}
-	if value, ok := mu.mutation.Body(); ok {
-		_spec.SetField(message.FieldBody, field.TypeString, value)
 	}
 	if value, ok := mu.mutation.CheckedAt(); ok {
 		_spec.SetField(message.FieldCheckedAt, field.TypeTime, value)
@@ -281,9 +246,6 @@ func (mu *MessageUpdate) sqlSave(ctx context.Context) (n int, err error) {
 	}
 	if value, ok := mu.mutation.IsBlocked(); ok {
 		_spec.SetField(message.FieldIsBlocked, field.TypeBool, value)
-	}
-	if value, ok := mu.mutation.IsService(); ok {
-		_spec.SetField(message.FieldIsService, field.TypeBool, value)
 	}
 	if value, ok := mu.mutation.CreatedAt(); ok {
 		_spec.SetField(message.FieldCreatedAt, field.TypeTime, value)
@@ -369,43 +331,29 @@ type MessageUpdateOne struct {
 }
 
 // SetChatID sets the "chat_id" field.
-func (muo *MessageUpdateOne) SetChatID(u uuid.UUID) *MessageUpdateOne {
-	muo.mutation.SetChatID(u)
+func (muo *MessageUpdateOne) SetChatID(ti types.ChatID) *MessageUpdateOne {
+	muo.mutation.SetChatID(ti)
 	return muo
 }
 
 // SetNillableChatID sets the "chat_id" field if the given value is not nil.
-func (muo *MessageUpdateOne) SetNillableChatID(u *uuid.UUID) *MessageUpdateOne {
-	if u != nil {
-		muo.SetChatID(*u)
+func (muo *MessageUpdateOne) SetNillableChatID(ti *types.ChatID) *MessageUpdateOne {
+	if ti != nil {
+		muo.SetChatID(*ti)
 	}
 	return muo
 }
 
 // SetProblemID sets the "problem_id" field.
-func (muo *MessageUpdateOne) SetProblemID(u uuid.UUID) *MessageUpdateOne {
-	muo.mutation.SetProblemID(u)
+func (muo *MessageUpdateOne) SetProblemID(ti types.ProblemID) *MessageUpdateOne {
+	muo.mutation.SetProblemID(ti)
 	return muo
 }
 
 // SetNillableProblemID sets the "problem_id" field if the given value is not nil.
-func (muo *MessageUpdateOne) SetNillableProblemID(u *uuid.UUID) *MessageUpdateOne {
-	if u != nil {
-		muo.SetProblemID(*u)
-	}
-	return muo
-}
-
-// SetAuthorID sets the "author_id" field.
-func (muo *MessageUpdateOne) SetAuthorID(u uuid.UUID) *MessageUpdateOne {
-	muo.mutation.SetAuthorID(u)
-	return muo
-}
-
-// SetNillableAuthorID sets the "author_id" field if the given value is not nil.
-func (muo *MessageUpdateOne) SetNillableAuthorID(u *uuid.UUID) *MessageUpdateOne {
-	if u != nil {
-		muo.SetAuthorID(*u)
+func (muo *MessageUpdateOne) SetNillableProblemID(ti *types.ProblemID) *MessageUpdateOne {
+	if ti != nil {
+		muo.SetProblemID(*ti)
 	}
 	return muo
 }
@@ -434,20 +382,6 @@ func (muo *MessageUpdateOne) SetIsVisibleForManager(b bool) *MessageUpdateOne {
 func (muo *MessageUpdateOne) SetNillableIsVisibleForManager(b *bool) *MessageUpdateOne {
 	if b != nil {
 		muo.SetIsVisibleForManager(*b)
-	}
-	return muo
-}
-
-// SetBody sets the "body" field.
-func (muo *MessageUpdateOne) SetBody(s string) *MessageUpdateOne {
-	muo.mutation.SetBody(s)
-	return muo
-}
-
-// SetNillableBody sets the "body" field if the given value is not nil.
-func (muo *MessageUpdateOne) SetNillableBody(s *string) *MessageUpdateOne {
-	if s != nil {
-		muo.SetBody(*s)
 	}
 	return muo
 }
@@ -482,20 +416,6 @@ func (muo *MessageUpdateOne) SetIsBlocked(b bool) *MessageUpdateOne {
 func (muo *MessageUpdateOne) SetNillableIsBlocked(b *bool) *MessageUpdateOne {
 	if b != nil {
 		muo.SetIsBlocked(*b)
-	}
-	return muo
-}
-
-// SetIsService sets the "is_service" field.
-func (muo *MessageUpdateOne) SetIsService(b bool) *MessageUpdateOne {
-	muo.mutation.SetIsService(b)
-	return muo
-}
-
-// SetNillableIsService sets the "is_service" field if the given value is not nil.
-func (muo *MessageUpdateOne) SetNillableIsService(b *bool) *MessageUpdateOne {
-	if b != nil {
-		muo.SetIsService(*b)
 	}
 	return muo
 }
@@ -583,6 +503,16 @@ func (muo *MessageUpdateOne) ExecX(ctx context.Context) {
 
 // check runs all checks and user-defined validators on the builder.
 func (muo *MessageUpdateOne) check() error {
+	if v, ok := muo.mutation.ChatID(); ok {
+		if err := v.Validate(); err != nil {
+			return &ValidationError{Name: "chat_id", err: fmt.Errorf(`store: validator failed for field "Message.chat_id": %w`, err)}
+		}
+	}
+	if v, ok := muo.mutation.ProblemID(); ok {
+		if err := v.Validate(); err != nil {
+			return &ValidationError{Name: "problem_id", err: fmt.Errorf(`store: validator failed for field "Message.problem_id": %w`, err)}
+		}
+	}
 	if muo.mutation.ChatCleared() && len(muo.mutation.ChatIDs()) > 0 {
 		return errors.New(`store: clearing a required unique edge "Message.chat"`)
 	}
@@ -627,17 +557,14 @@ func (muo *MessageUpdateOne) sqlSave(ctx context.Context) (_node *Message, err e
 			}
 		}
 	}
-	if value, ok := muo.mutation.AuthorID(); ok {
-		_spec.SetField(message.FieldAuthorID, field.TypeUUID, value)
+	if muo.mutation.AuthorIDCleared() {
+		_spec.ClearField(message.FieldAuthorID, field.TypeUUID)
 	}
 	if value, ok := muo.mutation.IsVisibleForClient(); ok {
 		_spec.SetField(message.FieldIsVisibleForClient, field.TypeBool, value)
 	}
 	if value, ok := muo.mutation.IsVisibleForManager(); ok {
 		_spec.SetField(message.FieldIsVisibleForManager, field.TypeBool, value)
-	}
-	if value, ok := muo.mutation.Body(); ok {
-		_spec.SetField(message.FieldBody, field.TypeString, value)
 	}
 	if value, ok := muo.mutation.CheckedAt(); ok {
 		_spec.SetField(message.FieldCheckedAt, field.TypeTime, value)
@@ -647,9 +574,6 @@ func (muo *MessageUpdateOne) sqlSave(ctx context.Context) (_node *Message, err e
 	}
 	if value, ok := muo.mutation.IsBlocked(); ok {
 		_spec.SetField(message.FieldIsBlocked, field.TypeBool, value)
-	}
-	if value, ok := muo.mutation.IsService(); ok {
-		_spec.SetField(message.FieldIsService, field.TypeBool, value)
 	}
 	if value, ok := muo.mutation.CreatedAt(); ok {
 		_spec.SetField(message.FieldCreatedAt, field.TypeTime, value)
