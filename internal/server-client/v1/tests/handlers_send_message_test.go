@@ -35,7 +35,6 @@ func (s *HandlersSuite) TestSendMessage_BindRequestEmptyMsgError() {
 	err := s.handlers.PostSendMessage(eCtx, clientv1.PostSendMessageParams{XRequestID: reqID})
 
 	// Assert.
-	s.T().Log(err.Error())
 	s.Require().Error(err)
 	s.Equal(http.StatusBadRequest, internalerrors.GetServerErrorCode(err))
 	s.Empty(resp.Body)

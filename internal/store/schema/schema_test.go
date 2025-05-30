@@ -28,6 +28,10 @@ func TestChatServiceSchema(t *testing.T) {
 
 	clientID := types.NewUserID()
 	managerID := types.NewUserID()
+	reqID := types.NewRequestID()
+	reqID2 := types.NewRequestID()
+	reqID3 := types.NewRequestID()
+	reqID4 := types.NewRequestID()
 
 	// Init.
 
@@ -60,6 +64,7 @@ func TestChatServiceSchema(t *testing.T) {
 			SetIsVisibleForManager(true).
 			SetIsBlocked(false).
 			SetIsService(false).
+			SetInitialRequestID(reqID).
 			SetBody("Hello, manager!"),
 
 		client.Message.
@@ -71,6 +76,7 @@ func TestChatServiceSchema(t *testing.T) {
 			SetIsVisibleForManager(true).
 			SetIsBlocked(false).
 			SetIsService(false).
+			SetInitialRequestID(reqID2).
 			SetBody("Hello, client!"),
 
 		// Dialog 2.
@@ -83,6 +89,7 @@ func TestChatServiceSchema(t *testing.T) {
 			SetIsVisibleForManager(true).
 			SetIsBlocked(false).
 			SetIsService(false).
+			SetInitialRequestID(reqID3).
 			SetBody("I lost my money."),
 
 		client.Message.
@@ -94,6 +101,7 @@ func TestChatServiceSchema(t *testing.T) {
 			SetIsVisibleForManager(true).
 			SetIsBlocked(false).
 			SetIsService(false).
+			SetInitialRequestID(reqID4).
 			SetBody("No money, no honey."),
 	).SaveX(ctx)
 
