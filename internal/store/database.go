@@ -88,6 +88,16 @@ func (db *Database) Chat(ctx context.Context) *ChatClient {
 	return db.loadClient(ctx).Chat
 }
 
+// FailedJob is the client for interacting with the FailedJob builders.
+func (db *Database) FailedJob(ctx context.Context) *FailedJobClient {
+	return db.loadClient(ctx).FailedJob
+}
+
+// Job is the client for interacting with the Job builders.
+func (db *Database) Job(ctx context.Context) *JobClient {
+	return db.loadClient(ctx).Job
+}
+
 // Message is the client for interacting with the Message builders.
 func (db *Database) Message(ctx context.Context) *MessageClient {
 	return db.loadClient(ctx).Message

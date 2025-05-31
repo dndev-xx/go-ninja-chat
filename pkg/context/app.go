@@ -5,37 +5,40 @@ import (
 	"flag"
 	"fmt"
 
+	swag "github.com/getkin/kin-openapi/openapi3"
+	"go.uber.org/zap"
+
 	keycloakclient "github.com/dndev-xx/go-ninja-chat/internal/clients/keycloak"
 	"github.com/dndev-xx/go-ninja-chat/internal/config"
 	"github.com/dndev-xx/go-ninja-chat/internal/logger"
-
 	repoChats "github.com/dndev-xx/go-ninja-chat/internal/repositories/chats"
+	repoJobs "github.com/dndev-xx/go-ninja-chat/internal/repositories/jobs"
 	repo "github.com/dndev-xx/go-ninja-chat/internal/repositories/messages"
 	repoProblems "github.com/dndev-xx/go-ninja-chat/internal/repositories/problems"
 	serverclient "github.com/dndev-xx/go-ninja-chat/internal/server-client"
+	obox "github.com/dndev-xx/go-ninja-chat/internal/services/outbox"
 	servererror "github.com/dndev-xx/go-ninja-chat/internal/server-client/errhandler"
 	h "github.com/dndev-xx/go-ninja-chat/internal/server-client/v1"
 	sw "github.com/dndev-xx/go-ninja-chat/internal/server-client/v1/pkg"
 	serverdebug "github.com/dndev-xx/go-ninja-chat/internal/server-debug"
 	"github.com/dndev-xx/go-ninja-chat/internal/store"
 	db "github.com/dndev-xx/go-ninja-chat/internal/store"
-
+	msgProducer "github.com/dndev-xx/go-ninja-chat/internal/services/msg-producer"
+	regMsgProd "github.com/dndev-xx/go-ninja-chat/internal/services/outbox/jobs/send-client-message"
 	usecase "github.com/dndev-xx/go-ninja-chat/internal/usecase/client/get-history"
 	usecaseMsg "github.com/dndev-xx/go-ninja-chat/internal/usecase/client/send-message"
-	swag "github.com/getkin/kin-openapi/openapi3"
-	"go.uber.org/zap"
 )
 
 var configPath = flag.String("config", "configs/config.toml", "Path to config file")
 
 type AppContext struct {
-	context			context.Context
-	Config      	*config.Config
-	Logger      	*zap.Logger
-	DebugServer 	*serverdebug.Server
-	Swagger 		*swag.T
-	ClientServer 	*serverclient.Server
-	Stores			*store.Client
+	context      context.Context
+	Config       *config.Config
+	Logger       *zap.Logger
+	DebugServer  *serverdebug.Server
+	Swagger      *swag.T
+	ClientServer *serverclient.Server
+	Stores       *store.Client
 }
 
 type AppBuilder struct {
@@ -67,8 +70,8 @@ func (b *AppBuilder) WithConfig() Builder {
 
 func (b *AppBuilder) WithLogger() Builder {
 	if b.err != nil {
-        return b
-    }
+		return b
+	}
 	if err := logger.Init(logger.NewOptions(
 		b.App.Config.Log.Level,
 		logger.WithProductionMode(b.App.Config.Global.IsProduction()),
@@ -83,8 +86,8 @@ func (b *AppBuilder) WithLogger() Builder {
 
 func (b *AppBuilder) WithDebugHTTPSrv() Builder {
 	if b.err != nil {
-        return b
-    }
+		return b
+	}
 	srvDebug, err := serverdebug.New(serverdebug.NewOptions(b.App.Config.Servers.Debug.Addr))
 	if err != nil {
 		b.err = fmt.Errorf("init debug server: %v", err)
@@ -97,8 +100,8 @@ func (b *AppBuilder) WithDebugHTTPSrv() Builder {
 
 func (b *AppBuilder) WithSwagger() Builder {
 	if b.err != nil {
-        return b
-    }
+		return b
+	}
 	swagger, err := sw.GetSwagger()
 	if err != nil {
 		b.err = fmt.Errorf("load swagger spec: %v", err)
@@ -110,8 +113,8 @@ func (b *AppBuilder) WithSwagger() Builder {
 
 func (b *AppBuilder) WithStoresDB() Builder {
 	if b.err != nil {
-        return b
-    }
+		return b
+	}
 	client, err := db.NewPSQLClient(db.NewPSQLOptions(
 		b.App.context,
 		b.App.Config.Stores.PSQL.Addr,
@@ -130,11 +133,11 @@ func (b *AppBuilder) WithStoresDB() Builder {
 
 func (b *AppBuilder) WithClientHTTPSrv() Builder {
 	if b.err != nil {
-        return b
-    }
+		return b
+	}
 	db := store.NewDatabase(b.App.Stores)
 	msgRepo, err := repo.New(repo.NewOptions(
-    db,
+		db,
 	))
 	chatRepo, err := repoChats.New(repoChats.NewOptions(db))
 	repoProblems, err := repoProblems.New(repoProblems.NewOptions(db))
@@ -142,8 +145,38 @@ func (b *AppBuilder) WithClientHTTPSrv() Builder {
 		b.err = fmt.Errorf("create v1 repository %v", err)
 		return b
 	}
+	jobRepo, err := repoJobs.New(repoJobs.NewOptions(db))
+	if err != nil {
+		b.err = fmt.Errorf("create v1 repository %v", err)
+		return b
+	}
+	msgProd, err := msgProducer.New(msgProducer.NewOptions(
+		msgProducer.NewKafkaWriter(
+			b.App.Config.Services.MsgProducer.Brokers,
+			b.App.Config.Services.MsgProducer.Topic,
+			16,
+		),
+		msgProducer.WithEncryptKey(b.App.Config.Services.MsgProducer.EncryptKey),
+	))
+	if err != nil {
+		b.err = fmt.Errorf("create v1 usecase %v", err)
+		return b
+	}
+	job, err := regMsgProd.New(regMsgProd.NewOptions(msgProd, msgRepo))
+	if err != nil {
+		b.err = fmt.Errorf("create v1 usecase %v", err)
+		return b
+	}
+	outbox := obox.New(jobRepo, db, obox.Config{
+		Workers: 10,
+		IdleTime: b.App.Config.Services.Outbox.IdleTime,
+		ReserveFor: b.App.Config.Services.Outbox.ReserveFor,
+		Logger: b.App.Logger,
+	})
+	outbox.MustRegisterJob(job)
+	go outbox.Start(b.App.context)
 	usecaseHist, err := usecase.New(usecase.NewOptions(msgRepo))
-	usecaseMsg, err := usecaseMsg.New(usecaseMsg.NewOptions(msgRepo, chatRepo, repoProblems, db))
+	usecaseMsg, err := usecaseMsg.New(usecaseMsg.NewOptions(msgRepo, chatRepo, repoProblems, db, outbox))
 	if err != nil {
 		b.err = fmt.Errorf("create v1 usecase %v", err)
 		return b

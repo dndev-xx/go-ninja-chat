@@ -7,15 +7,14 @@ import (
 )
 
 type jsonResponse struct {
-	Data  any `json:"data,omitempty"`
-	Error string      `json:"error,omitempty"`
+	Data  any    `json:"data,omitempty"`
+	Error string `json:"error,omitempty"`
 }
 
 func JSONResponseMiddleware() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			err := next(c)
-
 			if err != nil {
 				if he, ok := err.(*echo.HTTPError); ok {
 					return c.JSON(he.Code, jsonResponse{
@@ -32,7 +31,7 @@ func JSONResponseMiddleware() echo.MiddlewareFunc {
 			responseData := c.Get("responseData")
 
 			return c.JSON(http.StatusOK, jsonResponse{
-				Data: responseData,
+				Data:  responseData,
 				Error: "",
 			})
 		}

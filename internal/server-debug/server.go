@@ -10,14 +10,15 @@ import (
 	"sync"
 	"time"
 
-	"github.com/dndev-xx/go-ninja-chat/internal/buildinfo"
-	"github.com/dndev-xx/go-ninja-chat/internal/logger"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"github.com/mssola/useragent"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"golang.org/x/sync/errgroup"
+
+	"github.com/dndev-xx/go-ninja-chat/internal/buildinfo"
+	"github.com/dndev-xx/go-ninja-chat/internal/logger"
 )
 
 const (
@@ -31,8 +32,8 @@ type Options struct {
 }
 
 type Server struct {
-	lg  *zap.Logger
-	srv *http.Server
+	lg        *zap.Logger
+	srv       *http.Server
 	logBuffer *logBuffer
 }
 
@@ -77,14 +78,14 @@ func New(opts Options) (*Server, error) {
 
 	logBuf := newLogBuffer(1 * 1024 * 1024)
 
-		// Получаем глобальный core
+	// Получаем глобальный core
 	globalCore := zap.L().Core()
 
-		// Создаем encoder для буфера
+	// Создаем encoder для буфера
 	encoderCfg := zap.NewDevelopmentEncoderConfig()
 	bufferEncoder := zapcore.NewConsoleEncoder(encoderCfg)
 
-		// Создаем core для записи в буфер
+	// Создаем core для записи в буфер
 	bufferCore := newLogBufferCore(logBuf, bufferEncoder, zapcore.DebugLevel)
 
 	// Объединяем core глобального логгера и буфера

@@ -16,6 +16,10 @@ type Tx struct {
 	config
 	// Chat is the client for interacting with the Chat builders.
 	Chat *ChatClient
+	// FailedJob is the client for interacting with the FailedJob builders.
+	FailedJob *FailedJobClient
+	// Job is the client for interacting with the Job builders.
+	Job *JobClient
 	// Message is the client for interacting with the Message builders.
 	Message *MessageClient
 	// Problem is the client for interacting with the Problem builders.
@@ -152,6 +156,8 @@ func (tx *Tx) Client() *Client {
 
 func (tx *Tx) init() {
 	tx.Chat = NewChatClient(tx.config)
+	tx.FailedJob = NewFailedJobClient(tx.config)
+	tx.Job = NewJobClient(tx.config)
 	tx.Message = NewMessageClient(tx.config)
 	tx.Problem = NewProblemClient(tx.config)
 }

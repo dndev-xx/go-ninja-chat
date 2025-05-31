@@ -50,23 +50,23 @@ func (r *Repo) GetClientChatMessages(
 		Order(store.Desc(message.FieldCreatedAt)).
 		Limit(pCurr + 1)
 
- 	if !lastCreatedAt.IsZero() {
-        query = query.Where(message.CreatedAtLT(lastCreatedAt))
-    }
-    messages, err := query.All(ctx)
-    if err != nil {
-        return nil, nil, fmt.Errorf("failed to fetch messages: %w", err)
-    }
+	if !lastCreatedAt.IsZero() {
+		query = query.Where(message.CreatedAtLT(lastCreatedAt))
+	}
+	messages, err := query.All(ctx)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to fetch messages: %w", err)
+	}
 
-    var nextCursor *Cursor
-    if len(messages) > pCurr {
-        lastMsg := messages[pCurr-1]
-        nextCursor = &Cursor{
-            LastCreatedAt: lastMsg.CreatedAt,
-            PageSize:      pCurr,
-        }
-        messages = messages[:pCurr]
-    }
+	var nextCursor *Cursor
+	if len(messages) > pCurr {
+		lastMsg := messages[pCurr-1]
+		nextCursor = &Cursor{
+			LastCreatedAt: lastMsg.CreatedAt,
+			PageSize:      pCurr,
+		}
+		messages = messages[:pCurr]
+	}
 
 	return adaptStoreMessages(messages), nextCursor, nil
 }

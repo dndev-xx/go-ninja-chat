@@ -14,8 +14,8 @@ var ResponseBuilder = func(code int, msg string, details string) any {
 		currentDetails = &details
 	}
 	return Response{
-		Error: clientv1.Error {
-			Code: clientv1.ErrorCode(code),
+		Error: clientv1.Error{
+			Code:    clientv1.ErrorCode(code),
 			Message: msg,
 			Details: currentDetails,
 		},

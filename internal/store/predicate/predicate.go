@@ -9,6 +9,12 @@ import (
 // Chat is the predicate function for chat builders.
 type Chat func(*sql.Selector)
 
+// FailedJob is the predicate function for failedjob builders.
+type FailedJob func(*sql.Selector)
+
+// Job is the predicate function for job builders.
+type Job func(*sql.Selector)
+
 // Message is the predicate function for message builders.
 type Message func(*sql.Selector)
 

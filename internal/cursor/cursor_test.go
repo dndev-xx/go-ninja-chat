@@ -12,7 +12,7 @@ import (
 )
 
 func TestSimpleEncode(t *testing.T) {
-	c := messages.Cursor {
+	c := messages.Cursor{
 		LastCreatedAt: time.Unix(42, 42).UTC(),
 		PageSize:      10,
 	}

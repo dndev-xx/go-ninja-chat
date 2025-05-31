@@ -8,32 +8,32 @@ import (
 )
 
 type Message struct {
-	ID                   types.MessageID  `json:"id"`
-	ChatID               types.ChatID     `json:"chatId"`
-	ProblemID            types.ProblemID  `json:"problemId"`
-	AuthorID             types.UserID     `json:"authorId"`
-	Body                 string           `json:"body"`
-	IsVisibleForClient   bool             `json:"isVisibleForClient"`
-	IsVisibleForManager  bool             `json:"isVisibleForManager"`
-	IsBlocked            bool             `json:"isBlocked"`
-	IsService            bool             `json:"isService"`
-	CreatedAt            time.Time        `json:"createdAt"`
-	CheckedAt            *time.Time       `json:"checkedAt,omitempty"`
+	ID                  types.MessageID `json:"id"`
+	ChatID              types.ChatID    `json:"chatId"`
+	ProblemID           types.ProblemID `json:"problemId"`
+	AuthorID            types.UserID    `json:"authorId"`
+	Body                string          `json:"body"`
+	IsVisibleForClient  bool            `json:"isVisibleForClient"`
+	IsVisibleForManager bool            `json:"isVisibleForManager"`
+	IsBlocked           bool            `json:"isBlocked"`
+	IsService           bool            `json:"isService"`
+	CreatedAt           time.Time       `json:"createdAt"`
+	CheckedAt           *time.Time      `json:"checkedAt,omitempty"`
 }
 
 func adaptStoreMessage(m *store.Message) Message {
 	return Message{
-		ID:                   m.ID,
-		ChatID:               m.ChatID,
-		ProblemID:            m.ProblemID,
-		AuthorID:             m.AuthorID,
-		Body:                 m.Body,
-		IsVisibleForClient:   m.IsVisibleForClient,
-		IsVisibleForManager:  m.IsVisibleForManager,
-		IsBlocked:            m.IsBlocked,
-		IsService:            m.IsService,
-		CreatedAt:            m.CreatedAt,
-		CheckedAt:            m.CheckedAt,
+		ID:                  m.ID,
+		ChatID:              m.ChatID,
+		ProblemID:           m.ProblemID,
+		AuthorID:            m.AuthorID,
+		Body:                m.Body,
+		IsVisibleForClient:  m.IsVisibleForClient,
+		IsVisibleForManager: m.IsVisibleForManager,
+		IsBlocked:           m.IsBlocked,
+		IsService:           m.IsService,
+		CreatedAt:           m.CreatedAt,
+		CheckedAt:           m.CheckedAt,
 	}
 }
 

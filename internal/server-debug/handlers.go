@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"net/http"
 
-	"github.com/dndev-xx/go-ninja-chat/internal/server-client/v1/pkg"
 	"github.com/labstack/echo/v4"
+
+	"github.com/dndev-xx/go-ninja-chat/internal/server-client/v1/pkg"
 )
 
 func (s *Server) getOpenAPISpec(c echo.Context) error {

@@ -21,23 +21,23 @@ func (r Request) Validate() error {
 		return err
 	}
 	if r.Cursor == "" && r.PageSize == 0 {
-        return errors.New("either cursor or page size must be specified")
-    }
+		return errors.New("either cursor or page size must be specified")
+	}
 
-    return nil
+	return nil
 }
 
 type Response struct {
-	Messages 		[]Message 	`json:"messages"`
-	NextCursor 		string 		`json:"next_cursor"`
+	Messages   []Message `json:"messages"`
+	NextCursor string    `json:"next_cursor"`
 }
 
 type Message struct {
-	ID                   types.MessageID 	`json:"id"`
-	AuthorID             types.UserID 		`json:"author_id"`
-	Body                 string 			`json:"body"`
-	IsBlocked            bool 				`json:"is_blocked"`
-	IsService            bool 				`json:"is_service"`
-	IsReceived			 bool 				`json:"is_received"`
-	CreatedAt            time.Time 			`json:"created_at"`
+	ID         types.MessageID `json:"id"`
+	AuthorID   types.UserID    `json:"author_id"`
+	Body       string          `json:"body"`
+	IsBlocked  bool            `json:"is_blocked"`
+	IsService  bool            `json:"is_service"`
+	IsReceived bool            `json:"is_received"`
+	CreatedAt  time.Time       `json:"created_at"`
 }

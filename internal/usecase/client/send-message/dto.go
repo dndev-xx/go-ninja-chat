@@ -8,9 +8,9 @@ import (
 )
 
 type Request struct {
-	ID          types.RequestID 	`validate:"required"`
-	ClientID    types.UserID		`validate:"required"`
-	MessageBody string				`validate:"required,min=1,max=4000"`
+	ID          types.RequestID `validate:"required"`
+	ClientID    types.UserID    `validate:"required"`
+	MessageBody string          `validate:"required,min=1,max=4000"`
 }
 
 func (r Request) Validate() error {
@@ -21,7 +21,7 @@ func (r Request) Validate() error {
 }
 
 type Response struct {
-	AuthorID  types.UserID  		`json:"authorID"`
-	MessageID types.MessageID 		`json:"messageID"`
-	CreatedAt time.Time				`json:"createdAt"`
+	AuthorID  types.UserID    `json:"authorID"`
+	MessageID types.MessageID `json:"messageID"`
+	CreatedAt time.Time       `json:"createdAt"`
 }

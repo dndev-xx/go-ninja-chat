@@ -7,6 +7,7 @@ package sendmessagemocks
 import (
 	context "context"
 	reflect "reflect"
+	time "time"
 
 	messages "github.com/dndev-xx/go-ninja-chat/internal/repositories/messages"
 	types "github.com/dndev-xx/go-ninja-chat/internal/types"
@@ -142,42 +143,42 @@ func (mr *MockproblemsRepositoryMockRecorder) CreateIfNotExists(ctx, chatID inte
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateIfNotExists", reflect.TypeOf((*MockproblemsRepository)(nil).CreateIfNotExists), ctx, chatID)
 }
 
-// MockrequestRepository is a mock of requestRepository interface.
-type MockrequestRepository struct {
+// MockoutboxService is a mock of outboxService interface.
+type MockoutboxService struct {
 	ctrl     *gomock.Controller
-	recorder *MockrequestRepositoryMockRecorder
+	recorder *MockoutboxServiceMockRecorder
 }
 
-// MockrequestRepositoryMockRecorder is the mock recorder for MockrequestRepository.
-type MockrequestRepositoryMockRecorder struct {
-	mock *MockrequestRepository
+// MockoutboxServiceMockRecorder is the mock recorder for MockoutboxService.
+type MockoutboxServiceMockRecorder struct {
+	mock *MockoutboxService
 }
 
-// NewMockrequestRepository creates a new mock instance.
-func NewMockrequestRepository(ctrl *gomock.Controller) *MockrequestRepository {
-	mock := &MockrequestRepository{ctrl: ctrl}
-	mock.recorder = &MockrequestRepositoryMockRecorder{mock}
+// NewMockoutboxService creates a new mock instance.
+func NewMockoutboxService(ctrl *gomock.Controller) *MockoutboxService {
+	mock := &MockoutboxService{ctrl: ctrl}
+	mock.recorder = &MockoutboxServiceMockRecorder{mock}
 	return mock
 }
 
 // EXPECT returns an object that allows the caller to indicate expected use.
-func (m *MockrequestRepository) EXPECT() *MockrequestRepositoryMockRecorder {
+func (m *MockoutboxService) EXPECT() *MockoutboxServiceMockRecorder {
 	return m.recorder
 }
 
-// CreateIfNotExists mocks base method.
-func (m *MockrequestRepository) CreateIfNotExists(ctx context.Context, requestID types.RequestID) (bool, error) {
+// Put mocks base method.
+func (m *MockoutboxService) Put(ctx context.Context, name, payload string, availableAt time.Time) (types.JobID, error) {
 	m.ctrl.T.Helper()
-	ret := m.ctrl.Call(m, "CreateIfNotExists", ctx, requestID)
-	ret0, _ := ret[0].(bool)
+	ret := m.ctrl.Call(m, "Put", ctx, name, payload, availableAt)
+	ret0, _ := ret[0].(types.JobID)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// CreateIfNotExists indicates an expected call of CreateIfNotExists.
-func (mr *MockrequestRepositoryMockRecorder) CreateIfNotExists(ctx, requestID interface{}) *gomock.Call {
+// Put indicates an expected call of Put.
+func (mr *MockoutboxServiceMockRecorder) Put(ctx, name, payload, availableAt interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "CreateIfNotExists", reflect.TypeOf((*MockrequestRepository)(nil).CreateIfNotExists), ctx, requestID)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Put", reflect.TypeOf((*MockoutboxService)(nil).Put), ctx, name, payload, availableAt)
 }
 
 // Mocktransactor is a mock of transactor interface.

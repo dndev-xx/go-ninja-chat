@@ -8,8 +8,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	application "github.com/dndev-xx/go-ninja-chat/pkg/context"
 	"golang.org/x/sync/errgroup"
+
+	application "github.com/dndev-xx/go-ninja-chat/pkg/context"
 )
 
 func main() {
@@ -25,7 +26,6 @@ func main() {
 		WithStoresDB().
 		WithClientHTTPSrv().
 		GetContext()
-
 	if err != nil {
 		log.Fatalf("Failed to build app: %v\n", err)
 		os.Exit(1)

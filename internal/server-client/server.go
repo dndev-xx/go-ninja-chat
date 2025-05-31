@@ -26,15 +26,15 @@ const (
 
 //go:generate options-gen -out-filename=server_options.gen.go -from-struct=Options
 type Options struct {
-	logger       *zap.Logger              	`option:"mandatory"`
-	addr         string                   	`option:"mandatory" validate:"hostname_port"`
-	allowOrigins []string                 	`option:"mandatory"`
-	v1Swagger    *openapi3.T              	`option:"mandatory"`
-	v1Handlers   clientv1.ServerInterface 	`option:"mandatory"`
-	keycloakClient mw.Introspector 		  	`option:"mandatory"`
+	logger         *zap.Logger              `option:"mandatory"`
+	addr           string                   `option:"mandatory" validate:"hostname_port"`
+	allowOrigins   []string                 `option:"mandatory"`
+	v1Swagger      *openapi3.T              `option:"mandatory"`
+	v1Handlers     clientv1.ServerInterface `option:"mandatory"`
+	keycloakClient mw.Introspector          `option:"mandatory"`
 	resource       string                   `option:"mandatory"`
 	role           string                   `option:"mandatory"`
-	errorHandler   echo.HTTPErrorHandler	`option:"mandatory"`
+	errorHandler   echo.HTTPErrorHandler    `option:"mandatory"`
 }
 
 type Server struct {
@@ -51,8 +51,8 @@ func New(opts Options) (*Server, error) {
 	e.HTTPErrorHandler = opts.errorHandler
 
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins:     opts.allowOrigins,
-		AllowMethods:     []string{http.MethodGet, http.MethodPost, http.MethodOptions},
+		AllowOrigins: opts.allowOrigins,
+		AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodOptions},
 		AllowHeaders: []string{
 			echo.HeaderOrigin,
 			echo.HeaderContentType,
@@ -70,18 +70,18 @@ func New(opts Options) (*Server, error) {
 	recoverLog := mw.NewRecovery(lg)
 
 	v1 := e.Group("/v1",
-	//mw.JSONResponseMiddleware(),
-	loggerMiddleware,
-	recoverLog,
-	authMiddleware,
-	oapimdlwr.OapiRequestValidatorWithOptions(opts.v1Swagger, &oapimdlwr.Options{
-		Options: openapi3filter.Options{
-			ExcludeRequestBody:  false,
-			ExcludeResponseBody: true,
-			AuthenticationFunc:  openapi3filter.NoopAuthenticationFunc,
-		},
-		SilenceServersWarning: true,
-	}))
+		// mw.JSONResponseMiddleware(),
+		loggerMiddleware,
+		recoverLog,
+		authMiddleware,
+		oapimdlwr.OapiRequestValidatorWithOptions(opts.v1Swagger, &oapimdlwr.Options{
+			Options: openapi3filter.Options{
+				ExcludeRequestBody:  false,
+				ExcludeResponseBody: true,
+				AuthenticationFunc:  openapi3filter.NoopAuthenticationFunc,
+			},
+			SilenceServersWarning: true,
+		}))
 
 	clientv1.RegisterHandlers(v1, opts.v1Handlers)
 

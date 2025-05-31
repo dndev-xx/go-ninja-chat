@@ -15,6 +15,8 @@ GEN_TYPES_OUT = internal/server-client/v1/pkg/types.gen.go
 GEN_SERVER_OUT = internal/server-client/v1/pkg/server.gen.go
 GEN_CLIENT_OUT = internal/server-client/v1/pkg/client.gen.go
 GEN_SPEC_OUT = internal/server-client/v1/pkg/spec.gen.go
+GO_MODULE := github.com/dndev-xx/go-ninja-chat
+GO_FILES := $(shell find . -type f -name '*.go' -not -path "./vendor/*" -not -path "./internal/store/*" -not -path "*.gen.go" | tr "\n" " ")
 
 # ANSI color codes for better output
 GREEN  := \033[32m
@@ -24,7 +26,12 @@ RESET  := \033[0m
 
 # Phony targets declaration
 .PHONY: build run run-client gen_swagger gen_types test test-fail test-it lint tidy gen gen_ent \
-        up up-db up-swagger down db_status db_logs db_stop db_clean sentry_updat help
+        up up-db up-swagger down db_status db_logs db_stop db_clean sentry_updat format help
+
+fmt:
+	@echo "- Format"
+	gofumpt -w $(GO_FILES)
+	gci write -s standard -s default -s "Prefix($(GO_MODULE))" $(GO_FILES) 2> /dev/null
 
 build:
 	@echo "$(YELLOW)Building project...$(RESET)"
@@ -121,7 +128,7 @@ gen_ent:
 # run only linux
 up:
 	@echo "$(YELLOW)Starting containers from $(COMPOSE_FILE) and $(COMPOSE_SENTRY_FILE)...$(RESET)"
-	docker compose -f $(COMPOSE_FILE) -f $(COMPOSE_SENTRY_FILE) up -d
+	docker compose -f $(COMPOSE_FILE) up -d
 	@echo "$(GREEN)Containers started successfully.$(RESET)"
 
 up-db:

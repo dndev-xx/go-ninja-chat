@@ -5,9 +5,10 @@ package testingh
 import (
 	"fmt"
 
+	"github.com/kelseyhightower/envconfig"
+
 	"github.com/dndev-xx/go-ninja-chat/internal/logger"
 	"github.com/dndev-xx/go-ninja-chat/internal/validator"
-	"github.com/kelseyhightower/envconfig"
 )
 
 var Config config

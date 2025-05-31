@@ -21,6 +21,30 @@ func (f ChatFunc) Mutate(ctx context.Context, m store.Mutation) (store.Value, er
 	return nil, fmt.Errorf("unexpected mutation type %T. expect *store.ChatMutation", m)
 }
 
+// The FailedJobFunc type is an adapter to allow the use of ordinary
+// function as FailedJob mutator.
+type FailedJobFunc func(context.Context, *store.FailedJobMutation) (store.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f FailedJobFunc) Mutate(ctx context.Context, m store.Mutation) (store.Value, error) {
+	if mv, ok := m.(*store.FailedJobMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *store.FailedJobMutation", m)
+}
+
+// The JobFunc type is an adapter to allow the use of ordinary
+// function as Job mutator.
+type JobFunc func(context.Context, *store.JobMutation) (store.Value, error)
+
+// Mutate calls f(ctx, m).
+func (f JobFunc) Mutate(ctx context.Context, m store.Mutation) (store.Value, error) {
+	if mv, ok := m.(*store.JobMutation); ok {
+		return f(ctx, mv)
+	}
+	return nil, fmt.Errorf("unexpected mutation type %T. expect *store.JobMutation", m)
+}
+
 // The MessageFunc type is an adapter to allow the use of ordinary
 // function as Message mutator.
 type MessageFunc func(context.Context, *store.MessageMutation) (store.Value, error)

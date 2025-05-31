@@ -8,14 +8,14 @@ import (
 )
 
 type Config struct {
-	Global    GlobalConfig          `toml:"global"`
-	Log       LogConfig             `toml:"log"`
-	Sentry    SentryConfig          `toml:"sentry"`
-	Tracing   TracingConfig         `toml:"tracing"`
-	Servers   ServersConfig         `toml:"servers"`
-	Stores    StoresConfig          `toml:"stores"`
-	Clients   ClientsConfig         `toml:"clients"`
-	Services  ServicesConfig        `toml:"services"`
+	Global   GlobalConfig   `toml:"global"`
+	Log      LogConfig      `toml:"log"`
+	Sentry   SentryConfig   `toml:"sentry"`
+	Tracing  TracingConfig  `toml:"tracing"`
+	Servers  ServersConfig  `toml:"servers"`
+	Stores   StoresConfig   `toml:"stores"`
+	Clients  ClientsConfig  `toml:"clients"`
+	Services ServicesConfig `toml:"services"`
 }
 
 type GlobalConfig struct {
@@ -36,13 +36,13 @@ type SentryConfig struct {
 }
 
 type TracingConfig struct {
-	Enabled    bool   `toml:"enabled"`
-	AgentAddr  string `toml:"agent_addr"`
+	Enabled   bool   `toml:"enabled"`
+	AgentAddr string `toml:"agent_addr"`
 }
 
 type ServersConfig struct {
 	Debug   DebugServerConfig   `toml:"debug"`
-	Client  ClientServerConfig 	`toml:"client"`
+	Client  ClientServerConfig  `toml:"client"`
 	Manager ManagerServerConfig `toml:"manager"`
 }
 
@@ -51,16 +51,16 @@ type DebugServerConfig struct {
 }
 
 type ClientServerConfig struct {
-	Addr           string            	`toml:"addr" validate:"hostname_port"`
-	AllowOrigins   []string          	`toml:"alloworigins"`
-	SecWsProtocol  string            	`toml:"secwsprotocol"`
+	Addr           string               `toml:"addr" validate:"hostname_port"`
+	AllowOrigins   []string             `toml:"alloworigins"`
+	SecWsProtocol  string               `toml:"secwsprotocol"`
 	RequiredAccess RequiredAccessConfig `toml:"requiredaccess"`
 }
 
 type ManagerServerConfig struct {
-	Addr           string            	`toml:"addr" validate:"hostname_port"`
-	AllowOrigins   []string          	`toml:"alloworigins"`
-	SecWsProtocol  string            	`toml:"secwsprotocol"`
+	Addr           string               `toml:"addr" validate:"hostname_port"`
+	AllowOrigins   []string             `toml:"alloworigins"`
+	SecWsProtocol  string               `toml:"secwsprotocol"`
 	RequiredAccess RequiredAccessConfig `toml:"requiredaccess"`
 }
 
@@ -90,17 +90,17 @@ type ClientsConfig struct {
 }
 
 type KeycloakConfig struct {
-	BasePath    string `toml:"basepath"`
-	Realm       string `toml:"realm"`
-	ClientID    string `toml:"clientid"`
+	BasePath     string `toml:"basepath"`
+	Realm        string `toml:"realm"`
+	ClientID     string `toml:"clientid"`
 	ClientSecret string `toml:"clientsecret"`
-	DebugMode   bool   `toml:"debugmode"`
+	DebugMode    bool   `toml:"debugmode"`
 }
 
 type ServicesConfig struct {
 	ManagerLoad          ManagerLoadConfig          `toml:"manager_load"`
 	ManagerScheduler     ManagerSchedulerConfig     `toml:"manager_scheduler"`
-	MsgProducer          MsgProducerConfig          `toml:"msg_producer"`
+	MsgProducer          MsgProducerConfig          `toml:"msgproducer"`
 	Outbox               OutboxConfig               `toml:"outbox"`
 	AFCVerdictsProcessor AFCVerdictsProcessorConfig `toml:"afc_verdicts_processor"`
 }
@@ -116,23 +116,23 @@ type ManagerSchedulerConfig struct {
 type MsgProducerConfig struct {
 	Brokers    []string `toml:"brokers"`
 	Topic      string   `toml:"topic"`
-	BatchSize  int      `toml:"batch_size"`
-	EncryptKey string   `toml:"encrypt_key"`
+	BatchSize  int      `toml:"batchsize"`
+	EncryptKey string   `toml:"encryptkey"`
 }
 
 type OutboxConfig struct {
 	Workers    int           `toml:"workers"`
-	IdleTime   time.Duration `toml:"idle_time"`
-	ReserveFor time.Duration `toml:"reserve_for"`
+	IdleTime   time.Duration `toml:"idletime"`
+	ReserveFor time.Duration `toml:"reservefor"`
 }
 
 type AFCVerdictsProcessorConfig struct {
-	Brokers                 []string `toml:"brokers"`
-	Consumers               int      `toml:"consumers"`
-	ConsumerGroup           string   `toml:"consumer_group"`
-	BatchSize               int      `toml:"batch_size"`
-	VerdictsTopic           string   `toml:"verdicts_topic"`
-	VerdictsDLQTopic        string   `toml:"verdicts_dlq_topic"`
+	Brokers                  []string `toml:"brokers"`
+	Consumers                int      `toml:"consumers"`
+	ConsumerGroup            string   `toml:"consumer_group"`
+	BatchSize                int      `toml:"batch_size"`
+	VerdictsTopic            string   `toml:"verdicts_topic"`
+	VerdictsDLQTopic         string   `toml:"verdicts_dlq_topic"`
 	VerdictsSigningPublicKey string   `toml:"verdicts_signing_public_key"`
 }
 
