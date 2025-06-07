@@ -6,8 +6,8 @@ import (
 	"errors"
 	"sync"
 
-	"github.com/dndev-xx/go-ninja-chat/internal/types"
 	mem "github.com/dndev-xx/go-ninja-chat/internal/services/manager-pool"
+	"github.com/dndev-xx/go-ninja-chat/internal/types"
 )
 
 const (
