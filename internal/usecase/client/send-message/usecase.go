@@ -5,9 +5,10 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
 	messagesrepo "github.com/dndev-xx/go-ninja-chat/internal/repositories/messages"
-	"github.com/dndev-xx/go-ninja-chat/internal/types"
 	sendclientmessagejob "github.com/dndev-xx/go-ninja-chat/internal/services/outbox/jobs/send-client-message"
+	"github.com/dndev-xx/go-ninja-chat/internal/types"
 )
 
 //go:generate mockgen -source=$GOFILE -destination=mocks/usecase_mock.gen.go -package=sendmessagemocks

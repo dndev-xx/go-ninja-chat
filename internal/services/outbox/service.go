@@ -130,7 +130,7 @@ func (o *Outbox) worker(ctx context.Context, workerID int) {
 				// 	zap.Int("worker_id", workerID),
 				// 	zap.Error(err),
 				// )
-				time.Sleep(time.Second*5)
+				time.Sleep(time.Second * 5)
 			}
 		}
 	}

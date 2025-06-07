@@ -16,15 +16,15 @@ import (
 	repo "github.com/dndev-xx/go-ninja-chat/internal/repositories/messages"
 	repoProblems "github.com/dndev-xx/go-ninja-chat/internal/repositories/problems"
 	serverclient "github.com/dndev-xx/go-ninja-chat/internal/server-client"
-	obox "github.com/dndev-xx/go-ninja-chat/internal/services/outbox"
 	servererror "github.com/dndev-xx/go-ninja-chat/internal/server-client/errhandler"
 	h "github.com/dndev-xx/go-ninja-chat/internal/server-client/v1"
 	sw "github.com/dndev-xx/go-ninja-chat/internal/server-client/v1/pkg"
 	serverdebug "github.com/dndev-xx/go-ninja-chat/internal/server-debug"
+	msgProducer "github.com/dndev-xx/go-ninja-chat/internal/services/msg-producer"
+	obox "github.com/dndev-xx/go-ninja-chat/internal/services/outbox"
+	regMsgProd "github.com/dndev-xx/go-ninja-chat/internal/services/outbox/jobs/send-client-message"
 	"github.com/dndev-xx/go-ninja-chat/internal/store"
 	db "github.com/dndev-xx/go-ninja-chat/internal/store"
-	msgProducer "github.com/dndev-xx/go-ninja-chat/internal/services/msg-producer"
-	regMsgProd "github.com/dndev-xx/go-ninja-chat/internal/services/outbox/jobs/send-client-message"
 	usecase "github.com/dndev-xx/go-ninja-chat/internal/usecase/client/get-history"
 	usecaseMsg "github.com/dndev-xx/go-ninja-chat/internal/usecase/client/send-message"
 )
@@ -168,10 +168,10 @@ func (b *AppBuilder) WithClientHTTPSrv() Builder {
 		return b
 	}
 	outbox := obox.New(jobRepo, db, obox.Config{
-		Workers: 10,
-		IdleTime: b.App.Config.Services.Outbox.IdleTime,
+		Workers:    10,
+		IdleTime:   b.App.Config.Services.Outbox.IdleTime,
 		ReserveFor: b.App.Config.Services.Outbox.ReserveFor,
-		Logger: b.App.Logger,
+		Logger:     b.App.Logger,
 	})
 	outbox.MustRegisterJob(job)
 	go outbox.Start(b.App.context)
