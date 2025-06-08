@@ -16,12 +16,12 @@ import (
 	repo "github.com/dndev-xx/go-ninja-chat/internal/repositories/messages"
 	repoProblems "github.com/dndev-xx/go-ninja-chat/internal/repositories/problems"
 	serverclient "github.com/dndev-xx/go-ninja-chat/internal/server-client"
-	servermanager "github.com/dndev-xx/go-ninja-chat/internal/server-manager"
-	mgpkg "github.com/dndev-xx/go-ninja-chat/internal/server-manager/v1/pkg"
 	servererror "github.com/dndev-xx/go-ninja-chat/internal/server-client/errhandler"
 	h "github.com/dndev-xx/go-ninja-chat/internal/server-client/v1"
 	sw "github.com/dndev-xx/go-ninja-chat/internal/server-client/v1/pkg"
 	serverdebug "github.com/dndev-xx/go-ninja-chat/internal/server-debug"
+	servermanager "github.com/dndev-xx/go-ninja-chat/internal/server-manager"
+	mgpkg "github.com/dndev-xx/go-ninja-chat/internal/server-manager/v1/pkg"
 	msgProducer "github.com/dndev-xx/go-ninja-chat/internal/services/msg-producer"
 	obox "github.com/dndev-xx/go-ninja-chat/internal/services/outbox"
 	regMsgProd "github.com/dndev-xx/go-ninja-chat/internal/services/outbox/jobs/send-client-message"
@@ -34,14 +34,14 @@ import (
 var configPath = flag.String("config", "configs/config.toml", "Path to config file")
 
 type AppContext struct {
-	context      context.Context
-	Config       *config.Config
-	Logger       *zap.Logger
-	DebugServer  *serverdebug.Server
-	Swagger      map[string]*swag.T
-	ClientServer *serverclient.Server
+	context       context.Context
+	Config        *config.Config
+	Logger        *zap.Logger
+	DebugServer   *serverdebug.Server
+	Swagger       map[string]*swag.T
+	ClientServer  *serverclient.Server
 	ManagerServer *servermanager.Server
-	Stores       *store.Client
+	Stores        *store.Client
 }
 
 type AppBuilder struct {
