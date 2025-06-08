@@ -1,4 +1,4 @@
-package serverclient
+package servermanager
 
 import (
 	"context"
@@ -16,7 +16,7 @@ import (
 	"golang.org/x/sync/errgroup"
 
 	mw "github.com/dndev-xx/go-ninja-chat/internal/middlewares"
-	clientv1 "github.com/dndev-xx/go-ninja-chat/internal/server-client/v1/pkg"
+	clientv1 "github.com/dndev-xx/go-ninja-chat/internal/server-manager/v1/pkg"
 )
 
 const (
@@ -110,7 +110,7 @@ func (s *Server) Run(ctx context.Context) error {
 	})
 
 	eg.Go(func() error {
-		s.lg.Info("client-server", zap.String("addr", s.srv.Addr))
+		s.lg.Info("manager-server", zap.String("addr", s.srv.Addr))
 
 		if err := s.srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			return fmt.Errorf("listen and serve: %v", err)

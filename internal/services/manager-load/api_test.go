@@ -2,8 +2,9 @@ package managerload_test
 
 import (
 	"context"
-	"testing"
 	"errors"
+	"testing"
+
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/suite"
 
@@ -67,7 +68,6 @@ func (s *ServiceSuite) TestCanManagerTakeProblem_WhenBelowLimit() {
 	s.Require().NoError(err)
 	s.True(canTake)
 }
-
 
 func (s *ServiceSuite) TestCanManagerTakeProblem_WhenAtLimit() {
 	managerID := types.NewUserID()

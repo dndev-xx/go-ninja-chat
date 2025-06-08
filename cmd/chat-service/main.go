@@ -21,8 +21,9 @@ func main() {
 		WithContext(ctx).
 		WithConfig().
 		WithLogger().
-		WithDebugHTTPSrv().
 		WithSwagger().
+		WithDebugHTTPSrv().
+		WithManagerHTTPSrv().
 		WithStoresDB().
 		WithClientHTTPSrv().
 		GetContext()
@@ -37,6 +38,7 @@ func main() {
 
 	eg.Go(func() error { return app.DebugServer.Run(ctx) })
 	eg.Go(func() error { return app.ClientServer.Run(ctx) })
+	eg.Go(func() error { return app.ManagerServer.Run(ctx) })
 
 	if err = eg.Wait(); err != nil && !errors.Is(err, context.Canceled) {
 		log.Fatalf("run app: %v", err)

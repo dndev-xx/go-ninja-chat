@@ -1,10 +1,14 @@
+version: "3.8"
+
 services:
   swagger-ui:
     image: swaggerapi/swagger-ui
-    profiles: ["swagger-ui"]
+    profiles: [ "swagger-ui" ]
     ports:
       - "127.0.0.1:3011:8080"
     volumes:
-      - ../../api/client.v1.swagger.yaml:/client.v1.swagger.yaml
+      - ./../../api:/usr/share/nginx/html/doc
     environment:
-      SWAGGER_JSON: /client.v1.swagger.yaml
+      URLS: "[
+        {url: 'doc/client.v1.swagger.yaml', name: 'Bank Support Chat Client API'},
+        {url: 'doc/manager.v1.swagger.yaml', name: 'Bank Support Chat Manager API'}]"

@@ -11,6 +11,7 @@ type Builder interface {
 	WithDebugHTTPSrv() Builder
 	WithSwagger() Builder
 	WithClientHTTPSrv() Builder
+	WithManagerHTTPSrv() Builder
 	WithStoresDB() Builder
 	GetContext() (*AppContext, error)
 }

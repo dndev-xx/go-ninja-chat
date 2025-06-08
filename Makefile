@@ -11,10 +11,17 @@ TYPE_LOWER := $(shell echo $(TYPE) | tr '[:upper:]' '[:lower:]')
 UI_CLIENT := "./cmd/ui-client/main.go"
 SWAGGER_CONFIG := "./api/codegen.yaml"
 SWAGGER_YAML := "./api/client.v1.swagger.yaml"
+SWAGGER_MANAGER_YAML := "./api/manager.v1.swagger.yaml"
 GEN_TYPES_OUT = internal/server-client/v1/pkg/types.gen.go
 GEN_SERVER_OUT = internal/server-client/v1/pkg/server.gen.go
 GEN_CLIENT_OUT = internal/server-client/v1/pkg/client.gen.go
 GEN_SPEC_OUT = internal/server-client/v1/pkg/spec.gen.go
+
+GEN_TYPES_MANAGER_OUT = internal/server-manager/v1/pkg/types.gen.go
+GEN_SERVER_MANAGER_OUT = internal/server-manager/v1/pkg/server.gen.go
+GEN_MANAGER_OUT = internal/server-manager/v1/pkg/client.gen.go
+GEN_SPEC_MANAGER_OUT = internal/server-manager/v1/pkg/spec.gen.go
+
 GO_MODULE := github.com/dndev-xx/go-ninja-chat
 GO_FILES := $(shell find . -type f -name '*.go' -not -path "./vendor/*" -not -path "./internal/store/*" -not -path "*.gen.go" | tr "\n" " ")
 
@@ -48,7 +55,14 @@ run-client:
 	go run $(UI_CLIENT)
 	@echo "$(GREEN)Execution completed.$(RESET)"
 
-gen_swagger:
+run-manager:
+	@echo "$(YELLOW)Running ui client...$(RESET)"
+	go run ./cmd/ui-manager/main.go
+	@echo "$(GREEN)Execution completed.$(RESET)"
+
+gen_api: gen_client gen_manager
+
+gen_client:
 	@echo "$(YELLOW)Running ui client...$(RESET)"
 	oapi-codegen \
       -package pkg \
@@ -73,6 +87,33 @@ gen_swagger:
 	  -generate spec \
       -o $(GEN_SPEC_OUT) \
       $(SWAGGER_YAML)
+	@echo "$(GREEN)Execution completed.$(RESET)"
+
+gen_manager:
+	@echo "$(YELLOW)Running ui client...$(RESET)"
+	oapi-codegen \
+      -package pkg \
+      -generate types \
+      -o $(GEN_TYPES_MANAGER_OUT) \
+      $(SWAGGER_MANAGER_YAML)
+
+	oapi-codegen \
+      -package pkg \
+      -generate echo-server \
+      -o $(GEN_SERVER_MANAGER_OUT) \
+      $(SWAGGER_MANAGER_YAML)
+
+	oapi-codegen \
+      -package pkg \
+      -generate client \
+      -o $(GEN_MANAGER_OUT) \
+      $(SWAGGER_MANAGER_YAML)
+
+	oapi-codegen \
+	  -package pkg \
+	  -generate spec \
+      -o $(GEN_SPEC_MANAGER_OUT) \
+      $(SWAGGER_MANAGER_YAML)
 	@echo "$(GREEN)Execution completed.$(RESET)"
 
 gen_types:
@@ -186,6 +227,7 @@ help:
 	@echo "  $(GREEN)build$(RESET): Build project"
 	@echo "  $(GREEN)run$(RESET): Build and run project"
 	@echo "  $(GREEN)run-client$(RESET): Run ui-client"
+	@echo "  $(GREEN)run-manager$(RESET): Run manager-client"
 	@echo "  $(GREEN)test$(RESET): Run unit tests"
 	@echo "  $(GREEN)test-fail$(RESET): Run only failed unit tests"
 	@echo "  $(GREEN)test-it$(RESET): Run integration tests"
@@ -193,7 +235,7 @@ help:
 	@echo "  $(GREEN)tidy$(RESET): Tidy and vendor dependencies"
 	@echo "  $(GREEN)gen$(RESET): Generate code"
 	@echo "  $(GREEN)gen_ent$(RESET): Generate code for ent"
-	@echo "  $(GREEN)gen_swagger$(RESET): Generate code for swagger"
+	@echo "  $(GREEN)gen_api$(RESET): Generate code for swagger"
 	@echo "  $(GREEN)up$(RESET): Start all containers (including Sentry)"
 	@echo "  $(GREEN)up-db$(RESET): Start DB containers"
 	@echo "  $(GREEN)up-swagger$(RESET): Start SWAGGER containers"

@@ -116,7 +116,9 @@ func New(opts Options) (*Server, error) {
 	e.PUT("/log/level", echo.WrapHandler(logger.Level))
 	e.GET("/log/level", echo.WrapHandler(logger.Level))
 	e.GET("/schema/client", s.getOpenAPISpec)
-	index.addPage("/schema/client", "Get specification")
+	e.GET("/schema/manager", s.getOpenAPISpecManger)
+	index.addPage("/schema/client", "Get specification for cleint")
+	index.addPage("/schema/manager", "Get specification for manager")
 	e.GET("/logs", s.AllLogs)
 	index.addPage("/logs", "Get all application logs")
 	{

@@ -16,6 +16,8 @@ import (
 	repo "github.com/dndev-xx/go-ninja-chat/internal/repositories/messages"
 	repoProblems "github.com/dndev-xx/go-ninja-chat/internal/repositories/problems"
 	serverclient "github.com/dndev-xx/go-ninja-chat/internal/server-client"
+	servermanager "github.com/dndev-xx/go-ninja-chat/internal/server-manager"
+	mgpkg "github.com/dndev-xx/go-ninja-chat/internal/server-manager/v1/pkg"
 	servererror "github.com/dndev-xx/go-ninja-chat/internal/server-client/errhandler"
 	h "github.com/dndev-xx/go-ninja-chat/internal/server-client/v1"
 	sw "github.com/dndev-xx/go-ninja-chat/internal/server-client/v1/pkg"
@@ -36,8 +38,9 @@ type AppContext struct {
 	Config       *config.Config
 	Logger       *zap.Logger
 	DebugServer  *serverdebug.Server
-	Swagger      *swag.T
+	Swagger      map[string]*swag.T
 	ClientServer *serverclient.Server
+	ManagerServer *servermanager.Server
 	Stores       *store.Client
 }
 
@@ -48,7 +51,9 @@ type AppBuilder struct {
 
 func NewAppBuilder() *AppBuilder {
 	return &AppBuilder{
-		App: &AppContext{},
+		App: &AppContext{
+			Swagger: make(map[string]*swag.T),
+		},
 	}
 }
 
@@ -102,12 +107,18 @@ func (b *AppBuilder) WithSwagger() Builder {
 	if b.err != nil {
 		return b
 	}
-	swagger, err := sw.GetSwagger()
+	swaggerClient, err := sw.GetSwagger()
 	if err != nil {
 		b.err = fmt.Errorf("load swagger spec: %v", err)
 		return b
 	}
-	b.App.Swagger = swagger
+	swaggerManager, err := mgpkg.GetSwagger()
+	if err != nil {
+		b.err = fmt.Errorf("load swagger spec: %v", err)
+		return b
+	}
+	b.App.Swagger["client"] = swaggerClient
+	b.App.Swagger["manager"] = swaggerManager
 	return b
 }
 
@@ -128,6 +139,43 @@ func (b *AppBuilder) WithStoresDB() Builder {
 		return b
 	}
 	b.App.Stores = client
+	return b
+}
+
+func (b *AppBuilder) WithManagerHTTPSrv() Builder {
+	if b.err != nil {
+		return b
+	}
+	httpErrorHandler, err := servererror.New(servererror.NewOptions(
+		b.App.Logger,
+		b.App.Config.Global.IsProduction(),
+		servererror.ResponseBuilder,
+	))
+	kc, err := keycloakclient.New(keycloakclient.NewOptions(
+		keycloakclient.WithBasePath(b.App.Config.Clients.Keycloak.BasePath),
+		keycloakclient.WithRealm(b.App.Config.Clients.Keycloak.Realm),
+		keycloakclient.WithClientID(b.App.Config.Clients.Keycloak.ClientID),
+		keycloakclient.WithClientSecret(b.App.Config.Clients.Keycloak.ClientSecret),
+		keycloakclient.WithDebugMode(b.App.Config.Clients.Keycloak.DebugMode),
+	))
+	handlers := mgpkg.ServerInterfaceWrapper{}
+	lg := zap.L().Named("server-manager")
+	server, err := servermanager.New(servermanager.NewOptions(
+		lg,
+		":8081",
+		b.App.Config.Servers.Client.AllowOrigins,
+		b.App.Swagger["manager"],
+		handlers,
+		kc,
+		b.App.Config.Servers.Client.RequiredAccess.Resource,
+		b.App.Config.Servers.Client.RequiredAccess.Role,
+		httpErrorHandler.Handle,
+	))
+	if err != nil {
+		b.err = fmt.Errorf("create server %v", err)
+		return b
+	}
+	b.App.ManagerServer = server
 	return b
 }
 
@@ -209,7 +257,7 @@ func (b *AppBuilder) WithClientHTTPSrv() Builder {
 		b.App.Logger,
 		b.App.Config.Servers.Client.Addr,
 		b.App.Config.Servers.Client.AllowOrigins,
-		b.App.Swagger,
+		b.App.Swagger["client"],
 		handlers,
 		kc,
 		b.App.Config.Servers.Client.RequiredAccess.Resource,
