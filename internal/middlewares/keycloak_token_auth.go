@@ -58,7 +58,6 @@ func NewKeycloakTokenAuth(introspector Introspector, resource, role string) echo
 			if err := stdClaims.Valid(); err != nil {
 				return false, err
 			}
-
 			// Validate custom claims
 			if err := cl.Valid(); err != nil {
 				return false, echo.NewHTTPError(http.StatusUnauthorized, err.Error())

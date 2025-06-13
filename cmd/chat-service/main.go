@@ -22,9 +22,9 @@ func main() {
 		WithConfig().
 		WithLogger().
 		WithSwagger().
+		WithStoresDB().
 		WithDebugHTTPSrv().
 		WithManagerHTTPSrv().
-		WithStoresDB().
 		WithClientHTTPSrv().
 		GetContext()
 	if err != nil {

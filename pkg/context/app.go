@@ -11,6 +11,8 @@ import (
 	keycloakclient "github.com/dndev-xx/go-ninja-chat/internal/clients/keycloak"
 	"github.com/dndev-xx/go-ninja-chat/internal/config"
 	"github.com/dndev-xx/go-ninja-chat/internal/logger"
+	managerload "github.com/dndev-xx/go-ninja-chat/internal/services/manager-load"
+	managerpool "github.com/dndev-xx/go-ninja-chat/internal/services/manager-pool/in-mem"
 	repoChats "github.com/dndev-xx/go-ninja-chat/internal/repositories/chats"
 	repoJobs "github.com/dndev-xx/go-ninja-chat/internal/repositories/jobs"
 	repo "github.com/dndev-xx/go-ninja-chat/internal/repositories/messages"
@@ -148,6 +150,8 @@ func (b *AppBuilder) WithManagerHTTPSrv() Builder {
 	if b.err != nil {
 		return b
 	}
+	db := store.NewDatabase(b.App.Stores)
+	repoProblems, err := repoProblems.New(repoProblems.NewOptions(db))
 	httpErrorHandler, err := servererror.New(servererror.NewOptions(
 		b.App.Logger,
 		b.App.Config.Global.IsProduction(),
@@ -160,7 +164,20 @@ func (b *AppBuilder) WithManagerHTTPSrv() Builder {
 		keycloakclient.WithClientSecret(b.App.Config.Clients.Keycloak.ClientSecret),
 		keycloakclient.WithDebugMode(b.App.Config.Clients.Keycloak.DebugMode),
 	))
-	usecaseAvailableManger, err := usecaseAvailableManager.New(usecaseAvailableManager.NewOptions())
+
+	managerLoadService, err := managerload.New(managerload.NewOptions(b.App.Config.Services.ManagerLoad.MaxProblemsAtSameTime,
+		repoProblems,
+	))
+	if err != nil {
+		b.err = fmt.Errorf("create manager load service: %v", err)
+		return b
+	}
+	usecaseAvailableManger, err := usecaseAvailableManager.New(usecaseAvailableManager.NewOptions(
+		usecaseAvailableManager.WithManagerLoadService(
+			managerLoadService,
+		),
+		usecaseAvailableManager.WithManagerPool(managerpool.New()),
+	))
 	if err != nil {
 		b.err = fmt.Errorf("create usecase available manager: %v", err)
 		return b
@@ -178,8 +195,8 @@ func (b *AppBuilder) WithManagerHTTPSrv() Builder {
 		b.App.Swagger["manager"],
 		handlers,
 		kc,
-		b.App.Config.Servers.Client.RequiredAccess.Resource,
-		b.App.Config.Servers.Client.RequiredAccess.Role,
+		b.App.Config.Servers.Manager.RequiredAccess.Resource,
+		b.App.Config.Servers.Manager.RequiredAccess.Role,
 		httpErrorHandler.Handle,
 	))
 	if err != nil {
