@@ -98,7 +98,7 @@ type KeycloakConfig struct {
 }
 
 type ServicesConfig struct {
-	ManagerLoad          ManagerLoadConfig          `toml:"manager_load"`
+	ManagerLoad          ManagerLoadConfig          `toml:"managerload"`
 	ManagerScheduler     ManagerSchedulerConfig     `toml:"manager_scheduler"`
 	MsgProducer          MsgProducerConfig          `toml:"msgproducer"`
 	Outbox               OutboxConfig               `toml:"outbox"`
@@ -106,7 +106,7 @@ type ServicesConfig struct {
 }
 
 type ManagerLoadConfig struct {
-	MaxProblemsAtSameTime int `toml:"max_problems_at_same_time"`
+	MaxProblemsAtSameTime int `toml:"maxproblemsatsametime"`
 }
 
 type ManagerSchedulerConfig struct {

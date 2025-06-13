@@ -8,6 +8,30 @@ servers:
     description: Development server
 
 paths:
+  /getFreeHandsBtnAvailability:
+    post:
+      description: Send new message to the chat.
+      parameters:
+        - $ref: "#/components/parameters/XRequestIDHeader"
+      responses:
+        "200":
+          description: Message created.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetFreeHandsBtnAvailabilityResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
 
 security:
   - bearerAuth: [ ]
@@ -19,8 +43,27 @@ components:
       scheme: bearer
       bearerFormat: JWT
 
+  parameters:
+    XRequestIDHeader:
+      in: header
+      name: X-Request-ID
+      schema:
+        type: string
+        format: uuid
+        x-go-type: types.RequestID
+        x-go-import:
+          path: "github.com/dndev-xx/go-ninja-chat/internal/types"
+      required: true
+
   schemas:
     # Common.
+    GetFreeHandsBtnAvailabilityResponse:
+      required: [data]
+      properties:
+        data:
+          available:
+            type: boolean
+            description: true if the button is available, false otherwise.
 
     Error:
       required: [ message, code ]

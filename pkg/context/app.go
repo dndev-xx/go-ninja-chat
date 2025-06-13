@@ -21,6 +21,7 @@ import (
 	sw "github.com/dndev-xx/go-ninja-chat/internal/server-client/v1/pkg"
 	serverdebug "github.com/dndev-xx/go-ninja-chat/internal/server-debug"
 	servermanager "github.com/dndev-xx/go-ninja-chat/internal/server-manager"
+	hm "github.com/dndev-xx/go-ninja-chat/internal/server-manager/v1"
 	mgpkg "github.com/dndev-xx/go-ninja-chat/internal/server-manager/v1/pkg"
 	msgProducer "github.com/dndev-xx/go-ninja-chat/internal/services/msg-producer"
 	obox "github.com/dndev-xx/go-ninja-chat/internal/services/outbox"
@@ -29,6 +30,7 @@ import (
 	db "github.com/dndev-xx/go-ninja-chat/internal/store"
 	usecase "github.com/dndev-xx/go-ninja-chat/internal/usecase/client/get-history"
 	usecaseMsg "github.com/dndev-xx/go-ninja-chat/internal/usecase/client/send-message"
+	usecaseAvailableManager "github.com/dndev-xx/go-ninja-chat/internal/usecase/manager/getFreeHandsBtnAvailability"
 )
 
 var configPath = flag.String("config", "configs/config.toml", "Path to config file")
@@ -158,7 +160,16 @@ func (b *AppBuilder) WithManagerHTTPSrv() Builder {
 		keycloakclient.WithClientSecret(b.App.Config.Clients.Keycloak.ClientSecret),
 		keycloakclient.WithDebugMode(b.App.Config.Clients.Keycloak.DebugMode),
 	))
-	handlers := mgpkg.ServerInterfaceWrapper{}
+	usecaseAvailableManger, err := usecaseAvailableManager.New(usecaseAvailableManager.NewOptions())
+	if err != nil {
+		b.err = fmt.Errorf("create usecase available manager: %v", err)
+		return b
+	}
+	handlers, err := hm.NewHandlers(hm.NewOptions(usecaseAvailableManger))
+	if err != nil {
+		b.err = fmt.Errorf("create handlers manager: %v", err)
+		return b
+	}
 	lg := zap.L().Named("server-manager")
 	server, err := servermanager.New(servermanager.NewOptions(
 		lg,
