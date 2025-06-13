@@ -20,6 +20,11 @@ type Error struct {
 // ErrorCode contains HTTP error codes and specific business logic error codes (the last must be >= 1000).
 type ErrorCode = int
 
+// FreeHandsResponse defines model for FreeHandsResponse.
+type FreeHandsResponse struct {
+	Data *interface{} `json:"data"`
+}
+
 // GetFreeHandsBtnAvailabilityResponse defines model for GetFreeHandsBtnAvailabilityResponse.
 type GetFreeHandsBtnAvailabilityResponse struct {
 	Data interface{} `json:"data"`
@@ -27,6 +32,11 @@ type GetFreeHandsBtnAvailabilityResponse struct {
 
 // XRequestIDHeader defines model for XRequestIDHeader.
 type XRequestIDHeader = types.RequestID
+
+// PostFreeHandsParams defines parameters for PostFreeHands.
+type PostFreeHandsParams struct {
+	XRequestID XRequestIDHeader `json:"X-Request-ID"`
+}
 
 // PostGetFreeHandsBtnAvailabilityParams defines parameters for PostGetFreeHandsBtnAvailability.
 type PostGetFreeHandsBtnAvailabilityParams struct {

@@ -8,6 +8,7 @@ import (
 	context "context"
 	reflect "reflect"
 
+	getfreehands "github.com/dndev-xx/go-ninja-chat/internal/usecase/manager/get-free-hands"
 	getfreehandsbtnavailability "github.com/dndev-xx/go-ninja-chat/internal/usecase/manager/getFreeHandsBtnAvailability"
 	gomock "github.com/golang/mock/gomock"
 )
@@ -48,4 +49,41 @@ func (m *MockgetFreeHandsBtnAvailabilityUseCase) Handle(ctx context.Context, req
 func (mr *MockgetFreeHandsBtnAvailabilityUseCaseMockRecorder) Handle(ctx, req interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Handle", reflect.TypeOf((*MockgetFreeHandsBtnAvailabilityUseCase)(nil).Handle), ctx, req)
+}
+
+// MockgetFreeHands is a mock of getFreeHands interface.
+type MockgetFreeHands struct {
+	ctrl     *gomock.Controller
+	recorder *MockgetFreeHandsMockRecorder
+}
+
+// MockgetFreeHandsMockRecorder is the mock recorder for MockgetFreeHands.
+type MockgetFreeHandsMockRecorder struct {
+	mock *MockgetFreeHands
+}
+
+// NewMockgetFreeHands creates a new mock instance.
+func NewMockgetFreeHands(ctrl *gomock.Controller) *MockgetFreeHands {
+	mock := &MockgetFreeHands{ctrl: ctrl}
+	mock.recorder = &MockgetFreeHandsMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockgetFreeHands) EXPECT() *MockgetFreeHandsMockRecorder {
+	return m.recorder
+}
+
+// Handle mocks base method.
+func (m *MockgetFreeHands) Handle(ctx context.Context, req getfreehands.Request) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Handle", ctx, req)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Handle indicates an expected call of Handle.
+func (mr *MockgetFreeHandsMockRecorder) Handle(ctx, req interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Handle", reflect.TypeOf((*MockgetFreeHands)(nil).Handle), ctx, req)
 }

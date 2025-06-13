@@ -11,8 +11,6 @@ import (
 	keycloakclient "github.com/dndev-xx/go-ninja-chat/internal/clients/keycloak"
 	"github.com/dndev-xx/go-ninja-chat/internal/config"
 	"github.com/dndev-xx/go-ninja-chat/internal/logger"
-	managerload "github.com/dndev-xx/go-ninja-chat/internal/services/manager-load"
-	managerpool "github.com/dndev-xx/go-ninja-chat/internal/services/manager-pool/in-mem"
 	repoChats "github.com/dndev-xx/go-ninja-chat/internal/repositories/chats"
 	repoJobs "github.com/dndev-xx/go-ninja-chat/internal/repositories/jobs"
 	repo "github.com/dndev-xx/go-ninja-chat/internal/repositories/messages"
@@ -25,6 +23,8 @@ import (
 	servermanager "github.com/dndev-xx/go-ninja-chat/internal/server-manager"
 	hm "github.com/dndev-xx/go-ninja-chat/internal/server-manager/v1"
 	mgpkg "github.com/dndev-xx/go-ninja-chat/internal/server-manager/v1/pkg"
+	managerload "github.com/dndev-xx/go-ninja-chat/internal/services/manager-load"
+	managerpool "github.com/dndev-xx/go-ninja-chat/internal/services/manager-pool/in-mem"
 	msgProducer "github.com/dndev-xx/go-ninja-chat/internal/services/msg-producer"
 	obox "github.com/dndev-xx/go-ninja-chat/internal/services/outbox"
 	regMsgProd "github.com/dndev-xx/go-ninja-chat/internal/services/outbox/jobs/send-client-message"
@@ -32,6 +32,7 @@ import (
 	db "github.com/dndev-xx/go-ninja-chat/internal/store"
 	usecase "github.com/dndev-xx/go-ninja-chat/internal/usecase/client/get-history"
 	usecaseMsg "github.com/dndev-xx/go-ninja-chat/internal/usecase/client/send-message"
+	usecaseFreeHands "github.com/dndev-xx/go-ninja-chat/internal/usecase/manager/get-free-hands"
 	usecaseAvailableManager "github.com/dndev-xx/go-ninja-chat/internal/usecase/manager/getFreeHandsBtnAvailability"
 )
 
@@ -172,17 +173,21 @@ func (b *AppBuilder) WithManagerHTTPSrv() Builder {
 		b.err = fmt.Errorf("create manager load service: %v", err)
 		return b
 	}
+	managerPool := managerpool.New()
 	usecaseAvailableManger, err := usecaseAvailableManager.New(usecaseAvailableManager.NewOptions(
 		usecaseAvailableManager.WithManagerLoadService(
 			managerLoadService,
 		),
-		usecaseAvailableManager.WithManagerPool(managerpool.New()),
+		usecaseAvailableManager.WithManagerPool(managerPool),
 	))
 	if err != nil {
 		b.err = fmt.Errorf("create usecase available manager: %v", err)
 		return b
 	}
-	handlers, err := hm.NewHandlers(hm.NewOptions(usecaseAvailableManger))
+	usecaseFreeHands, err := usecaseFreeHands.New(usecaseFreeHands.NewOptions(
+		usecaseFreeHands.WithManagerPool(managerPool),
+	))
+	handlers, err := hm.NewHandlers(hm.NewOptions(usecaseAvailableManger, usecaseFreeHands))
 	if err != nil {
 		b.err = fmt.Errorf("create handlers manager: %v", err)
 		return b

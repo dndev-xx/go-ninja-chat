@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	freeHands "github.com/dndev-xx/go-ninja-chat/internal/usecase/manager/get-free-hands"
 	getFreeHandsBtnAvailability "github.com/dndev-xx/go-ninja-chat/internal/usecase/manager/getFreeHandsBtnAvailability"
 )
 
@@ -12,9 +13,14 @@ type getFreeHandsBtnAvailabilityUseCase interface {
 	Handle(ctx context.Context, req getFreeHandsBtnAvailability.Request) (getFreeHandsBtnAvailability.Response, error)
 }
 
+type getFreeHands interface {
+	Handle(ctx context.Context, req freeHands.Request) error
+}
+
 //go:generate options-gen -out-filename=handlers.gen.go -from-struct=Options
 type Options struct {
 	getFreeHandsBtnAvailability getFreeHandsBtnAvailabilityUseCase `option:"mandatory" validate:"required"`
+	getFreeHands                getFreeHands                       `option:"mandatory" validate:"required"`
 }
 
 type Handlers struct {

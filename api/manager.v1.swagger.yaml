@@ -15,11 +15,35 @@ paths:
         - $ref: "#/components/parameters/XRequestIDHeader"
       responses:
         "200":
-          description: Message created.
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/GetFreeHandsBtnAvailabilityResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              
+  /freeHands:
+    post:
+      description: Send event that say about manager ready take problem.
+      parameters:
+        - $ref: "#/components/parameters/XRequestIDHeader"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeHandsResponse"
         "400":
           description: Bad Request
           content:
@@ -57,6 +81,11 @@ components:
 
   schemas:
     # Common.
+    FreeHandsResponse:
+      required: [data]
+      properties:
+        data:
+          nullable: true
     GetFreeHandsBtnAvailabilityResponse:
       required: [data]
       properties:

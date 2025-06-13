@@ -88,8 +88,23 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
+	// PostFreeHands request
+	PostFreeHands(ctx context.Context, params *PostFreeHandsParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// PostGetFreeHandsBtnAvailability request
 	PostGetFreeHandsBtnAvailability(ctx context.Context, params *PostGetFreeHandsBtnAvailabilityParams, reqEditors ...RequestEditorFn) (*http.Response, error)
+}
+
+func (c *Client) PostFreeHands(ctx context.Context, params *PostFreeHandsParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostFreeHandsRequest(c.Server, params)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
 }
 
 func (c *Client) PostGetFreeHandsBtnAvailability(ctx context.Context, params *PostGetFreeHandsBtnAvailabilityParams, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -102,6 +117,46 @@ func (c *Client) PostGetFreeHandsBtnAvailability(ctx context.Context, params *Po
 		return nil, err
 	}
 	return c.Client.Do(req)
+}
+
+// NewPostFreeHandsRequest generates requests for PostFreeHands
+func NewPostFreeHandsRequest(server string, params *PostFreeHandsParams) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/freeHands")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("POST", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	if params != nil {
+
+		var headerParam0 string
+
+		headerParam0, err = runtime.StyleParamWithLocation("simple", false, "X-Request-ID", runtime.ParamLocationHeader, params.XRequestID)
+		if err != nil {
+			return nil, err
+		}
+
+		req.Header.Set("X-Request-ID", headerParam0)
+
+	}
+
+	return req, nil
 }
 
 // NewPostGetFreeHandsBtnAvailabilityRequest generates requests for PostGetFreeHandsBtnAvailability
@@ -187,8 +242,35 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
+	// PostFreeHandsWithResponse request
+	PostFreeHandsWithResponse(ctx context.Context, params *PostFreeHandsParams, reqEditors ...RequestEditorFn) (*PostFreeHandsResponse, error)
+
 	// PostGetFreeHandsBtnAvailabilityWithResponse request
 	PostGetFreeHandsBtnAvailabilityWithResponse(ctx context.Context, params *PostGetFreeHandsBtnAvailabilityParams, reqEditors ...RequestEditorFn) (*PostGetFreeHandsBtnAvailabilityResponse, error)
+}
+
+type PostFreeHandsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *FreeHandsResponse
+	JSON400      *Error
+	JSON500      *Error
+}
+
+// Status returns HTTPResponse.Status
+func (r PostFreeHandsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r PostFreeHandsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
 }
 
 type PostGetFreeHandsBtnAvailabilityResponse struct {
@@ -215,6 +297,15 @@ func (r PostGetFreeHandsBtnAvailabilityResponse) StatusCode() int {
 	return 0
 }
 
+// PostFreeHandsWithResponse request returning *PostFreeHandsResponse
+func (c *ClientWithResponses) PostFreeHandsWithResponse(ctx context.Context, params *PostFreeHandsParams, reqEditors ...RequestEditorFn) (*PostFreeHandsResponse, error) {
+	rsp, err := c.PostFreeHands(ctx, params, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParsePostFreeHandsResponse(rsp)
+}
+
 // PostGetFreeHandsBtnAvailabilityWithResponse request returning *PostGetFreeHandsBtnAvailabilityResponse
 func (c *ClientWithResponses) PostGetFreeHandsBtnAvailabilityWithResponse(ctx context.Context, params *PostGetFreeHandsBtnAvailabilityParams, reqEditors ...RequestEditorFn) (*PostGetFreeHandsBtnAvailabilityResponse, error) {
 	rsp, err := c.PostGetFreeHandsBtnAvailability(ctx, params, reqEditors...)
@@ -222,6 +313,46 @@ func (c *ClientWithResponses) PostGetFreeHandsBtnAvailabilityWithResponse(ctx co
 		return nil, err
 	}
 	return ParsePostGetFreeHandsBtnAvailabilityResponse(rsp)
+}
+
+// ParsePostFreeHandsResponse parses an HTTP response from a PostFreeHandsWithResponse call
+func ParsePostFreeHandsResponse(rsp *http.Response) (*PostFreeHandsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &PostFreeHandsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest FreeHandsResponse
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 400:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON400 = &dest
+
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 500:
+		var dest Error
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON500 = &dest
+
+	}
+
+	return response, nil
 }
 
 // ParsePostGetFreeHandsBtnAvailabilityResponse parses an HTTP response from a PostGetFreeHandsBtnAvailabilityWithResponse call

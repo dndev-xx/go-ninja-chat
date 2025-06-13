@@ -10,6 +10,13 @@ import (
 	"github.com/dndev-xx/go-ninja-chat/internal/types"
 )
 
+var (
+	ErrNoAvailableManagers  = errors.New("no available managers")
+	ErrManagerAlreadyExists = errors.New("manager already exists")
+	ErrManagerNotFound      = errors.New("manager not found")
+	ErrManagerExists        = errors.New("manager pool is full")
+)
+
 const (
 	serviceName = "manager-pool"
 	managersMax = 1000
@@ -67,7 +74,7 @@ func (s *Service) Put(ctx context.Context, managerID types.UserID) error {
 	}
 
 	if s.queue.Len() >= s.maxSize {
-		return errors.New("manager pool is full")
+		return ErrManagerExists
 	}
 
 	s.queue.PushBack(managerID)

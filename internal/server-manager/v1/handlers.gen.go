@@ -13,6 +13,7 @@ type OptOptionsSetter func(o *Options)
 
 func NewOptions(
 	getFreeHandsBtnAvailability getFreeHandsBtnAvailabilityUseCase,
+	getFreeHands getFreeHands,
 	options ...OptOptionsSetter,
 ) Options {
 	o := Options{}
@@ -20,6 +21,8 @@ func NewOptions(
 	// Setting defaults from field tag (if present)
 
 	o.getFreeHandsBtnAvailability = getFreeHandsBtnAvailability
+
+	o.getFreeHands = getFreeHands
 
 	for _, opt := range options {
 		opt(&o)
@@ -30,12 +33,20 @@ func NewOptions(
 func (o *Options) Validate() error {
 	errs := new(errors461e464ebed9.ValidationErrors)
 	errs.Add(errors461e464ebed9.NewValidationError("getFreeHandsBtnAvailability", _validate_Options_getFreeHandsBtnAvailability(o)))
+	errs.Add(errors461e464ebed9.NewValidationError("getFreeHands", _validate_Options_getFreeHands(o)))
 	return errs.AsError()
 }
 
 func _validate_Options_getFreeHandsBtnAvailability(o *Options) error {
 	if err := validator461e464ebed9.GetValidatorFor(o).Var(o.getFreeHandsBtnAvailability, "required"); err != nil {
 		return fmt461e464ebed9.Errorf("field `getFreeHandsBtnAvailability` did not pass the test: %w", err)
+	}
+	return nil
+}
+
+func _validate_Options_getFreeHands(o *Options) error {
+	if err := validator461e464ebed9.GetValidatorFor(o).Var(o.getFreeHands, "required"); err != nil {
+		return fmt461e464ebed9.Errorf("field `getFreeHands` did not pass the test: %w", err)
 	}
 	return nil
 }

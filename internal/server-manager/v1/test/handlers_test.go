@@ -23,6 +23,7 @@ type HandlersSuite struct {
 
 	ctrl                               *gomock.Controller
 	getFreeHandsBtnAvailabilityUseCase *managerv1mocks.MockgetFreeHandsBtnAvailabilityUseCase
+	getFreeHands                       *managerv1mocks.MockgetFreeHands
 	handlers                           *managerv1.Handlers
 
 	managerID types.UserID
@@ -36,9 +37,10 @@ func TestHandlersSuite(t *testing.T) {
 func (s *HandlersSuite) SetupTest() {
 	s.ctrl = gomock.NewController(s.T())
 	s.getFreeHandsBtnAvailabilityUseCase = managerv1mocks.NewMockgetFreeHandsBtnAvailabilityUseCase(s.ctrl)
+	s.getFreeHands = managerv1mocks.NewMockgetFreeHands(s.ctrl)
 	{
 		var err error
-		s.handlers, err = managerv1.NewHandlers(managerv1.NewOptions(s.getFreeHandsBtnAvailabilityUseCase))
+		s.handlers, err = managerv1.NewHandlers(managerv1.NewOptions(s.getFreeHandsBtnAvailabilityUseCase, s.getFreeHands))
 		s.Require().NoError(err)
 	}
 	s.managerID = types.NewUserID()
@@ -85,4 +87,3 @@ func (s *HandlersSuite) newEchoCtx(
 
 	return resp, ctx
 }
-
