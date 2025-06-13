@@ -6,6 +6,7 @@ import (
 
 	managerv1 "github.com/dndev-xx/go-ninja-chat/internal/server-manager/v1/pkg"
 	"github.com/dndev-xx/go-ninja-chat/internal/types"
+	fhands "github.com/dndev-xx/go-ninja-chat/internal/usecase/manager/get-free-hands"
 	canreceiveproblems "github.com/dndev-xx/go-ninja-chat/internal/usecase/manager/getFreeHandsBtnAvailability"
 )
 
@@ -47,5 +48,25 @@ func (s *HandlersSuite) TestGetFreeHandsBtnAvailability_Usecase_Success() {
     {
         "available": true
     }
+}`, resp.Body.String())
+}
+
+func (s *HandlersSuite) TestGetFreeHands_Usecase_Success() {
+	// Arrange.
+	reqID := types.NewRequestID()
+	resp, eCtx := s.newEchoCtx(reqID, "/v1/freeHands", "")
+	s.getFreeHands.EXPECT().Handle(eCtx.Request().Context(), fhands.Request{
+		ManagerID: s.managerID,
+	}).Return(nil)
+
+	// Action.
+	err := s.handlers.PostFreeHands(eCtx, managerv1.PostFreeHandsParams{XRequestID: reqID})
+
+	// Assert.
+	s.Require().NoError(err)
+	s.Equal(http.StatusOK, resp.Code)
+	s.JSONEq(`
+{
+    "data":null
 }`, resp.Body.String())
 }
