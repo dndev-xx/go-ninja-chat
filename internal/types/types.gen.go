@@ -8,6 +8,54 @@ import (
 	"github.com/google/uuid"
 )
 
+var FailedJobIDNil = FailedJobID(uuid.Nil)
+
+type FailedJobID uuid.UUID                             //
+func NewFailedJobID() FailedJobID                { return FailedJobID(uuid.New()) }
+func (t FailedJobID) String() string                   { return uuid.UUID(t).String() }
+func (t FailedJobID) Value() (driver.Value, error)     { return t.String(), nil }
+func (t *FailedJobID) Scan(src any) error              { return (*uuid.UUID)(t).Scan(src) }
+func (t FailedJobID) MarshalText() ([]byte, error)     { return uuid.UUID(t).MarshalText() }
+func (t *FailedJobID) UnmarshalText(data []byte) error { return (*uuid.UUID)(t).UnmarshalText(data) }
+func (t FailedJobID) IsZero() bool                     { return t == FailedJobIDNil }
+func (t FailedJobID) Matches(x any) bool {
+	v, ok := x.(FailedJobID)
+	if !ok {
+		return false
+	}
+	return t.String() == v.String()
+}
+func (t FailedJobID) Validate() error {
+	if t.IsZero() {
+		return errors.New("zero FailedJobID")
+	}
+	return nil
+}
+
+var JobIDNil = JobID(uuid.Nil)
+
+type JobID uuid.UUID                             //
+func NewJobID() JobID                           { return JobID(uuid.New()) }
+func (t JobID) String() string                   { return uuid.UUID(t).String() }
+func (t JobID) Value() (driver.Value, error)     { return t.String(), nil }
+func (t *JobID) Scan(src any) error              { return (*uuid.UUID)(t).Scan(src) }
+func (t JobID) MarshalText() ([]byte, error)     { return uuid.UUID(t).MarshalText() }
+func (t *JobID) UnmarshalText(data []byte) error { return (*uuid.UUID)(t).UnmarshalText(data) }
+func (t JobID) IsZero() bool                     { return t == JobIDNil }
+func (t JobID) Matches(x any) bool {
+	v, ok := x.(JobID)
+	if !ok {
+		return false
+	}
+	return t.String() == v.String()
+}
+func (t JobID) Validate() error {
+	if t.IsZero() {
+		return errors.New("zero JobID")
+	}
+	return nil
+}
+
 var ChatIDNil = ChatID(uuid.Nil)
 
 type ChatID uuid.UUID                             //

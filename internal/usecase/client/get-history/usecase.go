@@ -62,7 +62,7 @@ func (u UseCase) Handle(ctx context.Context, req Request) (Response, error) {
 	var nextCursor string
 	messages := make([]Message, 0)
 	if curs != nil {
-	   	nextCursor, err = cursor.Encode(curs)
+		nextCursor, err = cursor.Encode(curs)
 		if err != nil {
 			return rsl, err
 		}
@@ -74,12 +74,12 @@ func (u UseCase) Handle(ctx context.Context, req Request) (Response, error) {
 			isReceived = true
 		}
 		curMsg := Message{
-			ID: msg.ID,
-			AuthorID: msg.AuthorID,
-			Body: msg.Body,
-			IsBlocked: msg.IsBlocked,
-			IsService: msg.IsService,
-			CreatedAt: msg.CreatedAt,
+			ID:         msg.ID,
+			AuthorID:   msg.AuthorID,
+			Body:       msg.Body,
+			IsBlocked:  msg.IsBlocked,
+			IsService:  msg.IsService,
+			CreatedAt:  msg.CreatedAt,
 			IsReceived: isReceived,
 		}
 		messages = append(messages, curMsg)

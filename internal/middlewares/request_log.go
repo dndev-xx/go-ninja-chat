@@ -3,11 +3,11 @@ package middlewares
 import (
 	"net/http"
 
-	internalerrors "github.com/dndev-xx/go-ninja-chat/internal/errors"
-
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	"go.uber.org/zap"
+
+	internalerrors "github.com/dndev-xx/go-ninja-chat/internal/errors"
 )
 
 func NewRequestLogger(lg *zap.Logger) echo.MiddlewareFunc {

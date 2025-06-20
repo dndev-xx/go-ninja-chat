@@ -2,6 +2,7 @@ package serverdebug
 
 import (
 	"html/template"
+
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
 )

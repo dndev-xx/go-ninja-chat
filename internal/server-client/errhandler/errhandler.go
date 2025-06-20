@@ -3,9 +3,10 @@ package errhandler
 import (
 	"net/http"
 
-	internalerrors "github.com/dndev-xx/go-ninja-chat/internal/errors"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
+
+	internalerrors "github.com/dndev-xx/go-ninja-chat/internal/errors"
 )
 
 //go:generate options-gen -out-filename=errhandler_options.gen.go -from-struct=Options
@@ -26,8 +27,8 @@ func New(opts Options) (Handler, error) {
 		return Handler{}, err
 	}
 	return Handler{
-		lg: opts.logger,
-		productionMode: opts.productionMode,
+		lg:              opts.logger,
+		productionMode:  opts.productionMode,
 		responseBuilder: opts.responseBuilder,
 	}, nil
 }

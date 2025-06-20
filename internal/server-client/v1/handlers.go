@@ -20,8 +20,8 @@ type sendMsgUseCase interface {
 
 //go:generate options-gen -out-filename=handlers.gen.go -from-struct=Options
 type Options struct {
-	getHistory getHistoryUseCase 		`option:"mandatory" validate:"required"`
-	sendMsg sendMsgUseCase 				`option:"mandatory"`
+	getHistory getHistoryUseCase `option:"mandatory" validate:"required"`
+	sendMsg    sendMsgUseCase    `option:"mandatory"`
 }
 
 type Handlers struct {

@@ -8,8 +8,9 @@ import (
 	"os/signal"
 	"syscall"
 
-	application "github.com/dndev-xx/go-ninja-chat/pkg/context"
 	"golang.org/x/sync/errgroup"
+
+	application "github.com/dndev-xx/go-ninja-chat/pkg/context"
 )
 
 func main() {
@@ -20,12 +21,12 @@ func main() {
 		WithContext(ctx).
 		WithConfig().
 		WithLogger().
-		WithDebugHTTPSrv().
 		WithSwagger().
 		WithStoresDB().
+		WithDebugHTTPSrv().
+		WithManagerHTTPSrv().
 		WithClientHTTPSrv().
 		GetContext()
-
 	if err != nil {
 		log.Fatalf("Failed to build app: %v\n", err)
 		os.Exit(1)
@@ -37,6 +38,7 @@ func main() {
 
 	eg.Go(func() error { return app.DebugServer.Run(ctx) })
 	eg.Go(func() error { return app.ClientServer.Run(ctx) })
+	eg.Go(func() error { return app.ManagerServer.Run(ctx) })
 
 	if err = eg.Wait(); err != nil && !errors.Is(err, context.Canceled) {
 		log.Fatalf("run app: %v", err)

@@ -1,0 +1,110 @@
+openapi: 3.0.3
+info:
+  title: Bank Support Chat Manager API
+  version: v1
+
+servers:
+  - url: http://localhost:8081/v1
+    description: Development server
+
+paths:
+  /getFreeHandsBtnAvailability:
+    post:
+      description: Send new message to the chat.
+      parameters:
+        - $ref: "#/components/parameters/XRequestIDHeader"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetFreeHandsBtnAvailabilityResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+              
+  /freeHands:
+    post:
+      description: Send event that say about manager ready take problem.
+      parameters:
+        - $ref: "#/components/parameters/XRequestIDHeader"
+      responses:
+        "200":
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FreeHandsResponse"
+        "400":
+          description: Bad Request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+        "500":
+          description: Internal Server Error
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+security:
+  - bearerAuth: [ ]
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    XRequestIDHeader:
+      in: header
+      name: X-Request-ID
+      schema:
+        type: string
+        format: uuid
+        x-go-type: types.RequestID
+        x-go-import:
+          path: "github.com/dndev-xx/go-ninja-chat/internal/types"
+      required: true
+
+  schemas:
+    # Common.
+    FreeHandsResponse:
+      required: [data]
+      properties:
+        data:
+          nullable: true
+    GetFreeHandsBtnAvailabilityResponse:
+      required: [data]
+      properties:
+        data:
+          available:
+            type: boolean
+            description: true if the button is available, false otherwise.
+
+    Error:
+      required: [ message, code ]
+      properties:
+        code:
+          $ref: "#/components/schemas/ErrorCode"
+        message:
+          type: string
+        details:
+          type: string
+
+    ErrorCode:
+      type: integer
+      description: contains HTTP error codes and specific business logic error codes (the last must be >= 1000).
+      minimum: 400

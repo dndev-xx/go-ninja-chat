@@ -6,10 +6,10 @@ import (
 )
 
 func ConvertOriginalMessageToMessage(origMsg usecase.Message) clientv1.Message {
-    return clientv1.Message{
-        AuthorId:  origMsg.AuthorID,
-        Body:      origMsg.Body,
-        CreatedAt: origMsg.CreatedAt,
-        Id:        origMsg.ID,
-    }
+	return clientv1.Message{
+		AuthorId:  origMsg.AuthorID,
+		Body:      origMsg.Body,
+		CreatedAt: origMsg.CreatedAt,
+		Id:        origMsg.ID,
+	}
 }

@@ -15,12 +15,12 @@ var (
 
 type Claims struct {
 	*jwt.StandardClaims
-	RealmAccess      struct {
-        Roles []string `json:"roles"`
-    } `json:"realm_access"`
-    ResourceAccess map[string]struct {
-        Roles []string `json:"roles"`
-    } `json:"resource_access"`
+	RealmAccess struct {
+		Roles []string `json:"roles"`
+	} `json:"realm_access"`
+	ResourceAccess map[string]struct {
+		Roles []string `json:"roles"`
+	} `json:"resource_access"`
 	Email             string   `json:"email"`
 	PreferredUsername string   `json:"preferred_username"`
 	Sid               string   `json:"sid"`

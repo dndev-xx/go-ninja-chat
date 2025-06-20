@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	messagesrepo "github.com/dndev-xx/go-ninja-chat/internal/repositories/messages"
+	sendclientmessagejob "github.com/dndev-xx/go-ninja-chat/internal/services/outbox/jobs/send-client-message"
 	"github.com/dndev-xx/go-ninja-chat/internal/types"
 )
 
@@ -38,8 +40,8 @@ type problemsRepository interface {
 	CreateIfNotExists(ctx context.Context, chatID types.ChatID) (types.ProblemID, error)
 }
 
-type requestRepository interface {
-	CreateIfNotExists(ctx context.Context, requestID types.RequestID) (bool, error)
+type outboxService interface {
+	Put(ctx context.Context, name, payload string, availableAt time.Time) (types.JobID, error)
 }
 
 type transactor interface {
@@ -48,10 +50,11 @@ type transactor interface {
 
 //go:generate options-gen -out-filename=usecase_options.gen.go -from-struct=Options
 type Options struct {
-	msgRepo 	messagesRepository 		`option:"mandatory" validate:"required"`
-	chatRepo 	chatsRepository 		`option:"mandatory" validate:"required"`
-	problemRepo problemsRepository		`option:"mandatory" validate:"required"`
-	tx			transactor				`option:"mandatory" validate:"required"`
+	msgRepo     messagesRepository `option:"mandatory" validate:"required"`
+	chatRepo    chatsRepository    `option:"mandatory" validate:"required"`
+	problemRepo problemsRepository `option:"mandatory" validate:"required"`
+	tx          transactor         `option:"mandatory" validate:"required"`
+	outbox      outboxService      `option:"mandatory" validate:"required"`
 }
 
 type UseCase struct {
@@ -95,6 +98,10 @@ func (u UseCase) Handle(ctx context.Context, req Request) (Response, error) {
 		}
 
 		msg = m
+		// FIXME: rollback not working!
+		if _, err := u.outbox.Put(ctx, sendclientmessagejob.Name, fmt.Sprintf(`{"message_id": "%s"}`, msg.ID), time.Now()); err != nil {
+			return fmt.Errorf("put job to outbox: %v", err)
+		}
 		return nil
 	}); err != nil {
 		return Response{}, fmt.Errorf("`send client message` tx: %w", err)

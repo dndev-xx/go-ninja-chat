@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+
 	"github.com/dndev-xx/go-ninja-chat/internal/validator"
 )
 

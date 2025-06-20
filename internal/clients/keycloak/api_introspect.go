@@ -33,13 +33,13 @@ func (a *AudArray) UnmarshalJSON(data []byte) error {
 }
 
 type IntrospectTokenResult struct {
-	Exp    int      `json:"exp"`
-	Iat    int      `json:"iat"`
-	Aud    AudArray `json:"aud"`
-	Active bool     `json:"active"`
-	Username      string `json:"username"`
-	ClientID      string `json:"client_id"`
-	TokenType     string `json:"token_type"`
+	Exp           int      `json:"exp"`
+	Iat           int      `json:"iat"`
+	Aud           AudArray `json:"aud"`
+	Active        bool     `json:"active"`
+	Username      string   `json:"username"`
+	ClientID      string   `json:"client_id"`
+	TokenType     string   `json:"token_type"`
 	Authorization struct {
 		Permissions []struct {
 			Scopes []string `json:"scopes"`
@@ -62,7 +62,7 @@ func (c *Client) IntrospectToken(ctx context.Context, token string) (*Introspect
 		return nil, fmt.Errorf("invalid basepath URL: %v", err)
 	}
 
-	introspectURL := fmt.Sprintf("%s/realms/%s/protocol/openid-connect/token/introspect", 
+	introspectURL := fmt.Sprintf("%s/realms/%s/protocol/openid-connect/token/introspect",
 		baseURL.String(), url.PathEscape(c.Realm))
 
 	resp, err := c.auth(ctx).
@@ -72,7 +72,6 @@ func (c *Client) IntrospectToken(ctx context.Context, token string) (*Introspect
 			"client_secret": c.ClientSecret,
 		}).
 		Post(introspectURL)
-
 	if err != nil {
 		return nil, fmt.Errorf("failed to introspect token: %v", err)
 	}
@@ -100,7 +99,7 @@ func (c *Client) auth(ctx context.Context) *resty.Request {
 }
 
 type KeycloakError struct {
-	Err            string `json:"error"`
+	Err              string `json:"error"`
 	ErrorDescription string `json:"error_description"`
 }
 

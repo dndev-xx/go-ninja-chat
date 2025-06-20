@@ -5,9 +5,8 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/labstack/echo/v4"
-
 	"github.com/golang-jwt/jwt"
+	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
 	keycloakclient "github.com/dndev-xx/go-ninja-chat/internal/clients/keycloak"
@@ -17,6 +16,7 @@ import (
 //go:generate mockgen -source=$GOFILE -destination=mocks/introspector_mock.gen.go -package=middlewaresmocks Introspector
 
 const tokenCtxKey = "user-token"
+
 var ErrNoRequiredResourceRole = errors.New("no required resource role")
 
 type Introspector interface {
@@ -58,7 +58,6 @@ func NewKeycloakTokenAuth(introspector Introspector, resource, role string) echo
 			if err := stdClaims.Valid(); err != nil {
 				return false, err
 			}
-
 			// Validate custom claims
 			if err := cl.Valid(); err != nil {
 				return false, echo.NewHTTPError(http.StatusUnauthorized, err.Error())

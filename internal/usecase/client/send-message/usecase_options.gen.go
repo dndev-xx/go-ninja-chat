@@ -16,6 +16,7 @@ func NewOptions(
 	chatRepo chatsRepository,
 	problemRepo problemsRepository,
 	tx transactor,
+	outbox outboxService,
 	options ...OptOptionsSetter,
 ) Options {
 	o := Options{}
@@ -30,6 +31,8 @@ func NewOptions(
 
 	o.tx = tx
 
+	o.outbox = outbox
+
 	for _, opt := range options {
 		opt(&o)
 	}
@@ -42,6 +45,7 @@ func (o *Options) Validate() error {
 	errs.Add(errors461e464ebed9.NewValidationError("chatRepo", _validate_Options_chatRepo(o)))
 	errs.Add(errors461e464ebed9.NewValidationError("problemRepo", _validate_Options_problemRepo(o)))
 	errs.Add(errors461e464ebed9.NewValidationError("tx", _validate_Options_tx(o)))
+	errs.Add(errors461e464ebed9.NewValidationError("outbox", _validate_Options_outbox(o)))
 	return errs.AsError()
 }
 
@@ -69,6 +73,13 @@ func _validate_Options_problemRepo(o *Options) error {
 func _validate_Options_tx(o *Options) error {
 	if err := validator461e464ebed9.GetValidatorFor(o).Var(o.tx, "required"); err != nil {
 		return fmt461e464ebed9.Errorf("field `tx` did not pass the test: %w", err)
+	}
+	return nil
+}
+
+func _validate_Options_outbox(o *Options) error {
+	if err := validator461e464ebed9.GetValidatorFor(o).Var(o.outbox, "required"); err != nil {
+		return fmt461e464ebed9.Errorf("field `outbox` did not pass the test: %w", err)
 	}
 	return nil
 }

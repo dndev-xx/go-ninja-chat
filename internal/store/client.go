@@ -17,6 +17,8 @@ import (
 	"entgo.io/ent/dialect/sql"
 	"entgo.io/ent/dialect/sql/sqlgraph"
 	"github.com/dndev-xx/go-ninja-chat/internal/store/chat"
+	"github.com/dndev-xx/go-ninja-chat/internal/store/failedjob"
+	"github.com/dndev-xx/go-ninja-chat/internal/store/job"
 	"github.com/dndev-xx/go-ninja-chat/internal/store/message"
 	"github.com/dndev-xx/go-ninja-chat/internal/store/problem"
 
@@ -30,6 +32,10 @@ type Client struct {
 	Schema *migrate.Schema
 	// Chat is the client for interacting with the Chat builders.
 	Chat *ChatClient
+	// FailedJob is the client for interacting with the FailedJob builders.
+	FailedJob *FailedJobClient
+	// Job is the client for interacting with the Job builders.
+	Job *JobClient
 	// Message is the client for interacting with the Message builders.
 	Message *MessageClient
 	// Problem is the client for interacting with the Problem builders.
@@ -46,6 +52,8 @@ func NewClient(opts ...Option) *Client {
 func (c *Client) init() {
 	c.Schema = migrate.NewSchema(c.driver)
 	c.Chat = NewChatClient(c.config)
+	c.FailedJob = NewFailedJobClient(c.config)
+	c.Job = NewJobClient(c.config)
 	c.Message = NewMessageClient(c.config)
 	c.Problem = NewProblemClient(c.config)
 }
@@ -138,11 +146,13 @@ func (c *Client) Tx(ctx context.Context) (*Tx, error) {
 	cfg := c.config
 	cfg.driver = tx
 	return &Tx{
-		ctx:     ctx,
-		config:  cfg,
-		Chat:    NewChatClient(cfg),
-		Message: NewMessageClient(cfg),
-		Problem: NewProblemClient(cfg),
+		ctx:       ctx,
+		config:    cfg,
+		Chat:      NewChatClient(cfg),
+		FailedJob: NewFailedJobClient(cfg),
+		Job:       NewJobClient(cfg),
+		Message:   NewMessageClient(cfg),
+		Problem:   NewProblemClient(cfg),
 	}, nil
 }
 
@@ -160,11 +170,13 @@ func (c *Client) BeginTx(ctx context.Context, opts *sql.TxOptions) (*Tx, error) 
 	cfg := c.config
 	cfg.driver = &txDriver{tx: tx, drv: c.driver}
 	return &Tx{
-		ctx:     ctx,
-		config:  cfg,
-		Chat:    NewChatClient(cfg),
-		Message: NewMessageClient(cfg),
-		Problem: NewProblemClient(cfg),
+		ctx:       ctx,
+		config:    cfg,
+		Chat:      NewChatClient(cfg),
+		FailedJob: NewFailedJobClient(cfg),
+		Job:       NewJobClient(cfg),
+		Message:   NewMessageClient(cfg),
+		Problem:   NewProblemClient(cfg),
 	}, nil
 }
 
@@ -194,6 +206,8 @@ func (c *Client) Close() error {
 // In order to add hooks to a specific client, call: `client.Node.Use(...)`.
 func (c *Client) Use(hooks ...Hook) {
 	c.Chat.Use(hooks...)
+	c.FailedJob.Use(hooks...)
+	c.Job.Use(hooks...)
 	c.Message.Use(hooks...)
 	c.Problem.Use(hooks...)
 }
@@ -202,6 +216,8 @@ func (c *Client) Use(hooks ...Hook) {
 // In order to add interceptors to a specific client, call: `client.Node.Intercept(...)`.
 func (c *Client) Intercept(interceptors ...Interceptor) {
 	c.Chat.Intercept(interceptors...)
+	c.FailedJob.Intercept(interceptors...)
+	c.Job.Intercept(interceptors...)
 	c.Message.Intercept(interceptors...)
 	c.Problem.Intercept(interceptors...)
 }
@@ -211,6 +227,10 @@ func (c *Client) Mutate(ctx context.Context, m Mutation) (Value, error) {
 	switch m := m.(type) {
 	case *ChatMutation:
 		return c.Chat.mutate(ctx, m)
+	case *FailedJobMutation:
+		return c.FailedJob.mutate(ctx, m)
+	case *JobMutation:
+		return c.Job.mutate(ctx, m)
 	case *MessageMutation:
 		return c.Message.mutate(ctx, m)
 	case *ProblemMutation:
@@ -382,6 +402,272 @@ func (c *ChatClient) mutate(ctx context.Context, m *ChatMutation) (Value, error)
 		return (&ChatDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
 	default:
 		return nil, fmt.Errorf("store: unknown Chat mutation op: %q", m.Op())
+	}
+}
+
+// FailedJobClient is a client for the FailedJob schema.
+type FailedJobClient struct {
+	config
+}
+
+// NewFailedJobClient returns a client for the FailedJob from the given config.
+func NewFailedJobClient(c config) *FailedJobClient {
+	return &FailedJobClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `failedjob.Hooks(f(g(h())))`.
+func (c *FailedJobClient) Use(hooks ...Hook) {
+	c.hooks.FailedJob = append(c.hooks.FailedJob, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `failedjob.Intercept(f(g(h())))`.
+func (c *FailedJobClient) Intercept(interceptors ...Interceptor) {
+	c.inters.FailedJob = append(c.inters.FailedJob, interceptors...)
+}
+
+// Create returns a builder for creating a FailedJob entity.
+func (c *FailedJobClient) Create() *FailedJobCreate {
+	mutation := newFailedJobMutation(c.config, OpCreate)
+	return &FailedJobCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of FailedJob entities.
+func (c *FailedJobClient) CreateBulk(builders ...*FailedJobCreate) *FailedJobCreateBulk {
+	return &FailedJobCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *FailedJobClient) MapCreateBulk(slice any, setFunc func(*FailedJobCreate, int)) *FailedJobCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &FailedJobCreateBulk{err: fmt.Errorf("calling to FailedJobClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*FailedJobCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &FailedJobCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for FailedJob.
+func (c *FailedJobClient) Update() *FailedJobUpdate {
+	mutation := newFailedJobMutation(c.config, OpUpdate)
+	return &FailedJobUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *FailedJobClient) UpdateOne(fj *FailedJob) *FailedJobUpdateOne {
+	mutation := newFailedJobMutation(c.config, OpUpdateOne, withFailedJob(fj))
+	return &FailedJobUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *FailedJobClient) UpdateOneID(id types.FailedJobID) *FailedJobUpdateOne {
+	mutation := newFailedJobMutation(c.config, OpUpdateOne, withFailedJobID(id))
+	return &FailedJobUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for FailedJob.
+func (c *FailedJobClient) Delete() *FailedJobDelete {
+	mutation := newFailedJobMutation(c.config, OpDelete)
+	return &FailedJobDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *FailedJobClient) DeleteOne(fj *FailedJob) *FailedJobDeleteOne {
+	return c.DeleteOneID(fj.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *FailedJobClient) DeleteOneID(id types.FailedJobID) *FailedJobDeleteOne {
+	builder := c.Delete().Where(failedjob.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &FailedJobDeleteOne{builder}
+}
+
+// Query returns a query builder for FailedJob.
+func (c *FailedJobClient) Query() *FailedJobQuery {
+	return &FailedJobQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeFailedJob},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a FailedJob entity by its id.
+func (c *FailedJobClient) Get(ctx context.Context, id types.FailedJobID) (*FailedJob, error) {
+	return c.Query().Where(failedjob.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *FailedJobClient) GetX(ctx context.Context, id types.FailedJobID) *FailedJob {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *FailedJobClient) Hooks() []Hook {
+	return c.hooks.FailedJob
+}
+
+// Interceptors returns the client interceptors.
+func (c *FailedJobClient) Interceptors() []Interceptor {
+	return c.inters.FailedJob
+}
+
+func (c *FailedJobClient) mutate(ctx context.Context, m *FailedJobMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&FailedJobCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&FailedJobUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&FailedJobUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&FailedJobDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("store: unknown FailedJob mutation op: %q", m.Op())
+	}
+}
+
+// JobClient is a client for the Job schema.
+type JobClient struct {
+	config
+}
+
+// NewJobClient returns a client for the Job from the given config.
+func NewJobClient(c config) *JobClient {
+	return &JobClient{config: c}
+}
+
+// Use adds a list of mutation hooks to the hooks stack.
+// A call to `Use(f, g, h)` equals to `job.Hooks(f(g(h())))`.
+func (c *JobClient) Use(hooks ...Hook) {
+	c.hooks.Job = append(c.hooks.Job, hooks...)
+}
+
+// Intercept adds a list of query interceptors to the interceptors stack.
+// A call to `Intercept(f, g, h)` equals to `job.Intercept(f(g(h())))`.
+func (c *JobClient) Intercept(interceptors ...Interceptor) {
+	c.inters.Job = append(c.inters.Job, interceptors...)
+}
+
+// Create returns a builder for creating a Job entity.
+func (c *JobClient) Create() *JobCreate {
+	mutation := newJobMutation(c.config, OpCreate)
+	return &JobCreate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// CreateBulk returns a builder for creating a bulk of Job entities.
+func (c *JobClient) CreateBulk(builders ...*JobCreate) *JobCreateBulk {
+	return &JobCreateBulk{config: c.config, builders: builders}
+}
+
+// MapCreateBulk creates a bulk creation builder from the given slice. For each item in the slice, the function creates
+// a builder and applies setFunc on it.
+func (c *JobClient) MapCreateBulk(slice any, setFunc func(*JobCreate, int)) *JobCreateBulk {
+	rv := reflect.ValueOf(slice)
+	if rv.Kind() != reflect.Slice {
+		return &JobCreateBulk{err: fmt.Errorf("calling to JobClient.MapCreateBulk with wrong type %T, need slice", slice)}
+	}
+	builders := make([]*JobCreate, rv.Len())
+	for i := 0; i < rv.Len(); i++ {
+		builders[i] = c.Create()
+		setFunc(builders[i], i)
+	}
+	return &JobCreateBulk{config: c.config, builders: builders}
+}
+
+// Update returns an update builder for Job.
+func (c *JobClient) Update() *JobUpdate {
+	mutation := newJobMutation(c.config, OpUpdate)
+	return &JobUpdate{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOne returns an update builder for the given entity.
+func (c *JobClient) UpdateOne(j *Job) *JobUpdateOne {
+	mutation := newJobMutation(c.config, OpUpdateOne, withJob(j))
+	return &JobUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// UpdateOneID returns an update builder for the given id.
+func (c *JobClient) UpdateOneID(id types.JobID) *JobUpdateOne {
+	mutation := newJobMutation(c.config, OpUpdateOne, withJobID(id))
+	return &JobUpdateOne{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// Delete returns a delete builder for Job.
+func (c *JobClient) Delete() *JobDelete {
+	mutation := newJobMutation(c.config, OpDelete)
+	return &JobDelete{config: c.config, hooks: c.Hooks(), mutation: mutation}
+}
+
+// DeleteOne returns a builder for deleting the given entity.
+func (c *JobClient) DeleteOne(j *Job) *JobDeleteOne {
+	return c.DeleteOneID(j.ID)
+}
+
+// DeleteOneID returns a builder for deleting the given entity by its id.
+func (c *JobClient) DeleteOneID(id types.JobID) *JobDeleteOne {
+	builder := c.Delete().Where(job.ID(id))
+	builder.mutation.id = &id
+	builder.mutation.op = OpDeleteOne
+	return &JobDeleteOne{builder}
+}
+
+// Query returns a query builder for Job.
+func (c *JobClient) Query() *JobQuery {
+	return &JobQuery{
+		config: c.config,
+		ctx:    &QueryContext{Type: TypeJob},
+		inters: c.Interceptors(),
+	}
+}
+
+// Get returns a Job entity by its id.
+func (c *JobClient) Get(ctx context.Context, id types.JobID) (*Job, error) {
+	return c.Query().Where(job.ID(id)).Only(ctx)
+}
+
+// GetX is like Get, but panics if an error occurs.
+func (c *JobClient) GetX(ctx context.Context, id types.JobID) *Job {
+	obj, err := c.Get(ctx, id)
+	if err != nil {
+		panic(err)
+	}
+	return obj
+}
+
+// Hooks returns the client hooks.
+func (c *JobClient) Hooks() []Hook {
+	return c.hooks.Job
+}
+
+// Interceptors returns the client interceptors.
+func (c *JobClient) Interceptors() []Interceptor {
+	return c.inters.Job
+}
+
+func (c *JobClient) mutate(ctx context.Context, m *JobMutation) (Value, error) {
+	switch m.Op() {
+	case OpCreate:
+		return (&JobCreate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdate:
+		return (&JobUpdate{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpUpdateOne:
+		return (&JobUpdateOne{config: c.config, hooks: c.Hooks(), mutation: m}).Save(ctx)
+	case OpDelete, OpDeleteOne:
+		return (&JobDelete{config: c.config, hooks: c.Hooks(), mutation: m}).Exec(ctx)
+	default:
+		return nil, fmt.Errorf("store: unknown Job mutation op: %q", m.Op())
 	}
 }
 
@@ -718,10 +1004,10 @@ func (c *ProblemClient) mutate(ctx context.Context, m *ProblemMutation) (Value, 
 // hooks and interceptors per client, for fast access.
 type (
 	hooks struct {
-		Chat, Message, Problem []ent.Hook
+		Chat, FailedJob, Job, Message, Problem []ent.Hook
 	}
 	inters struct {
-		Chat, Message, Problem []ent.Interceptor
+		Chat, FailedJob, Job, Message, Problem []ent.Interceptor
 	}
 )
 

@@ -1,8 +1,9 @@
 package validator
 
 import (
-	"github.com/go-playground/validator/v10"
 	"strings"
+
+	"github.com/go-playground/validator/v10"
 	optsGenValidator "github.com/kazhuravlev/options-gen/pkg/validator"
 )
 

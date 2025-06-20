@@ -10,8 +10,10 @@ import (
 	"github.com/dndev-xx/go-ninja-chat/internal/types"
 )
 
-var ErrMsgNotFound = errors.New("message not found")
-var ErrMsgUpsert = errors.New("message don`t create or update")
+var (
+	ErrMsgNotFound = errors.New("message not found")
+	ErrMsgUpsert   = errors.New("message don`t create or update")
+)
 
 func (r *Repo) GetMessageByRequestID(ctx context.Context, reqID types.RequestID) (*Message, error) {
 	m, err := r.db.Message(ctx).Query().
@@ -51,6 +53,21 @@ func (r *Repo) CreateClientVisible(
 		return nil, fmt.Errorf("create msg: %v", err)
 	}
 
+	mm := adaptStoreMessage(m)
+	return &mm, nil
+}
+
+func (r *Repo) GetMessageByID(ctx context.Context, msgID types.MessageID) (*Message, error) {
+	m, err := r.db.Message(ctx).Query().
+		Unique(false).
+		Where(message.ID(msgID)).
+		Only(ctx)
+	if err != nil {
+		if store.IsNotFound(err) {
+			return nil, fmt.Errorf("message id %v: %w", msgID, ErrMsgNotFound)
+		}
+		return nil, fmt.Errorf("query message by id %v: %v", msgID, err)
+	}
 	mm := adaptStoreMessage(m)
 	return &mm, nil
 }
