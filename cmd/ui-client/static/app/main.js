@@ -43,6 +43,7 @@ class App {
 
                 this.apiClient = new APIClient(this.clientToken);
 
+                initWsStream(this.clientToken);
                 App.GetLastMessages();
                 App.InitListeners();
             })

@@ -89,16 +89,15 @@ func New(opts Options) (*Server, error) {
 	bufferCore := newLogBufferCore(logBuf, bufferEncoder, zapcore.DebugLevel)
 
 	// Объединяем core глобального логгера и буфера
-	dual := &dualCore{
+	_ = &dualCore{
 		core1: globalCore,
 		core2: bufferCore,
 	}
-	lg := zap.New(dual).Named("server-debug")
+	lg := zap.L().Named("server-debug")
 
 	e := echo.New()
 	e.Use(middleware.Recover())
 	e.Use(LoggerMiddleware(lg))
-
 	s := &Server{
 		lg:        lg,
 		logBuffer: logBuf,

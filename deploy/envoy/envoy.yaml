@@ -1,0 +1,86 @@
+# simple-envoy.yaml - Минимальная конфигурация для локального тестирования
+admin:
+  address:
+    socket_address:
+      protocol: TCP
+      address: 0.0.0.0 # Доступ с любого IP
+      port_value: 9901
+
+static_resources:
+  listeners:
+    - name: listener_0
+      address:
+        socket_address:
+          protocol: TCP
+          address: 0.0.0.0
+          port_value: 10000 # Envoy будет слушать на порту 10000
+      filter_chains:
+        - filters:
+            - name: envoy.filters.network.http_connection_manager
+              typed_config:
+                "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+                stat_prefix: ingress_http
+
+                # Включаем подробное логирование
+                access_log:
+                  - name: envoy.access_loggers.stdout
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.access_loggers.stream.v3.StdoutAccessLog
+
+                http_filters:
+                  - name: envoy.filters.http.router
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+
+                route_config:
+                  name: local_route
+                  virtual_hosts:
+                    - name: backend
+                      domains: ["*"]
+                      routes:
+                        # Роут для API эндпоинтов
+                        - match:
+                            prefix: "/api"
+                          route:
+                            cluster: local_service
+                            timeout: 30s
+                        # Роут для всех остальных запросов
+                        - match:
+                            prefix: "/"
+                          route:
+                            cluster: local_service
+                            timeout: 30s
+                      # Настройки CORS
+                      cors:
+                        allow_origin_string_match:
+                          - prefix: "*"
+                        allow_methods: GET, PUT, DELETE, POST, OPTIONS
+                        allow_headers: keep-alive,user-agent,cache-control,content-type,authorization
+                        max_age: "1728000"
+
+  clusters:
+    - name: local_service
+      connect_timeout: 30s
+      type: LOGICAL_DNS
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: local_service
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      address: 127.0.0.1 # Локальный Go сервис
+                      port_value: 8080
+
+      # Health check для проверки доступности сервиса
+      health_checks:
+        - timeout: 3s
+          interval: 10s
+          unhealthy_threshold: 2
+          healthy_threshold: 2
+          http_health_check:
+            path: "/api/health"
+            expected_statuses:
+              - start: 200
+                end: 299

@@ -296,6 +296,7 @@ func (b *AppBuilder) WithClientHTTPSrv() Builder {
 		b.App.Config.Servers.Client.RequiredAccess.Resource,
 		b.App.Config.Servers.Client.RequiredAccess.Role,
 		httpErrorHandler.Handle,
+		b.App.Config.Servers.Client.SecWsProtocol,
 	))
 	if err != nil {
 		b.err = fmt.Errorf("create server %v", err)

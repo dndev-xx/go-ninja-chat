@@ -26,6 +26,7 @@ func NewOptions(
 	resource string,
 	role string,
 	errorHandler echo.HTTPErrorHandler,
+	secWsProtocols string,
 	options ...OptOptionsSetter,
 ) Options {
 	o := Options{}
@@ -49,6 +50,8 @@ func NewOptions(
 	o.role = role
 
 	o.errorHandler = errorHandler
+
+	o.secWsProtocols = secWsProtocols
 
 	for _, opt := range options {
 		opt(&o)

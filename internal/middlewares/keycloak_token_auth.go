@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"slices"
 
 	"github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
@@ -77,11 +78,7 @@ func NewKeycloakTokenAuth(introspector Introspector, resource, role string) echo
 
 func hasResourceRole(cl *Claims, resource, role string) bool {
 	if resourceAccess, ok := cl.ResourceAccess[resource]; ok {
-		for _, r := range resourceAccess.Roles {
-			if r == role {
-				return true
-			}
-		}
+		return slices.Contains(resourceAccess.Roles, role)
 	}
 	return false
 }

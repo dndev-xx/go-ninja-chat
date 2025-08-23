@@ -37,6 +37,7 @@ type Options struct {
 	resource       string                   `option:"mandatory"`
 	role           string                   `option:"mandatory"`
 	errorHandler   echo.HTTPErrorHandler    `option:"mandatory"`
+	secWsProtocols string                   `option:"mandatory"`
 }
 
 type Server struct {
