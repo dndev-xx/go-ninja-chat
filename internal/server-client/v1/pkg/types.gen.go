@@ -90,18 +90,18 @@ type SendMessageResponse struct {
 // XRequestIDHeader defines model for XRequestIDHeader.
 type XRequestIDHeader = types.RequestID
 
-// PostGetHistoryParams defines parameters for PostGetHistory.
-type PostGetHistoryParams struct {
+// PostV1GetHistoryParams defines parameters for PostV1GetHistory.
+type PostV1GetHistoryParams struct {
 	XRequestID XRequestIDHeader `json:"X-Request-ID"`
 }
 
-// PostSendMessageParams defines parameters for PostSendMessage.
-type PostSendMessageParams struct {
+// PostV1SendMessageParams defines parameters for PostV1SendMessage.
+type PostV1SendMessageParams struct {
 	XRequestID XRequestIDHeader `json:"X-Request-ID"`
 }
 
-// PostGetHistoryJSONRequestBody defines body for PostGetHistory for application/json ContentType.
-type PostGetHistoryJSONRequestBody = GetHistoryRequest
+// PostV1GetHistoryJSONRequestBody defines body for PostV1GetHistory for application/json ContentType.
+type PostV1GetHistoryJSONRequestBody = GetHistoryRequest
 
-// PostSendMessageJSONRequestBody defines body for PostSendMessage for application/json ContentType.
-type PostSendMessageJSONRequestBody = SendMessageRequest
+// PostV1SendMessageJSONRequestBody defines body for PostV1SendMessage for application/json ContentType.
+type PostV1SendMessageJSONRequestBody = SendMessageRequest

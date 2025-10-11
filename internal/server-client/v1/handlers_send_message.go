@@ -11,7 +11,7 @@ import (
 	"github.com/dndev-xx/go-ninja-chat/internal/validator"
 )
 
-func (h Handlers) PostSendMessage(eCtx echo.Context, params clientv1.PostSendMessageParams) error {
+func (h Handlers) PostV1SendMessage(eCtx echo.Context, params clientv1.PostV1SendMessageParams) error {
 	ctx := eCtx.Request().Context()
 	userID := middlewares.MustUserID(eCtx)
 

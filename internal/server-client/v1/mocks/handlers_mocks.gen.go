@@ -11,6 +11,7 @@ import (
 	gethistory "github.com/dndev-xx/go-ninja-chat/internal/usecase/client/get-history"
 	sendmessage "github.com/dndev-xx/go-ninja-chat/internal/usecase/client/send-message"
 	gomock "github.com/golang/mock/gomock"
+	echo "github.com/labstack/echo/v4"
 )
 
 // MockgetHistoryUseCase is a mock of getHistoryUseCase interface.
@@ -87,4 +88,41 @@ func (m *MocksendMsgUseCase) Handle(ctx context.Context, req sendmessage.Request
 func (mr *MocksendMsgUseCaseMockRecorder) Handle(ctx, req interface{}) *gomock.Call {
 	mr.mock.ctrl.T.Helper()
 	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Handle", reflect.TypeOf((*MocksendMsgUseCase)(nil).Handle), ctx, req)
+}
+
+// MockwsUpdateHttpReqUseCase is a mock of wsUpdateHttpReqUseCase interface.
+type MockwsUpdateHttpReqUseCase struct {
+	ctrl     *gomock.Controller
+	recorder *MockwsUpdateHttpReqUseCaseMockRecorder
+}
+
+// MockwsUpdateHttpReqUseCaseMockRecorder is the mock recorder for MockwsUpdateHttpReqUseCase.
+type MockwsUpdateHttpReqUseCaseMockRecorder struct {
+	mock *MockwsUpdateHttpReqUseCase
+}
+
+// NewMockwsUpdateHttpReqUseCase creates a new mock instance.
+func NewMockwsUpdateHttpReqUseCase(ctrl *gomock.Controller) *MockwsUpdateHttpReqUseCase {
+	mock := &MockwsUpdateHttpReqUseCase{ctrl: ctrl}
+	mock.recorder = &MockwsUpdateHttpReqUseCaseMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockwsUpdateHttpReqUseCase) EXPECT() *MockwsUpdateHttpReqUseCaseMockRecorder {
+	return m.recorder
+}
+
+// Handle mocks base method.
+func (m *MockwsUpdateHttpReqUseCase) Handle(ctx echo.Context) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Handle", ctx)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// Handle indicates an expected call of Handle.
+func (mr *MockwsUpdateHttpReqUseCaseMockRecorder) Handle(ctx interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Handle", reflect.TypeOf((*MockwsUpdateHttpReqUseCase)(nil).Handle), ctx)
 }

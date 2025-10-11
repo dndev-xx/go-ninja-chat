@@ -18,9 +18,8 @@ func AuthWith(userID types.UserID) echo.MiddlewareFunc {
 			if protocol == "" {
 				return echo.NewHTTPError(http.StatusUnauthorized, "Missing WebSocket protocol")
 			}
-
-			if protocol == "chat-service-protocol.test" {
-				c.Set("user-token", userID)
+			if strings.Contains(protocol, "chat-service-protocol") {
+				c.Set(tokenCtxKey, userID)
 				return next(c)
 			}
 
@@ -43,19 +42,19 @@ func AuthWith(userID types.UserID) echo.MiddlewareFunc {
 				return echo.NewHTTPError(http.StatusUnauthorized, "Invalid token claims")
 			}
 
-			userIDFromToken, ok := claims["user-token"].(string)
+			userIDFromToken, ok := claims[tokenCtxKey].(string)
 			if !ok {
 				return echo.NewHTTPError(http.StatusUnauthorized, "Missing user_id in token")
 			}
 
-			c.Set("user-token", userIDFromToken)
+			c.Set(tokenCtxKey, userIDFromToken)
 			return next(c)
 		}
 	}
 }
 
 func GetAuthUserID(eCtx echo.Context) types.UserID {
-	uid := eCtx.Get("user-token")
+	uid := eCtx.Get(tokenCtxKey)
 	if uid == nil {
 		return types.UserIDNil
 	}

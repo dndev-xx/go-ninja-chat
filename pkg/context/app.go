@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"time"
 
 	swag "github.com/getkin/kin-openapi/openapi3"
 	"go.uber.org/zap"
@@ -23,6 +24,8 @@ import (
 	servermanager "github.com/dndev-xx/go-ninja-chat/internal/server-manager"
 	hm "github.com/dndev-xx/go-ninja-chat/internal/server-manager/v1"
 	mgpkg "github.com/dndev-xx/go-ninja-chat/internal/server-manager/v1/pkg"
+	eventstream "github.com/dndev-xx/go-ninja-chat/internal/services/event-stream"
+	eventstreamsrv"github.com/dndev-xx/go-ninja-chat/internal/services/event-stream/in-mem"
 	managerload "github.com/dndev-xx/go-ninja-chat/internal/services/manager-load"
 	managerpool "github.com/dndev-xx/go-ninja-chat/internal/services/manager-pool/in-mem"
 	msgProducer "github.com/dndev-xx/go-ninja-chat/internal/services/msg-producer"
@@ -32,8 +35,10 @@ import (
 	db "github.com/dndev-xx/go-ninja-chat/internal/store"
 	usecase "github.com/dndev-xx/go-ninja-chat/internal/usecase/client/get-history"
 	usecaseMsg "github.com/dndev-xx/go-ninja-chat/internal/usecase/client/send-message"
+	wshandshake "github.com/dndev-xx/go-ninja-chat/internal/usecase/client/ws-handshake"
 	usecaseFreeHands "github.com/dndev-xx/go-ninja-chat/internal/usecase/manager/get-free-hands"
 	usecaseAvailableManager "github.com/dndev-xx/go-ninja-chat/internal/usecase/manager/getFreeHandsBtnAvailability"
+	"github.com/dndev-xx/go-ninja-chat/internal/websocket-stream"
 )
 
 var configPath = flag.String("config", "configs/config.toml", "Path to config file")
@@ -270,7 +275,23 @@ func (b *AppBuilder) WithClientHTTPSrv() Builder {
 	if err != nil {
 		b.err = fmt.Errorf("create http error handler: %v", err)
 	}
-	handlers, err := h.NewHandlers(h.NewOptions(usecaseHist, usecaseMsg))
+	shutdownCh := make(chan struct{})
+	eventStream := eventstreamsrv.New()
+	upgrader, err := websocketstream.NewHTTPHandler(websocketstream.NewOptions(
+		zap.L(),
+		websocketstream.NewUpgrader([]string{"http://localhost"}, "chat-service-protocol"),
+		shutdownCh,
+		websocketstream.WithPingPeriod(time.Second/4),
+		websocketstream.WithEventAdapter(EventAdapter{}),
+		websocketstream.WithEventWriter(websocketstream.JSONEventWriter{}),
+		websocketstream.WithEventStream(eventStream),
+	))
+
+	usecaseUpgrade, err := wshandshake.New(
+		wshandshake.NewOptions(wshandshake.WithHttpUpgrade(upgrader)),
+	)
+
+	handlers, err := h.NewHandlers(h.NewOptions(usecaseHist, usecaseMsg, h.WithWsUpdateHttpReqUseCase(usecaseUpgrade)))
 	if err != nil {
 		b.err = fmt.Errorf("create v1 handlers %v", err)
 		return b
@@ -308,4 +329,10 @@ func (b *AppBuilder) WithClientHTTPSrv() Builder {
 
 func (b *AppBuilder) GetContext() (*AppContext, error) {
 	return b.App, b.err
+}
+
+type EventAdapter struct{}
+
+func (EventAdapter) Adapt(event eventstream.Event) (any, error) {
+	return event, nil
 }

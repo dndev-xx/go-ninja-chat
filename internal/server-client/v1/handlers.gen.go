@@ -30,6 +30,13 @@ func NewOptions(
 	return o
 }
 
+func WithWsUpdateHttpReqUseCase(opt wsUpdateHttpReqUseCase) OptOptionsSetter {
+	return func(o *Options) {
+		o.wsUpdateHttpReqUseCase = opt
+
+	}
+}
+
 func (o *Options) Validate() error {
 	errs := new(errors461e464ebed9.ValidationErrors)
 	errs.Add(errors461e464ebed9.NewValidationError("getHistory", _validate_Options_getHistory(o)))

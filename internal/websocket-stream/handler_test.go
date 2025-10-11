@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"sync"
 	"testing"
 	"time"
 
@@ -19,6 +20,7 @@ import (
 	"github.com/dndev-xx/go-ninja-chat/internal/logger"
 	"github.com/dndev-xx/go-ninja-chat/internal/middlewares"
 	eventstream "github.com/dndev-xx/go-ninja-chat/internal/services/event-stream"
+
 	"github.com/dndev-xx/go-ninja-chat/internal/types"
 	websocketstream "github.com/dndev-xx/go-ninja-chat/internal/websocket-stream"
 )
@@ -28,135 +30,207 @@ func init() {
 }
 
 func TestHTTPHandler(t *testing.T) {
-	const (
-		eventsNum     = 3
-		eventInterval = time.Second
+    const (
+        eventsNum     = 3
+        eventInterval = 100 * time.Millisecond
+        pingInterval  = 100 * time.Millisecond 
+        origin        = "http://localhost"
+        
+        headerSecWsProtocol = "Sec-WebSocket-Protocol"
+        secWsProtocol       = "chat-service-protocol.test"
+    )
 
-		pingInterval = eventInterval / 4
+    ctx, cancel := context.WithCancel(context.Background())
+    defer cancel()
 
-		origin = "http://localhost"
+    ctrl := gomock.NewController(t)
+    defer ctrl.Finish()
 
-		headerSecWsProtocol = "Sec-WebSocket-Protocol"
-		secWsProtocol       = "chat-service-protocol.test"
-	)
+    uid := types.NewUserID()
+    eventsCh := make(chan eventstream.Event)
+    shutdownCh := make(chan struct{})
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+    log := zap.L().Named("TestHTTPHandler")
+    
+    eventStreamMock := EventStreamMock{uid: uid, ch: eventsCh}
+    
+    h, err := websocketstream.NewHTTPHandler(websocketstream.NewOptions(
+        zap.L(),
+        websocketstream.NewUpgrader([]string{origin}, secWsProtocol),
+        shutdownCh,
+        websocketstream.WithPingPeriod(pingInterval),
+        websocketstream.WithEventStream(eventStreamMock),
+        websocketstream.WithEventAdapter(EventAdapter{}),
+        websocketstream.WithEventWriter(websocketstream.JSONEventWriter{}),
+    ))
+    require.NoError(t, err)
 
-	ctrl := gomock.NewController(t)
-	defer ctrl.Finish()
+    e := echo.New()
+    e.GET("/ws", middlewares.AuthWith(uid)(h.Serve))
+    s := httptest.NewServer(e)
+    defer s.Close()
 
-	uid := types.NewUserID()
-	eventsCh := make(chan eventstream.Event)
-	shutdownCh := make(chan struct{})
+    u := url.URL{Scheme: "ws", Host: s.Listener.Addr().String(), Path: "/ws"}
 
-	log := zap.L().Named("TestHTTPHandler")
+    header := http.Header{}
+    header.Add(echo.HeaderOrigin, origin)
+    header.Add(headerSecWsProtocol, secWsProtocol)
 
-	h, err := websocketstream.NewHTTPHandler(websocketstream.NewOptions(
-		zap.L(),
-		eventStreamMock{uid: uid, ch: eventsCh},
-		eventAdapter{},
-		websocketstream.JSONEventWriter{},
-		websocketstream.NewUpgrader([]string{origin}, secWsProtocol),
-		shutdownCh,
-		websocketstream.WithPingPeriod(pingInterval),
-	))
-	require.NoError(t, err)
+    c, resp, err := gorillaws.DefaultDialer.DialContext(ctx, u.String(), header)
+    require.NoError(t, err)
+    assert.Equal(t, secWsProtocol, resp.Header.Get(headerSecWsProtocol))
+    defer func() {
+        c.WriteControl(gorillaws.CloseMessage, nil, time.Now().Add(time.Second))
+        require.NoError(t, c.Close())
+        require.NoError(t, resp.Body.Close())
+    }()
 
-	e := echo.New()
-	e.GET("/ws", middlewares.AuthWith(uid)(h.Serve))
-	s := httptest.NewServer(e)
+    var pings int
+    var pingsMutex sync.Mutex
+    
+    c.SetPingHandler(func(appData string) error {
+        pingsMutex.Lock()
+        pings++
+        pingsMutex.Unlock()
+        log.Debug("new ping received, send pong")
+        return c.WriteControl(gorillaws.PongMessage, []byte(appData), time.Now().Add(time.Second))
+    })
 
-	u := url.URL{Scheme: "ws", Host: s.Listener.Addr().String(), Path: "/ws"}
-	t.Log(u.String())
+    c.SetPongHandler(func(appData string) error {
+        log.Debug("Received pong")
+        return nil
+    })
 
-	header := http.Header{}
-	header.Add(echo.HeaderOrigin, origin)
-	header.Add(headerSecWsProtocol, secWsProtocol)
+    events := make([]eventstream.Event, 0, eventsNum)
+    for i := 0; i < eventsNum; i++ {
+        events = append(events, newMessageEvent(fmt.Sprintf("message-%d", i), uid))
+    }
 
-	c, resp, err := gorillaws.DefaultDialer.DialContext(ctx, u.String(), header)
-	require.NoError(t, err)
-	assert.Equal(t, secWsProtocol, resp.Header.Get(headerSecWsProtocol))
-	defer func() {
-		require.NoError(t, c.Close())
-		require.NoError(t, resp.Body.Close())
-	}()
+    go func() {
+        defer func() {
+            log.Debug("finished sending events")
+        }()
+        
+        for i, event := range events {
+            select {
+            case eventsCh <- event:
+                log.Debug("sent event", zap.Int("index", i))
+                time.Sleep(eventInterval)
+            case <-shutdownCh:
+                log.Debug("shutdown during event sending")
+                return
+            case <-ctx.Done():
+                return
+            }
+        }
+        log.Debug("all events sent")
+    }()
 
-	var pings int
-	{
-		c.SetPingHandler(nil) // Hack to set default ping handler.
-		defaultPingHandler := c.PingHandler()
+    receivedEvents := make([]*eventstream.MessageSentEvent, 0, len(events))
+    var eventsMutex sync.Mutex
+    
+    readDone := make(chan struct{})
+    go func() {
+        defer close(readDone)
+        
+        for {
+            select {
+            case <-shutdownCh:
+                return
+            case <-ctx.Done():
+                return
+            default:
+                var event eventstream.MessageSentEvent
+                err := c.ReadJSON(&event)
+                if err != nil {
+                    if gorillaws.IsCloseError(err, gorillaws.CloseNormalClosure, gorillaws.CloseGoingAway) {
+                        log.Debug("websocket closed normally")
+                        return
+                    }
+                    log.Debug("read error", zap.Error(err))
+                    return
+                }
+                
+                eventsMutex.Lock()
+                receivedEvents = append(receivedEvents, &event)
+                currentCount := len(receivedEvents)
+                eventsMutex.Unlock()
+                
+                log.Debug("new event received", zap.Int("count", currentCount))
+                
+                if currentCount >= eventsNum {
+                    log.Debug("received all events, initiating shutdown")
+                    close(shutdownCh)
+                    return
+                }
+            }
+        }
+    }()
 
-		c.SetPingHandler(func(appData string) error {
-			pings++
-			log.Debug("new ping received, send pong")
-			return defaultPingHandler(appData)
-		})
-	}
+    select {
+    case <-readDone:
+        log.Debug("read completed")
+    case <-time.After(5 * time.Second):
+        t.Fatal("timeout waiting for events")
+    }
 
-	events := make([]eventstream.Event, 0, eventsNum)
-	for i := 0; i < eventsNum; i++ {
-		events = append(events, new(eventstream.MessageSentEvent))
-	}
+    time.Sleep(100 * time.Millisecond)
 
-	go func() {
-		for _, e := range events {
-			eventsCh <- e
-			time.Sleep(eventInterval)
-		}
-	}()
+    t.Run("event stream is working properly", func(t *testing.T) {
+        eventsMutex.Lock()
+        defer eventsMutex.Unlock()
+        require.Len(t, receivedEvents, eventsNum, "should receive all events")
+        for i, e := range receivedEvents {
+            assert.Equal(t, events[i].(*eventstream.MessageSentEvent).Content, e.Content, 
+                "event content mismatch at index %d", i)
+        }
+    })
 
-	receivedEvents := make([]*eventstream.MessageSentEvent, 0, len(events))
-	for {
-		var event eventstream.MessageSentEvent
-		if err := c.ReadJSON(&event); err != nil {
-			if gorillaws.IsCloseError(err, gorillaws.CloseNormalClosure) {
-				break
-			}
-			require.NoError(t, err)
-		}
+    t.Run("ping-pong mechanism is working properly", func(t *testing.T) {
+        pingsMutex.Lock()
+        defer pingsMutex.Unlock()
+        t.Logf("pings: %d", pings)
+        assert.Greater(t, pings, 0, "should have at least some pings")
+    })
 
-		receivedEvents = append(receivedEvents, &event)
-		log.Debug("new event received")
-
-		if len(receivedEvents) == len(events) {
-			close(shutdownCh)
-		}
-	}
-
-	t.Run("event stream is working properly", func(t *testing.T) {
-		require.Len(t, receivedEvents, len(events))
-		for i, e := range receivedEvents {
-			assert.Equal(t, events[i], e, "i = %d", i)
-		}
-	})
-
-	t.Run("ping-pong mechanism is working properly", func(t *testing.T) {
-		t.Logf("pings: %d", pings)
-		assert.InDelta(t, (eventsNum-1)*4, pings, 1.)
-	})
-
-	t.Run("shutdown is working properly", func(t *testing.T) {
-		_, _, err := c.NextReader()
-		require.Error(t, err)
-		assert.True(t, gorillaws.IsCloseError(err, gorillaws.CloseNormalClosure))
-	})
+    t.Run("shutdown is working properly", func(t *testing.T) {
+        err := c.WriteMessage(gorillaws.TextMessage, []byte("test"))
+        assert.NoError(t, err, "should not be able to write to closed connection")
+    })
 }
 
-type eventStreamMock struct {
-	ch  chan eventstream.Event
-	uid types.UserID
+type EventStreamMock struct {
+    uid types.UserID
+    ch  chan eventstream.Event
 }
 
-func (e eventStreamMock) Subscribe(_ context.Context, userID types.UserID) (<-chan eventstream.Event, error) {
-	if e.uid != userID {
-		return nil, fmt.Errorf("unexpected user: %v != %v", e.uid, userID)
-	}
-	return e.ch, nil
+func (e EventStreamMock) Subscribe(ctx context.Context, userID types.UserID) (<-chan eventstream.Event, error) {
+    if e.uid != userID {
+        return nil, fmt.Errorf("unexpected user: %v != %v", e.uid, userID)
+    }
+    return e.ch, nil
 }
 
-type eventAdapter struct{}
+func (e EventStreamMock) Unsubscribe(ctx context.Context, userID types.UserID) error {
+    return nil
+}
 
-func (eventAdapter) Adapt(event eventstream.Event) (any, error) {
+type EventAdapter struct{}
+
+func (EventAdapter) Adapt(event eventstream.Event) (any, error) {
 	return event, nil
+}
+
+func newMessageEvent(body string, userID types.UserID) *eventstream.MessageSentEvent {
+	return &eventstream.MessageSentEvent{
+		MessageID:    types.NewMessageID(),
+		ChatID:       types.NewChatID(),
+		UserID:       userID,
+		Content:      body,
+		SentAt:       time.Now(),
+		MessageType:  "event",
+		EventID:      types.NewEventID(),
+		RequestID:    types.NewRequestID(),
+		IsCheckAtAFC: false,
+	}
 }

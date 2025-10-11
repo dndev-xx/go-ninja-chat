@@ -1,3 +1,5 @@
+.DEFAULT_GOAL := help
+
 BIN := "./bin/chat"
 LDFLAGS := -X main.release="develop" -X main.buildDate=$(shell date -u +%Y-%m-%dT%H:%M:%S) -X main.gitHash=$(GIT_HASH)
 SOURCE := "./cmd/chat-service"
@@ -7,6 +9,7 @@ SWAGGER_FILE := "./deploy/local/docker-compose.swagger-ui.yaml"
 CONTAINER_DB_NAME := local-postgres-1
 GEN_TYPE := "./cmd/gen-types/"
 GEN_PATH := "./internal/types/"
+TYPE := FailedJobID JobID
 TYPE_LOWER := $(shell echo $(TYPE) | tr '[:upper:]' '[:lower:]')
 UI_CLIENT := "./cmd/ui-client/main.go"
 SWAGGER_CONFIG := "./api/codegen.yaml"

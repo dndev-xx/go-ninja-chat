@@ -14,11 +14,14 @@ import (
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 
-	// (POST /getHistory)
-	PostGetHistory(ctx echo.Context, params PostGetHistoryParams) error
+	// (POST /v1/getHistory)
+	PostV1GetHistory(ctx echo.Context, params PostV1GetHistoryParams) error
 
-	// (POST /sendMessage)
-	PostSendMessage(ctx echo.Context, params PostSendMessageParams) error
+	// (POST /v1/sendMessage)
+	PostV1SendMessage(ctx echo.Context, params PostV1SendMessageParams) error
+	// WebSocket connection
+	// (GET /ws)
+	GetWs(ctx echo.Context) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -26,14 +29,14 @@ type ServerInterfaceWrapper struct {
 	Handler ServerInterface
 }
 
-// PostGetHistory converts echo context to params.
-func (w *ServerInterfaceWrapper) PostGetHistory(ctx echo.Context) error {
+// PostV1GetHistory converts echo context to params.
+func (w *ServerInterfaceWrapper) PostV1GetHistory(ctx echo.Context) error {
 	var err error
 
 	ctx.Set(BearerAuthScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
-	var params PostGetHistoryParams
+	var params PostV1GetHistoryParams
 
 	headers := ctx.Request().Header
 	// ------------- Required header parameter "X-Request-ID" -------------
@@ -55,18 +58,18 @@ func (w *ServerInterfaceWrapper) PostGetHistory(ctx echo.Context) error {
 	}
 
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.PostGetHistory(ctx, params)
+	err = w.Handler.PostV1GetHistory(ctx, params)
 	return err
 }
 
-// PostSendMessage converts echo context to params.
-func (w *ServerInterfaceWrapper) PostSendMessage(ctx echo.Context) error {
+// PostV1SendMessage converts echo context to params.
+func (w *ServerInterfaceWrapper) PostV1SendMessage(ctx echo.Context) error {
 	var err error
 
 	ctx.Set(BearerAuthScopes, []string{})
 
 	// Parameter object where we will unmarshal all parameters from the context
-	var params PostSendMessageParams
+	var params PostV1SendMessageParams
 
 	headers := ctx.Request().Header
 	// ------------- Required header parameter "X-Request-ID" -------------
@@ -88,7 +91,18 @@ func (w *ServerInterfaceWrapper) PostSendMessage(ctx echo.Context) error {
 	}
 
 	// Invoke the callback with all the unmarshaled arguments
-	err = w.Handler.PostSendMessage(ctx, params)
+	err = w.Handler.PostV1SendMessage(ctx, params)
+	return err
+}
+
+// GetWs converts echo context to params.
+func (w *ServerInterfaceWrapper) GetWs(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.GetWs(ctx)
 	return err
 }
 
@@ -120,7 +134,8 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 		Handler: si,
 	}
 
-	router.POST(baseURL+"/getHistory", wrapper.PostGetHistory)
-	router.POST(baseURL+"/sendMessage", wrapper.PostSendMessage)
+	router.POST(baseURL+"/v1/getHistory", wrapper.PostV1GetHistory)
+	router.POST(baseURL+"/v1/sendMessage", wrapper.PostV1SendMessage)
+	router.GET(baseURL+"/ws", wrapper.GetWs)
 
 }

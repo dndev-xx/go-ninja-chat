@@ -89,19 +89,22 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
-	// PostGetHistoryWithBody request with any body
-	PostGetHistoryWithBody(ctx context.Context, params *PostGetHistoryParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// PostV1GetHistoryWithBody request with any body
+	PostV1GetHistoryWithBody(ctx context.Context, params *PostV1GetHistoryParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	PostGetHistory(ctx context.Context, params *PostGetHistoryParams, body PostGetHistoryJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PostV1GetHistory(ctx context.Context, params *PostV1GetHistoryParams, body PostV1GetHistoryJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	// PostSendMessageWithBody request with any body
-	PostSendMessageWithBody(ctx context.Context, params *PostSendMessageParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+	// PostV1SendMessageWithBody request with any body
+	PostV1SendMessageWithBody(ctx context.Context, params *PostV1SendMessageParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
 
-	PostSendMessage(ctx context.Context, params *PostSendMessageParams, body PostSendMessageJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+	PostV1SendMessage(ctx context.Context, params *PostV1SendMessageParams, body PostV1SendMessageJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// GetWs request
+	GetWs(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
 }
 
-func (c *Client) PostGetHistoryWithBody(ctx context.Context, params *PostGetHistoryParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostGetHistoryRequestWithBody(c.Server, params, contentType, body)
+func (c *Client) PostV1GetHistoryWithBody(ctx context.Context, params *PostV1GetHistoryParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostV1GetHistoryRequestWithBody(c.Server, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -112,8 +115,8 @@ func (c *Client) PostGetHistoryWithBody(ctx context.Context, params *PostGetHist
 	return c.Client.Do(req)
 }
 
-func (c *Client) PostGetHistory(ctx context.Context, params *PostGetHistoryParams, body PostGetHistoryJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostGetHistoryRequest(c.Server, params, body)
+func (c *Client) PostV1GetHistory(ctx context.Context, params *PostV1GetHistoryParams, body PostV1GetHistoryJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostV1GetHistoryRequest(c.Server, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -124,8 +127,8 @@ func (c *Client) PostGetHistory(ctx context.Context, params *PostGetHistoryParam
 	return c.Client.Do(req)
 }
 
-func (c *Client) PostSendMessageWithBody(ctx context.Context, params *PostSendMessageParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostSendMessageRequestWithBody(c.Server, params, contentType, body)
+func (c *Client) PostV1SendMessageWithBody(ctx context.Context, params *PostV1SendMessageParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostV1SendMessageRequestWithBody(c.Server, params, contentType, body)
 	if err != nil {
 		return nil, err
 	}
@@ -136,8 +139,8 @@ func (c *Client) PostSendMessageWithBody(ctx context.Context, params *PostSendMe
 	return c.Client.Do(req)
 }
 
-func (c *Client) PostSendMessage(ctx context.Context, params *PostSendMessageParams, body PostSendMessageJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
-	req, err := NewPostSendMessageRequest(c.Server, params, body)
+func (c *Client) PostV1SendMessage(ctx context.Context, params *PostV1SendMessageParams, body PostV1SendMessageJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewPostV1SendMessageRequest(c.Server, params, body)
 	if err != nil {
 		return nil, err
 	}
@@ -148,19 +151,31 @@ func (c *Client) PostSendMessage(ctx context.Context, params *PostSendMessagePar
 	return c.Client.Do(req)
 }
 
-// NewPostGetHistoryRequest calls the generic PostGetHistory builder with application/json body
-func NewPostGetHistoryRequest(server string, params *PostGetHistoryParams, body PostGetHistoryJSONRequestBody) (*http.Request, error) {
+func (c *Client) GetWs(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGetWsRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+// NewPostV1GetHistoryRequest calls the generic PostV1GetHistory builder with application/json body
+func NewPostV1GetHistoryRequest(server string, params *PostV1GetHistoryParams, body PostV1GetHistoryJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewPostGetHistoryRequestWithBody(server, params, "application/json", bodyReader)
+	return NewPostV1GetHistoryRequestWithBody(server, params, "application/json", bodyReader)
 }
 
-// NewPostGetHistoryRequestWithBody generates requests for PostGetHistory with any type of body
-func NewPostGetHistoryRequestWithBody(server string, params *PostGetHistoryParams, contentType string, body io.Reader) (*http.Request, error) {
+// NewPostV1GetHistoryRequestWithBody generates requests for PostV1GetHistory with any type of body
+func NewPostV1GetHistoryRequestWithBody(server string, params *PostV1GetHistoryParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -168,7 +183,7 @@ func NewPostGetHistoryRequestWithBody(server string, params *PostGetHistoryParam
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/getHistory")
+	operationPath := fmt.Sprintf("/v1/getHistory")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -201,19 +216,19 @@ func NewPostGetHistoryRequestWithBody(server string, params *PostGetHistoryParam
 	return req, nil
 }
 
-// NewPostSendMessageRequest calls the generic PostSendMessage builder with application/json body
-func NewPostSendMessageRequest(server string, params *PostSendMessageParams, body PostSendMessageJSONRequestBody) (*http.Request, error) {
+// NewPostV1SendMessageRequest calls the generic PostV1SendMessage builder with application/json body
+func NewPostV1SendMessageRequest(server string, params *PostV1SendMessageParams, body PostV1SendMessageJSONRequestBody) (*http.Request, error) {
 	var bodyReader io.Reader
 	buf, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
 	}
 	bodyReader = bytes.NewReader(buf)
-	return NewPostSendMessageRequestWithBody(server, params, "application/json", bodyReader)
+	return NewPostV1SendMessageRequestWithBody(server, params, "application/json", bodyReader)
 }
 
-// NewPostSendMessageRequestWithBody generates requests for PostSendMessage with any type of body
-func NewPostSendMessageRequestWithBody(server string, params *PostSendMessageParams, contentType string, body io.Reader) (*http.Request, error) {
+// NewPostV1SendMessageRequestWithBody generates requests for PostV1SendMessage with any type of body
+func NewPostV1SendMessageRequestWithBody(server string, params *PostV1SendMessageParams, contentType string, body io.Reader) (*http.Request, error) {
 	var err error
 
 	serverURL, err := url.Parse(server)
@@ -221,7 +236,7 @@ func NewPostSendMessageRequestWithBody(server string, params *PostSendMessagePar
 		return nil, err
 	}
 
-	operationPath := fmt.Sprintf("/sendMessage")
+	operationPath := fmt.Sprintf("/v1/sendMessage")
 	if operationPath[0] == '/' {
 		operationPath = "." + operationPath
 	}
@@ -249,6 +264,33 @@ func NewPostSendMessageRequestWithBody(server string, params *PostSendMessagePar
 
 		req.Header.Set("X-Request-ID", headerParam0)
 
+	}
+
+	return req, nil
+}
+
+// NewGetWsRequest generates requests for GetWs
+func NewGetWsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/ws")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
 	}
 
 	return req, nil
@@ -297,18 +339,21 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
-	// PostGetHistoryWithBodyWithResponse request with any body
-	PostGetHistoryWithBodyWithResponse(ctx context.Context, params *PostGetHistoryParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostGetHistoryResponse, error)
+	// PostV1GetHistoryWithBodyWithResponse request with any body
+	PostV1GetHistoryWithBodyWithResponse(ctx context.Context, params *PostV1GetHistoryParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostV1GetHistoryResponse, error)
 
-	PostGetHistoryWithResponse(ctx context.Context, params *PostGetHistoryParams, body PostGetHistoryJSONRequestBody, reqEditors ...RequestEditorFn) (*PostGetHistoryResponse, error)
+	PostV1GetHistoryWithResponse(ctx context.Context, params *PostV1GetHistoryParams, body PostV1GetHistoryJSONRequestBody, reqEditors ...RequestEditorFn) (*PostV1GetHistoryResponse, error)
 
-	// PostSendMessageWithBodyWithResponse request with any body
-	PostSendMessageWithBodyWithResponse(ctx context.Context, params *PostSendMessageParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostSendMessageResponse, error)
+	// PostV1SendMessageWithBodyWithResponse request with any body
+	PostV1SendMessageWithBodyWithResponse(ctx context.Context, params *PostV1SendMessageParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostV1SendMessageResponse, error)
 
-	PostSendMessageWithResponse(ctx context.Context, params *PostSendMessageParams, body PostSendMessageJSONRequestBody, reqEditors ...RequestEditorFn) (*PostSendMessageResponse, error)
+	PostV1SendMessageWithResponse(ctx context.Context, params *PostV1SendMessageParams, body PostV1SendMessageJSONRequestBody, reqEditors ...RequestEditorFn) (*PostV1SendMessageResponse, error)
+
+	// GetWsWithResponse request
+	GetWsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetWsResponse, error)
 }
 
-type PostGetHistoryResponse struct {
+type PostV1GetHistoryResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *GetHistoryResponse
@@ -317,7 +362,7 @@ type PostGetHistoryResponse struct {
 }
 
 // Status returns HTTPResponse.Status
-func (r PostGetHistoryResponse) Status() string {
+func (r PostV1GetHistoryResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -325,21 +370,21 @@ func (r PostGetHistoryResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r PostGetHistoryResponse) StatusCode() int {
+func (r PostV1GetHistoryResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-type PostSendMessageResponse struct {
+type PostV1SendMessageResponse struct {
 	Body         []byte
 	HTTPResponse *http.Response
 	JSON200      *SendMessageResponse
 }
 
 // Status returns HTTPResponse.Status
-func (r PostSendMessageResponse) Status() string {
+func (r PostV1SendMessageResponse) Status() string {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.Status
 	}
@@ -347,56 +392,86 @@ func (r PostSendMessageResponse) Status() string {
 }
 
 // StatusCode returns HTTPResponse.StatusCode
-func (r PostSendMessageResponse) StatusCode() int {
+func (r PostV1SendMessageResponse) StatusCode() int {
 	if r.HTTPResponse != nil {
 		return r.HTTPResponse.StatusCode
 	}
 	return 0
 }
 
-// PostGetHistoryWithBodyWithResponse request with arbitrary body returning *PostGetHistoryResponse
-func (c *ClientWithResponses) PostGetHistoryWithBodyWithResponse(ctx context.Context, params *PostGetHistoryParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostGetHistoryResponse, error) {
-	rsp, err := c.PostGetHistoryWithBody(ctx, params, contentType, body, reqEditors...)
+type GetWsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r GetWsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GetWsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+// PostV1GetHistoryWithBodyWithResponse request with arbitrary body returning *PostV1GetHistoryResponse
+func (c *ClientWithResponses) PostV1GetHistoryWithBodyWithResponse(ctx context.Context, params *PostV1GetHistoryParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostV1GetHistoryResponse, error) {
+	rsp, err := c.PostV1GetHistoryWithBody(ctx, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParsePostGetHistoryResponse(rsp)
+	return ParsePostV1GetHistoryResponse(rsp)
 }
 
-func (c *ClientWithResponses) PostGetHistoryWithResponse(ctx context.Context, params *PostGetHistoryParams, body PostGetHistoryJSONRequestBody, reqEditors ...RequestEditorFn) (*PostGetHistoryResponse, error) {
-	rsp, err := c.PostGetHistory(ctx, params, body, reqEditors...)
+func (c *ClientWithResponses) PostV1GetHistoryWithResponse(ctx context.Context, params *PostV1GetHistoryParams, body PostV1GetHistoryJSONRequestBody, reqEditors ...RequestEditorFn) (*PostV1GetHistoryResponse, error) {
+	rsp, err := c.PostV1GetHistory(ctx, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParsePostGetHistoryResponse(rsp)
+	return ParsePostV1GetHistoryResponse(rsp)
 }
 
-// PostSendMessageWithBodyWithResponse request with arbitrary body returning *PostSendMessageResponse
-func (c *ClientWithResponses) PostSendMessageWithBodyWithResponse(ctx context.Context, params *PostSendMessageParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostSendMessageResponse, error) {
-	rsp, err := c.PostSendMessageWithBody(ctx, params, contentType, body, reqEditors...)
+// PostV1SendMessageWithBodyWithResponse request with arbitrary body returning *PostV1SendMessageResponse
+func (c *ClientWithResponses) PostV1SendMessageWithBodyWithResponse(ctx context.Context, params *PostV1SendMessageParams, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*PostV1SendMessageResponse, error) {
+	rsp, err := c.PostV1SendMessageWithBody(ctx, params, contentType, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParsePostSendMessageResponse(rsp)
+	return ParsePostV1SendMessageResponse(rsp)
 }
 
-func (c *ClientWithResponses) PostSendMessageWithResponse(ctx context.Context, params *PostSendMessageParams, body PostSendMessageJSONRequestBody, reqEditors ...RequestEditorFn) (*PostSendMessageResponse, error) {
-	rsp, err := c.PostSendMessage(ctx, params, body, reqEditors...)
+func (c *ClientWithResponses) PostV1SendMessageWithResponse(ctx context.Context, params *PostV1SendMessageParams, body PostV1SendMessageJSONRequestBody, reqEditors ...RequestEditorFn) (*PostV1SendMessageResponse, error) {
+	rsp, err := c.PostV1SendMessage(ctx, params, body, reqEditors...)
 	if err != nil {
 		return nil, err
 	}
-	return ParsePostSendMessageResponse(rsp)
+	return ParsePostV1SendMessageResponse(rsp)
 }
 
-// ParsePostGetHistoryResponse parses an HTTP response from a PostGetHistoryWithResponse call
-func ParsePostGetHistoryResponse(rsp *http.Response) (*PostGetHistoryResponse, error) {
+// GetWsWithResponse request returning *GetWsResponse
+func (c *ClientWithResponses) GetWsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GetWsResponse, error) {
+	rsp, err := c.GetWs(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGetWsResponse(rsp)
+}
+
+// ParsePostV1GetHistoryResponse parses an HTTP response from a PostV1GetHistoryWithResponse call
+func ParsePostV1GetHistoryResponse(rsp *http.Response) (*PostV1GetHistoryResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &PostGetHistoryResponse{
+	response := &PostV1GetHistoryResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -428,15 +503,15 @@ func ParsePostGetHistoryResponse(rsp *http.Response) (*PostGetHistoryResponse, e
 	return response, nil
 }
 
-// ParsePostSendMessageResponse parses an HTTP response from a PostSendMessageWithResponse call
-func ParsePostSendMessageResponse(rsp *http.Response) (*PostSendMessageResponse, error) {
+// ParsePostV1SendMessageResponse parses an HTTP response from a PostV1SendMessageWithResponse call
+func ParsePostV1SendMessageResponse(rsp *http.Response) (*PostV1SendMessageResponse, error) {
 	bodyBytes, err := io.ReadAll(rsp.Body)
 	defer func() { _ = rsp.Body.Close() }()
 	if err != nil {
 		return nil, err
 	}
 
-	response := &PostSendMessageResponse{
+	response := &PostV1SendMessageResponse{
 		Body:         bodyBytes,
 		HTTPResponse: rsp,
 	}
@@ -449,6 +524,22 @@ func ParsePostSendMessageResponse(rsp *http.Response) (*PostSendMessageResponse,
 		}
 		response.JSON200 = &dest
 
+	}
+
+	return response, nil
+}
+
+// ParseGetWsResponse parses an HTTP response from a GetWsWithResponse call
+func ParseGetWsResponse(rsp *http.Response) (*GetWsResponse, error) {
+	bodyBytes, err := io.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GetWsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
 	}
 
 	return response, nil

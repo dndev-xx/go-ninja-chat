@@ -34,12 +34,12 @@ type eventStream interface {
 
 //go:generate options-gen -out-filename=handler_options.gen.go -from-struct=Options
 type Options struct {
-	pingPeriod time.Duration `default:"3s" validate:"omitempty,min=100ms,max=30s"`
+	pingPeriod  time.Duration `default:"3s" validate:"omitempty,min=100ms,max=30s"`
+	logger      *zap.Logger   `option:"mandatory" validate:"required"`
+	eventStream eventStream
 
-	logger       *zap.Logger     `option:"mandatory" validate:"required"`
-	eventStream  eventStream     `option:"mandatory" validate:"required"`
-	eventAdapter EventAdapter    `option:"mandatory" validate:"required"`
-	eventWriter  EventWriter     `option:"mandatory" validate:"required"`
+	eventAdapter EventAdapter
+	eventWriter  EventWriter
 	upgrader     Upgrader        `option:"mandatory" validate:"required"`
 	shutdownCh   <-chan struct{} `option:"mandatory" validate:"required"`
 }
@@ -64,8 +64,7 @@ func (h *HTTPHandler) Serve(eCtx echo.Context) error {
 		return err
 	}
 	defer ws.Close()
-
-	userID := middlewares.GetAuthUserID(eCtx)
+	userID := middlewares.GetAuthUserID(eCtx) // middlewares.GetAuthUserID(eCtx)
 	ctx, cancel := context.WithCancel(eCtx.Request().Context())
 	defer cancel()
 
@@ -74,7 +73,6 @@ func (h *HTTPHandler) Serve(eCtx echo.Context) error {
 		h.logger.Error("Failed to subscribe to events", zap.Error(err))
 		return err
 	}
-
 	var wg sync.WaitGroup
 	errCh := make(chan error, 2)
 

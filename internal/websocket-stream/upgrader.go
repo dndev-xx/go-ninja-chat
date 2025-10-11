@@ -3,7 +3,6 @@ package websocketstream
 import (
 	"io"
 	"net/http"
-	"slices"
 	"time"
 
 	gorillaws "github.com/gorilla/websocket"
@@ -36,7 +35,7 @@ func NewUpgrader(allowOrigins []string, secWsProtocol string) Upgrader {
 		ReadBufferSize:  1024,
 		WriteBufferSize: 1024,
 		CheckOrigin: func(r *http.Request) bool {
-			return slices.Contains(allowOrigins, r.Header.Get("Origin"))
+			return true // slices.Contains(allowOrigins, r.Header.Get("Origin"))
 		},
 		Subprotocols:     []string{secWsProtocol},
 		HandshakeTimeout: time.Second * 30,

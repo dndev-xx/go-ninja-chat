@@ -15,9 +15,6 @@ type OptOptionsSetter func(o *Options)
 
 func NewOptions(
 	logger *zap.Logger,
-	eventStream eventStream,
-	eventAdapter EventAdapter,
-	eventWriter EventWriter,
 	upgrader Upgrader,
 	shutdownCh <-chan struct{},
 	options ...OptOptionsSetter,
@@ -28,12 +25,6 @@ func NewOptions(
 	o.pingPeriod, _ = time.ParseDuration("3s")
 
 	o.logger = logger
-
-	o.eventStream = eventStream
-
-	o.eventAdapter = eventAdapter
-
-	o.eventWriter = eventWriter
 
 	o.upgrader = upgrader
 
@@ -52,13 +43,31 @@ func WithPingPeriod(opt time.Duration) OptOptionsSetter {
 	}
 }
 
+func WithEventStream(opt eventStream) OptOptionsSetter {
+	return func(o *Options) {
+		o.eventStream = opt
+
+	}
+}
+
+func WithEventAdapter(opt EventAdapter) OptOptionsSetter {
+	return func(o *Options) {
+		o.eventAdapter = opt
+
+	}
+}
+
+func WithEventWriter(opt EventWriter) OptOptionsSetter {
+	return func(o *Options) {
+		o.eventWriter = opt
+
+	}
+}
+
 func (o *Options) Validate() error {
 	errs := new(errors461e464ebed9.ValidationErrors)
 	errs.Add(errors461e464ebed9.NewValidationError("pingPeriod", _validate_Options_pingPeriod(o)))
 	errs.Add(errors461e464ebed9.NewValidationError("logger", _validate_Options_logger(o)))
-	errs.Add(errors461e464ebed9.NewValidationError("eventStream", _validate_Options_eventStream(o)))
-	errs.Add(errors461e464ebed9.NewValidationError("eventAdapter", _validate_Options_eventAdapter(o)))
-	errs.Add(errors461e464ebed9.NewValidationError("eventWriter", _validate_Options_eventWriter(o)))
 	errs.Add(errors461e464ebed9.NewValidationError("upgrader", _validate_Options_upgrader(o)))
 	errs.Add(errors461e464ebed9.NewValidationError("shutdownCh", _validate_Options_shutdownCh(o)))
 	return errs.AsError()
@@ -74,27 +83,6 @@ func _validate_Options_pingPeriod(o *Options) error {
 func _validate_Options_logger(o *Options) error {
 	if err := validator461e464ebed9.GetValidatorFor(o).Var(o.logger, "required"); err != nil {
 		return fmt461e464ebed9.Errorf("field `logger` did not pass the test: %w", err)
-	}
-	return nil
-}
-
-func _validate_Options_eventStream(o *Options) error {
-	if err := validator461e464ebed9.GetValidatorFor(o).Var(o.eventStream, "required"); err != nil {
-		return fmt461e464ebed9.Errorf("field `eventStream` did not pass the test: %w", err)
-	}
-	return nil
-}
-
-func _validate_Options_eventAdapter(o *Options) error {
-	if err := validator461e464ebed9.GetValidatorFor(o).Var(o.eventAdapter, "required"); err != nil {
-		return fmt461e464ebed9.Errorf("field `eventAdapter` did not pass the test: %w", err)
-	}
-	return nil
-}
-
-func _validate_Options_eventWriter(o *Options) error {
-	if err := validator461e464ebed9.GetValidatorFor(o).Var(o.eventWriter, "required"); err != nil {
-		return fmt461e464ebed9.Errorf("field `eventWriter` did not pass the test: %w", err)
 	}
 	return nil
 }
