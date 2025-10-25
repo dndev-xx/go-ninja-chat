@@ -15,6 +15,7 @@ UI_CLIENT := "./cmd/ui-client/main.go"
 SWAGGER_CONFIG := "./api/codegen.yaml"
 SWAGGER_YAML := "./api/client.v1.swagger.yaml"
 SWAGGER_MANAGER_YAML := "./api/manager.v1.swagger.yaml"
+SWAGGER_EVENT_YAML := "./api/client.events.swagger.yaml"
 GEN_TYPES_OUT = internal/server-client/v1/pkg/types.gen.go
 GEN_SERVER_OUT = internal/server-client/v1/pkg/server.gen.go
 GEN_CLIENT_OUT = internal/server-client/v1/pkg/client.gen.go
@@ -24,6 +25,11 @@ GEN_TYPES_MANAGER_OUT = internal/server-manager/v1/pkg/types.gen.go
 GEN_SERVER_MANAGER_OUT = internal/server-manager/v1/pkg/server.gen.go
 GEN_MANAGER_OUT = internal/server-manager/v1/pkg/client.gen.go
 GEN_SPEC_MANAGER_OUT = internal/server-manager/v1/pkg/spec.gen.go
+
+GEN_TYPES_EVENT_OUT = internal/server-event/v1/pkg/types.gen.go
+GEN_SERVER_EVENT_OUT = internal/server-event/v1/pkg/server.gen.go
+GEN_EVENT_OUT = internal/server-event/v1/pkg/client.gen.go
+GEN_SPEC_EVENT_OUT = internal/server-event/v1/pkg/spec.gen.go
 
 GO_MODULE := github.com/dndev-xx/go-ninja-chat
 GO_FILES := $(shell find . -type f -name '*.go' -not -path "./vendor/*" -not -path "./internal/store/*" -not -path "*.gen.go" | tr "\n" " ")
@@ -35,7 +41,7 @@ RED    := \033[31m
 RESET  := \033[0m
 
 # Phony targets declaration
-.PHONY: build run run-client gen_swagger gen_types test test-fail test-it lint tidy gen gen_ent \
+.PHONY: build run run-client gen_swagger gen_event gen_types test test-fail test-it lint tidy gen gen_ent \
         up up-db up-swagger down db_status db_logs db_stop db_clean sentry_updat format help
 
 fmt:
@@ -66,31 +72,52 @@ run-manager:
 gen_api: gen_client gen_manager
 
 gen_client:
-	@echo "$(YELLOW)Running ui client...$(RESET)"
-	oapi-codegen \
-      -package pkg \
-      -generate types \
-      -o $(GEN_TYPES_OUT) \
-      $(SWAGGER_YAML)
+	@echo "$(YELLOW)Generating client API...$(RESET)"
+	@oapi-codegen \
+		-package pkg \
+		-generate types \
+		-o $(GEN_TYPES_OUT) \
+		$(SWAGGER_YAML)
+	@oapi-codegen \
+		-package pkg \
+		-generate echo-server \
+		-o $(GEN_SERVER_OUT) \
+		$(SWAGGER_YAML)
+	@oapi-codegen \
+		-package pkg \
+		-generate client \
+		-o $(GEN_CLIENT_OUT) \
+		$(SWAGGER_YAML)
+	@oapi-codegen \
+		-package pkg \
+		-generate spec \
+		-o $(GEN_SPEC_OUT) \
+		$(SWAGGER_YAML)
+	@echo "$(GREEN)Client API generation completed.$(RESET)"
 
-	oapi-codegen \
-      -package pkg \
-      -generate echo-server \
-      -o $(GEN_SERVER_OUT) \
-      $(SWAGGER_YAML)
-
-	oapi-codegen \
-      -package pkg \
-      -generate client \
-      -o $(GEN_CLIENT_OUT) \
-      $(SWAGGER_YAML)
-
-	oapi-codegen \
-	  -package pkg \
-	  -generate spec \
-      -o $(GEN_SPEC_OUT) \
-      $(SWAGGER_YAML)
-	@echo "$(GREEN)Execution completed.$(RESET)"
+gen_event:
+	@echo "$(YELLOW)Generating client API...$(RESET)"
+	@oapi-codegen \
+		-package pkg \
+		-generate types \
+		-o $(GEN_TYPES_EVENT_OUT) \
+		$(SWAGGER_EVENT_YAML)
+	@oapi-codegen \
+		-package pkg \
+		-generate echo-server \
+		-o $(GEN_SERVER_EVENT_OUT) \
+		$(SWAGGER_EVENT_YAML)
+	@oapi-codegen \
+		-package pkg \
+		-generate client \
+		-o $(GEN_EVENT_OUT) \
+		$(SWAGGER_EVENT_YAML)
+	@oapi-codegen \
+		-package pkg \
+		-generate spec \
+		-o $(GEN_SPEC_EVENT_OUT) \
+		$(SWAGGER_EVENT_YAML)
+	@echo "$(GREEN)Client API generation completed.$(RESET)"
 
 gen_manager:
 	@echo "$(YELLOW)Running ui client...$(RESET)"
@@ -118,6 +145,9 @@ gen_manager:
       -o $(GEN_SPEC_MANAGER_OUT) \
       $(SWAGGER_MANAGER_YAML)
 	@echo "$(GREEN)Execution completed.$(RESET)"
+
+gen_all_spec: gen_client gen_event gen_manager
+	@echo "$(GREEN)All code generation completed.$(RESET)"
 
 gen_types:
 	@echo "$(YELLOW)Generating types for $(TYPE)...$(RESET)"
@@ -232,6 +262,8 @@ help:
 	@echo "  $(GREEN)run-client$(RESET): Run ui-client"
 	@echo "  $(GREEN)run-manager$(RESET): Run manager-client"
 	@echo "  $(GREEN)test$(RESET): Run unit tests"
+	@echo "  $(GREEN)gen_event$(RESET): Run gen_event"
+	@echo "  $(GREEN)gen_all_spec$(RESET): Run gen_all_spec"
 	@echo "  $(GREEN)test-fail$(RESET): Run only failed unit tests"
 	@echo "  $(GREEN)test-it$(RESET): Run integration tests"
 	@echo "  $(GREEN)lint$(RESET): Lint project using golangci-lint"

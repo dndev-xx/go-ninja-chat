@@ -25,7 +25,7 @@ import (
 	hm "github.com/dndev-xx/go-ninja-chat/internal/server-manager/v1"
 	mgpkg "github.com/dndev-xx/go-ninja-chat/internal/server-manager/v1/pkg"
 	eventstream "github.com/dndev-xx/go-ninja-chat/internal/services/event-stream"
-	eventstreamsrv"github.com/dndev-xx/go-ninja-chat/internal/services/event-stream/in-mem"
+	eventstreamsrv "github.com/dndev-xx/go-ninja-chat/internal/services/event-stream/in-mem"
 	managerload "github.com/dndev-xx/go-ninja-chat/internal/services/manager-load"
 	managerpool "github.com/dndev-xx/go-ninja-chat/internal/services/manager-pool/in-mem"
 	msgProducer "github.com/dndev-xx/go-ninja-chat/internal/services/msg-producer"
@@ -312,6 +312,7 @@ func (b *AppBuilder) WithClientHTTPSrv() Builder {
 		b.App.Config.Servers.Client.Addr,
 		b.App.Config.Servers.Client.AllowOrigins,
 		b.App.Swagger["client"],
+		handlers,
 		handlers,
 		kc,
 		b.App.Config.Servers.Client.RequiredAccess.Resource,

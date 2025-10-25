@@ -106,7 +106,7 @@ func (s *ServiceSuite) TestEventIsMultiplexedToStreams() {
 		case <-time.After(time.Second):
 			s.FailNow("lost events")
 		}
-		msgs = append(msgs, event.(*eventstream.MessageSentEvent).Content)
+		msgs = append(msgs, event.(*eventstream.MessageSentEvent).Body)
 	}
 	s.ElementsMatch(<-expectedCh, msgs)
 }
@@ -247,7 +247,7 @@ func readNewMessageEvents(stream <-chan eventstream.Event, n int) <-chan []strin
 	var msgs []string // No preallocation, n can be negative.
 	go func() {
 		for ev := range stream {
-			msg := ev.(*eventstream.MessageSentEvent).Content
+			msg := ev.(*eventstream.MessageSentEvent).Body
 			msgs = append(msgs, msg)
 			if n != -1 && len(msgs) == n {
 				break
@@ -259,15 +259,17 @@ func readNewMessageEvents(stream <-chan eventstream.Event, n int) <-chan []strin
 }
 
 func newMessageEvent(body string) eventstream.Event {
+	createaAt := time.Now()
+	usrId := types.NewUserID()
 	return &eventstream.MessageSentEvent{
-		MessageID:    types.NewMessageID(),
-		ChatID:       types.NewChatID(),
-		UserID:       types.NewUserID(),
-		Content:      body,
-		SentAt:       time.Now(),
-		MessageType:  "event",
-		EventID:      types.NewEventID(),
-		RequestID:    types.NewRequestID(),
-		IsCheckAtAFC: false,
+		MessageID: types.NewMessageID(),
+		ChatID:    types.NewChatID(),
+		AuthorID:  &usrId,
+		Body:      body,
+		CreatedAt: &createaAt,
+		EventType: "event",
+		EventID:   types.NewEventID(),
+		RequestID: types.NewRequestID(),
+		IsService: false,
 	}
 }

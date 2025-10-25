@@ -64,7 +64,7 @@ func (h *HTTPHandler) Serve(eCtx echo.Context) error {
 		return err
 	}
 	defer ws.Close()
-	userID := middlewares.GetAuthUserID(eCtx) // middlewares.GetAuthUserID(eCtx)
+	userID := middlewares.GetAuthUserID(eCtx) // middlewares.MustUserID TODO: test -> GetAuthUserID, app -> MustUserID
 	ctx, cancel := context.WithCancel(eCtx.Request().Context())
 	defer cancel()
 

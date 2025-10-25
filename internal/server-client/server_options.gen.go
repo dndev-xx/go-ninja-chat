@@ -7,6 +7,7 @@ import (
 
 	mw "github.com/dndev-xx/go-ninja-chat/internal/middlewares"
 	clientv1 "github.com/dndev-xx/go-ninja-chat/internal/server-client/v1/pkg"
+	wsv1 "github.com/dndev-xx/go-ninja-chat/internal/server-event/v1/pkg"
 	"github.com/getkin/kin-openapi/openapi3"
 	errors461e464ebed9 "github.com/kazhuravlev/options-gen/pkg/errors"
 	validator461e464ebed9 "github.com/kazhuravlev/options-gen/pkg/validator"
@@ -22,6 +23,7 @@ func NewOptions(
 	allowOrigins []string,
 	v1Swagger *openapi3.T,
 	v1Handlers clientv1.ServerInterface,
+	v1WsHandler wsv1.ServerInterface,
 	keycloakClient mw.Introspector,
 	resource string,
 	role string,
@@ -42,6 +44,8 @@ func NewOptions(
 	o.v1Swagger = v1Swagger
 
 	o.v1Handlers = v1Handlers
+
+	o.v1WsHandler = v1WsHandler
 
 	o.keycloakClient = keycloakClient
 

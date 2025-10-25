@@ -201,7 +201,7 @@ func (t UserID) Validate() error {
 }
 
 type TypeSet = interface {
-	ChatID | MessageID | ProblemID | RequestID | UserID
+	ChatID | MessageID | ProblemID | RequestID | UserID | EventID
 }
 
 func Parse[T TypeSet](s string) (T, error) {

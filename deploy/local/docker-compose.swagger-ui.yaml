@@ -11,4 +11,6 @@ services:
     environment:
       URLS: "[
         {url: 'doc/client.v1.swagger.yaml', name: 'Bank Support Chat Client API'},
-        {url: 'doc/manager.v1.swagger.yaml', name: 'Bank Support Chat Manager API'}]"
+        {url: 'doc/manager.v1.swagger.yaml', name: 'Bank Support Chat Manager API'},
+        {url: 'doc/client.events.swagger.yaml', name: 'Bank Support Chat Client Event ws'}
+        ]"

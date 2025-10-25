@@ -18,6 +18,7 @@ import (
 
 	mw "github.com/dndev-xx/go-ninja-chat/internal/middlewares"
 	clientv1 "github.com/dndev-xx/go-ninja-chat/internal/server-client/v1/pkg"
+	wsv1 "github.com/dndev-xx/go-ninja-chat/internal/server-event/v1/pkg"
 )
 
 const (
@@ -33,6 +34,7 @@ type Options struct {
 	allowOrigins   []string                 `option:"mandatory"`
 	v1Swagger      *openapi3.T              `option:"mandatory"`
 	v1Handlers     clientv1.ServerInterface `option:"mandatory"`
+	v1WsHandler    wsv1.ServerInterface     `option:"mandatory"`
 	keycloakClient mw.Introspector          `option:"mandatory"`
 	resource       string                   `option:"mandatory"`
 	role           string                   `option:"mandatory"`

@@ -54,22 +54,22 @@ func (s *Service) unsubscribe(userID types.UserID, ch chan eventstream.Event) {
 	if !exists {
 		return
 	}
+	loop:
+		for i, subscriber := range subscribers {
+			if subscriber == ch {
+				s.closedChannels[ch] = true
+				close(ch)
 
-	for i, subscriber := range subscribers {
-		if subscriber == ch {
-			s.closedChannels[ch] = true
-			close(ch)
-			
-			s.subscribers[userID] = append(subscribers[:i], subscribers[i+1:]...)
-			
-			if len(s.subscribers[userID]) == 0 {
-				delete(s.subscribers, userID)
+				s.subscribers[userID] = append(subscribers[:i], subscribers[i+1:]...)
+
+				if len(s.subscribers[userID]) == 0 {
+					delete(s.subscribers, userID)
+				}
+
+				delete(s.closedChannels, ch)
+				break loop
 			}
-			
-			delete(s.closedChannels, ch)
-			break
 		}
-	}
 }
 
 func (s *Service) Publish(ctx context.Context, userID types.UserID, event eventstream.Event) error {
@@ -123,7 +123,7 @@ func (s *Service) Close() error {
 		}
 		delete(s.subscribers, userID)
 	}
-	
+
 	s.closedChannels = make(map[chan eventstream.Event]bool)
 
 	return nil
