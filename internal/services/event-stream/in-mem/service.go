@@ -2,6 +2,7 @@ package inmemeventstream
 
 import (
 	"context"
+	"errors"
 	"sync"
 
 	eventstream "github.com/dndev-xx/go-ninja-chat/internal/services/event-stream"
@@ -10,66 +11,75 @@ import (
 
 const (
 	serviceName = "event-stream"
-	chSubLen    = 100
 )
 
+type subscriber struct {
+	ch      chan eventstream.Event
+	closing chan struct{}
+}
+
 type Service struct {
-	Name string
-	mu   sync.RWMutex
-	// Map of userID to list of channels for that user
-	subscribers map[types.UserID][]chan eventstream.Event
-	// Map to track if channel is closed
-	closedChannels map[chan eventstream.Event]bool
-	closed         bool
+	Name        string
+	mu          sync.RWMutex
+	subscribers map[types.UserID][]*subscriber
+	closed      bool
 }
 
 func New() *Service {
 	return &Service{
-		Name:           serviceName,
-		subscribers:    make(map[types.UserID][]chan eventstream.Event),
-		closedChannels: make(map[chan eventstream.Event]bool),
+		Name:        serviceName,
+		subscribers: make(map[types.UserID][]*subscriber),
 	}
 }
 
 func (s *Service) Subscribe(ctx context.Context, userID types.UserID) (<-chan eventstream.Event, error) {
 	s.mu.Lock()
-	ch := make(chan eventstream.Event, chSubLen)
-	s.subscribers[userID] = append(s.subscribers[userID], ch)
-	s.closedChannels[ch] = false
-	s.mu.Unlock()
+	defer s.mu.Unlock()
+
+	if s.closed {
+		return nil, errors.New("service is closed")
+	}
+	// буфферизированный канал является ботлнеком, заранее не сможем угадать сколько сообщений попадет в канал, если > 100 возможно недетермированное поведение.
+	ch := make(chan eventstream.Event, 100)
+	closing := make(chan struct{})
+	sub := &subscriber{ch: ch, closing: closing}
+	s.subscribers[userID] = append(s.subscribers[userID], sub)
 
 	go func() {
-		<-ctx.Done()
-		s.unsubscribe(userID, ch)
+		select {
+		case <-ctx.Done():
+			s.unsubscribe(userID, sub)
+		case <-closing:
+			// Уже закрыто другим способом
+		}
 	}()
 
 	return ch, nil
 }
 
-func (s *Service) unsubscribe(userID types.UserID, ch chan eventstream.Event) {
+func (s *Service) unsubscribe(userID types.UserID, sub *subscriber) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+
+	close(sub.closing)
 
 	subscribers, exists := s.subscribers[userID]
 	if !exists {
 		return
 	}
-	loop:
-		for i, subscriber := range subscribers {
-			if subscriber == ch {
-				s.closedChannels[ch] = true
-				close(ch)
 
-				s.subscribers[userID] = append(subscribers[:i], subscribers[i+1:]...)
+	for i, subscriber := range subscribers {
+		if subscriber == sub {
+			s.subscribers[userID] = append(subscribers[:i], subscribers[i+1:]...)
 
-				if len(s.subscribers[userID]) == 0 {
-					delete(s.subscribers, userID)
-				}
+			close(sub.ch)
 
-				delete(s.closedChannels, ch)
-				break loop
+			if len(s.subscribers[userID]) == 0 {
+				delete(s.subscribers, userID)
 			}
+			return
 		}
+	}
 }
 
 func (s *Service) Publish(ctx context.Context, userID types.UserID, event eventstream.Event) error {
@@ -78,28 +88,33 @@ func (s *Service) Publish(ctx context.Context, userID types.UserID, event events
 	}
 
 	s.mu.RLock()
-	subs, exists := s.subscribers[userID]
-	if !exists || len(subs) == 0 {
-		s.mu.RUnlock()
+	defer s.mu.RUnlock()
+
+	if s.closed {
+		return errors.New("service is closed")
+	}
+
+	subscribers, exists := s.subscribers[userID]
+	if !exists {
 		return nil
 	}
 
-	subsCopy := make([]chan eventstream.Event, 0, len(subs))
-	for _, ch := range subs {
-		if !s.closedChannels[ch] {
-			subsCopy = append(subsCopy, ch)
+	// Отправляем события только активным подписчикам
+	for _, sub := range subscribers {
+		select {
+		case <-sub.closing:
+			// Пропускаем закрытые подписчики
+			continue
+		default:
 		}
-	}
-	s.mu.RUnlock()
 
-	for _, ch := range subsCopy {
 		select {
 		case <-ctx.Done():
-			return nil
-		case ch <- event:
-			// Successfully sent to this subscriber
+			return ctx.Err()
+		case sub.ch <- event:
+			// Успешно отправлено
 		default:
-			// Channel is full, skip this subscriber to prevent blocking
+			// Пропускаем если канал заполнен
 		}
 	}
 
@@ -115,16 +130,13 @@ func (s *Service) Close() error {
 	}
 	s.closed = true
 
-	for userID, subs := range s.subscribers {
-		for _, ch := range subs {
-			if !s.closedChannels[ch] {
-				close(ch)
-			}
+	for userID, subscribers := range s.subscribers {
+		for _, sub := range subscribers {
+			close(sub.closing)
+			close(sub.ch)
 		}
 		delete(s.subscribers, userID)
 	}
-
-	s.closedChannels = make(map[chan eventstream.Event]bool)
 
 	return nil
 }

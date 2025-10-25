@@ -24,7 +24,7 @@ import (
 	servermanager "github.com/dndev-xx/go-ninja-chat/internal/server-manager"
 	hm "github.com/dndev-xx/go-ninja-chat/internal/server-manager/v1"
 	mgpkg "github.com/dndev-xx/go-ninja-chat/internal/server-manager/v1/pkg"
-	eventstream "github.com/dndev-xx/go-ninja-chat/internal/services/event-stream"
+	clientevents "github.com/dndev-xx/go-ninja-chat/internal/server-client/events"
 	eventstreamsrv "github.com/dndev-xx/go-ninja-chat/internal/services/event-stream/in-mem"
 	managerload "github.com/dndev-xx/go-ninja-chat/internal/services/manager-load"
 	managerpool "github.com/dndev-xx/go-ninja-chat/internal/services/manager-pool/in-mem"
@@ -282,7 +282,7 @@ func (b *AppBuilder) WithClientHTTPSrv() Builder {
 		websocketstream.NewUpgrader([]string{"http://localhost"}, "chat-service-protocol"),
 		shutdownCh,
 		websocketstream.WithPingPeriod(time.Second/4),
-		websocketstream.WithEventAdapter(EventAdapter{}),
+		websocketstream.WithEventAdapter(clientevents.Adapter{}),
 		websocketstream.WithEventWriter(websocketstream.JSONEventWriter{}),
 		websocketstream.WithEventStream(eventStream),
 	))
@@ -330,10 +330,4 @@ func (b *AppBuilder) WithClientHTTPSrv() Builder {
 
 func (b *AppBuilder) GetContext() (*AppContext, error) {
 	return b.App, b.err
-}
-
-type EventAdapter struct{}
-
-func (EventAdapter) Adapt(event eventstream.Event) (any, error) {
-	return event, nil
 }

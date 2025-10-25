@@ -179,12 +179,15 @@ func (s *ServiceSuite) TestPublishWithoutSubscribers() {
 		publish("3")
 
 		cancel3()
+		time.Sleep(1 * time.Millisecond)
 		publish("4")
 
 		cancel2()
+		time.Sleep(1 * time.Millisecond)
 		publish("5")
 
 		cancel1()
+		time.Sleep(1 * time.Millisecond)
 		publish("6")
 
 		// Assert.
