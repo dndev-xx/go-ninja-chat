@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 
 	messagesrepo "github.com/dndev-xx/go-ninja-chat/internal/repositories/messages"
 	sendclientmessagejob "github.com/dndev-xx/go-ninja-chat/internal/services/outbox/jobs/send-client-message"

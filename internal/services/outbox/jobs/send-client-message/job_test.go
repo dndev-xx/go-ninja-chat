@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/require"
+	"go.uber.org/mock/gomock"
 
 	messagesrepo "github.com/dndev-xx/go-ninja-chat/internal/repositories/messages"
 	msgproducer "github.com/dndev-xx/go-ninja-chat/internal/services/msg-producer"

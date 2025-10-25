@@ -2,6 +2,7 @@ package websocketstream
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"sync"
 	"time"
@@ -32,11 +33,16 @@ type eventStream interface {
 	Subscribe(ctx context.Context, userID types.UserID) (<-chan eventstream.Event, error)
 }
 
+type eventPublisher interface {
+	Publish(ctx context.Context, userID types.UserID, event eventstream.Event) error
+}
+
 //go:generate options-gen -out-filename=handler_options.gen.go -from-struct=Options
 type Options struct {
-	pingPeriod  time.Duration `default:"3s" validate:"omitempty,min=100ms,max=30s"`
-	logger      *zap.Logger   `option:"mandatory" validate:"required"`
-	eventStream eventStream
+	pingPeriod     time.Duration `default:"3s" validate:"omitempty,min=100ms,max=30s"`
+	logger         *zap.Logger   `option:"mandatory" validate:"required"`
+	eventStream    eventStream
+	eventPublisher eventPublisher
 
 	eventAdapter EventAdapter
 	eventWriter  EventWriter
@@ -91,7 +97,7 @@ func (h *HTTPHandler) Serve(eCtx echo.Context) error {
 		})
 
 		for {
-			_, _, err := ws.ReadMessage()
+			_, msg, err := ws.ReadMessage()
 			if err != nil {
 				if gorillaws.IsCloseError(err, gorillaws.CloseNormalClosure, gorillaws.CloseGoingAway) {
 					h.logger.Debug("Connection closed normally")
@@ -99,6 +105,9 @@ func (h *HTTPHandler) Serve(eCtx echo.Context) error {
 				}
 				errCh <- fmt.Errorf("read error: %w", err)
 				return
+			}
+			if err := h.handleIncomingMessage(ctx, userID, msg); err != nil {
+				h.logger.Sugar().Errorf("Failed to handle incoming message: %w", err.Error())
 			}
 		}
 	}()
@@ -158,6 +167,60 @@ func (h *HTTPHandler) Serve(eCtx echo.Context) error {
 	for err := range errCh {
 		return err
 	}
+
+	return nil
+}
+
+func (h *HTTPHandler) handleIncomingMessage(ctx context.Context, userID types.UserID, message []byte) error {
+	var baseEvent BaseEvent
+	if err := json.Unmarshal(message, &baseEvent); err != nil {
+		return fmt.Errorf("failed to unmarshal base event: %w", err)
+	}
+
+	switch baseEvent.EventType {
+	case "messageSentEvent":
+		return h.handleMessageSentEvent(ctx, userID, message)
+	default:
+		h.logger.Warn("Unsupported event type",
+			zap.String("eventType", baseEvent.EventType),
+			zap.String("userID", userID.String()))
+		return nil
+	}
+}
+
+func (h *HTTPHandler) handleMessageSentEvent(ctx context.Context, userID types.UserID, message []byte) error {
+	var incomingEvent IncomingMessageSentEvent
+	if err := json.Unmarshal(message, &incomingEvent); err != nil {
+		return fmt.Errorf("failed to unmarshal MessageSentEvent: %w", err)
+	}
+
+	if incomingEvent.Body == "" {
+		return fmt.Errorf("message body cannot be empty")
+	}
+
+	// if incomingEvent.AuthorID != userID {
+	//     return fmt.Errorf("authorId does not match authenticated user")
+	// }
+
+	event := &eventstream.MessageSentEvent{
+		EventID:   types.NewEventID(),
+		EventType: "MessageSentEvent",
+		MessageID: incomingEvent.MessageID,
+		RequestID: incomingEvent.RequestID,
+		AuthorID:  &incomingEvent.AuthorID,
+		Body:      incomingEvent.Body,
+		CreatedAt: &incomingEvent.CreatedAt,
+		IsService: incomingEvent.IsService,
+	}
+
+	if err := h.eventPublisher.Publish(ctx, userID, event); err != nil {
+		return fmt.Errorf("failed to publish event: %w", err)
+	}
+
+	h.logger.Debug("Successfully processed MessageSentEvent",
+		zap.String("messageId", incomingEvent.MessageID.String()),
+		zap.String("authorId", incomingEvent.AuthorID.String()),
+		zap.Int("bodyLength", len(incomingEvent.Body)))
 
 	return nil
 }

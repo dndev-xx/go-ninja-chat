@@ -59,6 +59,7 @@ func TestHTTPHandler(t *testing.T) {
 		shutdownCh,
 		websocketstream.WithPingPeriod(pingInterval),
 		websocketstream.WithEventStream(eventStreamMock),
+		websocketstream.WithEventPublisher(eventStreamMock),
 		websocketstream.WithEventAdapter(EventAdapter{}),
 		websocketstream.WithEventWriter(websocketstream.JSONEventWriter{}),
 	))
@@ -201,6 +202,11 @@ func TestHTTPHandler(t *testing.T) {
 type EventStreamMock struct {
 	uid types.UserID
 	ch  chan eventstream.Event
+}
+
+func (e EventStreamMock) Publish(ctx context.Context, userID types.UserID, event eventstream.Event) error {
+	e.ch <- event
+	return nil
 }
 
 func (e EventStreamMock) Subscribe(ctx context.Context, userID types.UserID) (<-chan eventstream.Event, error) {

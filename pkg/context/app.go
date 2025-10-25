@@ -285,6 +285,7 @@ func (b *AppBuilder) WithClientHTTPSrv() Builder {
 		websocketstream.WithEventAdapter(clientevents.Adapter{}),
 		websocketstream.WithEventWriter(websocketstream.JSONEventWriter{}),
 		websocketstream.WithEventStream(eventStream),
+		websocketstream.WithEventPublisher(eventStream),
 	))
 
 	usecaseUpgrade, err := wshandshake.New(

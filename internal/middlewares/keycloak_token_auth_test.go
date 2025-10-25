@@ -8,11 +8,11 @@ import (
 	"testing"
 
 	"github.com/golang-jwt/jwt"
-	"github.com/golang/mock/gomock"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/stretchr/testify/suite"
+	"go.uber.org/mock/gomock"
 
 	keycloakclient "github.com/dndev-xx/go-ninja-chat/internal/clients/keycloak"
 	"github.com/dndev-xx/go-ninja-chat/internal/middlewares"
