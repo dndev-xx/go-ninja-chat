@@ -4,8 +4,8 @@ import (
 	"time"
 
 	eventstream "github.com/dndev-xx/go-ninja-chat/internal/services/event-stream"
-	websocketstream "github.com/dndev-xx/go-ninja-chat/internal/websocket-stream"
 	"github.com/dndev-xx/go-ninja-chat/internal/types"
+	websocketstream "github.com/dndev-xx/go-ninja-chat/internal/websocket-stream"
 )
 
 var _ websocketstream.EventAdapter = Adapter{}
@@ -53,11 +53,11 @@ func (Adapter) Adapt(ev eventstream.Event) (any, error) {
 			Body:      msgEvent.Body,
 			IsService: msgEvent.IsService,
 		}
-		
+
 		if msgEvent.CreatedAt != nil {
 			dto.CreatedAt = *msgEvent.CreatedAt
 		}
-		
+
 		return dto, nil
 
 	default:
@@ -70,11 +70,11 @@ func (Adapter) Adapt(ev eventstream.Event) (any, error) {
 				Body:      msgEvent.Body,
 				IsService: msgEvent.IsService,
 			}
-			
+
 			if msgEvent.CreatedAt != nil {
 				dto.CreatedAt = *msgEvent.CreatedAt
 			}
-			
+
 			return dto, nil
 		} else {
 			return MessageSentEventDTO{
