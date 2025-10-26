@@ -5,8 +5,8 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/golang/mock/gomock" //"go.uber.org/mock/gomock"
 	"github.com/stretchr/testify/suite"
-	"go.uber.org/mock/gomock"
 
 	managerload "github.com/dndev-xx/go-ninja-chat/internal/services/manager-load"
 	managerloadmocks "github.com/dndev-xx/go-ninja-chat/internal/services/manager-load/mocks"

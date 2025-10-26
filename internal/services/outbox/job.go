@@ -4,6 +4,9 @@ import (
 	"context"
 	"fmt"
 	"time"
+
+	"github.com/dndev-xx/go-ninja-chat/internal/services/event-stream"
+	"github.com/dndev-xx/go-ninja-chat/internal/types"
 )
 
 type Job interface {
@@ -20,6 +23,10 @@ type Job interface {
 	// An attempt is counted if the task was not completed due to an unknown error.
 	// When MaxAttempts() is exceeded, the task moves to the dlq (dead letter queue) table.
 	MaxAttempts() int
+}
+
+type eventPublisher interface {
+	Publish(ctx context.Context, userID types.UserID, event eventstream.Event) error
 }
 
 const (

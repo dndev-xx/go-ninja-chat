@@ -253,11 +253,13 @@ func (b *AppBuilder) WithClientHTTPSrv() Builder {
 		b.err = fmt.Errorf("create v1 usecase %v", err)
 		return b
 	}
+	eventStream := eventstreamsrv.New()
 	outbox := obox.New(jobRepo, db, obox.Config{
-		Workers:    10,
-		IdleTime:   b.App.Config.Services.Outbox.IdleTime,
-		ReserveFor: b.App.Config.Services.Outbox.ReserveFor,
-		Logger:     b.App.Logger,
+		Workers:        10,
+		IdleTime:       b.App.Config.Services.Outbox.IdleTime,
+		ReserveFor:     b.App.Config.Services.Outbox.ReserveFor,
+		Logger:         b.App.Logger,
+		EventPublisher: eventStream,
 	})
 	outbox.MustRegisterJob(job)
 	go outbox.Start(b.App.context)
@@ -276,7 +278,6 @@ func (b *AppBuilder) WithClientHTTPSrv() Builder {
 		b.err = fmt.Errorf("create http error handler: %v", err)
 	}
 	shutdownCh := make(chan struct{})
-	eventStream := eventstreamsrv.New()
 	upgrader, err := websocketstream.NewHTTPHandler(websocketstream.NewOptions(
 		zap.L(),
 		websocketstream.NewUpgrader([]string{"http://localhost"}, "chat-service-protocol"),
@@ -285,7 +286,7 @@ func (b *AppBuilder) WithClientHTTPSrv() Builder {
 		websocketstream.WithEventAdapter(clientevents.Adapter{}),
 		websocketstream.WithEventWriter(websocketstream.JSONEventWriter{}),
 		websocketstream.WithEventStream(eventStream),
-		websocketstream.WithEventPublisher(eventStream),
+		// websocketstream.WithEventPublisher(eventStream),
 	))
 
 	usecaseUpgrade, err := wshandshake.New(

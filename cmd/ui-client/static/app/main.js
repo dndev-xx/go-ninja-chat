@@ -22,8 +22,8 @@ class App {
         });
 
         keycloak.init({
-            onLoad: 'login-required',
-        })
+                onLoad: 'login-required',
+            })
             .then((authenticated) => {
                 if (!authenticated) {
                     throw new Error('Not authenticated!');
@@ -103,7 +103,7 @@ class App {
 
     static SendMessageOnBtnClick() {
         const app = this;
-        this.sendButton.click(function () {
+        this.sendButton.click(function() {
             const msgBody = app.msgInput.val();
             if (msgBody === '') {
                 return;
@@ -123,7 +123,15 @@ class App {
     }
 
     static DisplayNewMessage(msg) {
-        this.chatArea.append(Message.FromData(msg).render());
+        const message = Message.FromData(msg);
+        const messageId = message.id;
+
+        if ($(`*[data-message-id="${messageId}"]`).length > 0) {
+            console.log('Message already displayed:', messageId);
+            return;
+        }
+
+        this.chatArea.append(message.render());
         this.chatArea.animate({
             scrollTop: this.chatArea[0].scrollHeight,
         }, 1000);

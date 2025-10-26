@@ -33,16 +33,11 @@ type eventStream interface {
 	Subscribe(ctx context.Context, userID types.UserID) (<-chan eventstream.Event, error)
 }
 
-type eventPublisher interface {
-	Publish(ctx context.Context, userID types.UserID, event eventstream.Event) error
-}
-
 //go:generate options-gen -out-filename=handler_options.gen.go -from-struct=Options
 type Options struct {
-	pingPeriod     time.Duration `default:"3s" validate:"omitempty,min=100ms,max=30s"`
-	logger         *zap.Logger   `option:"mandatory" validate:"required"`
-	eventStream    eventStream
-	eventPublisher eventPublisher
+	pingPeriod  time.Duration `default:"3s" validate:"omitempty,min=100ms,max=30s"`
+	logger      *zap.Logger   `option:"mandatory" validate:"required"`
+	eventStream eventStream
 
 	eventAdapter EventAdapter
 	eventWriter  EventWriter
@@ -70,7 +65,7 @@ func (h *HTTPHandler) Serve(eCtx echo.Context) error {
 		return err
 	}
 	defer ws.Close()
-	userID := middlewares.GetAuthUserID(eCtx) // middlewares.MustUserID TODO: test -> GetAuthUserID, app -> MustUserID
+	userID := middlewares.MustUserID(eCtx) // middlewares.MustUserID TODO: test -> GetAuthUserID, app -> MustUserID
 	ctx, cancel := context.WithCancel(eCtx.Request().Context())
 	defer cancel()
 
@@ -95,9 +90,9 @@ func (h *HTTPHandler) Serve(eCtx echo.Context) error {
 			h.logger.Debug("Received pong")
 			return nil
 		})
-
+		// TODO: переписать, а именно, пишем сообщение в бд -> достаем и адаптируем его и кладем в events, далее вычитываем сообщение и пишем в ws(запись byte msg не нужна на данном этапе)
 		for {
-			_, msg, err := ws.ReadMessage()
+			_, _, err := ws.ReadMessage()
 			if err != nil {
 				if gorillaws.IsCloseError(err, gorillaws.CloseNormalClosure, gorillaws.CloseGoingAway) {
 					h.logger.Debug("Connection closed normally")
@@ -106,9 +101,9 @@ func (h *HTTPHandler) Serve(eCtx echo.Context) error {
 				errCh <- fmt.Errorf("read error: %w", err)
 				return
 			}
-			if err := h.handleIncomingMessage(ctx, userID, msg); err != nil {
-				h.logger.Sugar().Errorf("Failed to handle incoming message: %w", err.Error())
-			}
+			// if err := h.handleIncomingMessage(ctx, userID, msg); err != nil {
+			// 	h.logger.Sugar().Errorf("Failed to handle incoming message: %w", err.Error())
+			// }
 		}
 	}()
 
@@ -202,7 +197,7 @@ func (h *HTTPHandler) handleMessageSentEvent(ctx context.Context, userID types.U
 	//     return fmt.Errorf("authorId does not match authenticated user")
 	// }
 
-	event := &eventstream.MessageSentEvent{
+	_ = &eventstream.MessageSentEvent{
 		EventID:   types.NewEventID(),
 		EventType: "MessageSentEvent",
 		MessageID: incomingEvent.MessageID,
@@ -213,9 +208,9 @@ func (h *HTTPHandler) handleMessageSentEvent(ctx context.Context, userID types.U
 		IsService: incomingEvent.IsService,
 	}
 
-	if err := h.eventPublisher.Publish(ctx, userID, event); err != nil {
-		return fmt.Errorf("failed to publish event: %w", err)
-	}
+	// if err := h.eventPublisher.Publish(ctx, userID, event); err != nil {
+	// 	return fmt.Errorf("failed to publish event: %w", err)
+	// }
 
 	h.logger.Debug("Successfully processed MessageSentEvent",
 		zap.String("messageId", incomingEvent.MessageID.String()),
@@ -237,7 +232,7 @@ func (h *HTTPHandler) writeEvent(ws Websocket, event eventstream.Event) error {
 	if err != nil {
 		return fmt.Errorf("adapt event: %w", err)
 	}
-
+	
 	writer, err := ws.NextWriter(gorillaws.TextMessage)
 	if err != nil {
 		return fmt.Errorf("get writer: %w", err)

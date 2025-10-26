@@ -55,6 +55,8 @@ func NewMessageSentEventWithDetails(
 ) *MessageSentEvent {
 	event := &MessageSentEvent{
 		EventID:   eventId,
+		ChatID:    chatId,
+		AuthorID:  (*types.UserID)(&userId),
 		EventType: "NewMessageEvent", // Changed to match your second test case
 		MessageID: messageId,
 		RequestID: reqId,

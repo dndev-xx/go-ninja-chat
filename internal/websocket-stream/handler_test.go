@@ -59,7 +59,7 @@ func TestHTTPHandler(t *testing.T) {
 		shutdownCh,
 		websocketstream.WithPingPeriod(pingInterval),
 		websocketstream.WithEventStream(eventStreamMock),
-		websocketstream.WithEventPublisher(eventStreamMock),
+		// websocketstream.WithEventPublisher(eventStreamMock),
 		websocketstream.WithEventAdapter(EventAdapter{}),
 		websocketstream.WithEventWriter(websocketstream.JSONEventWriter{}),
 	))

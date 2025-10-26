@@ -7,9 +7,9 @@ import (
 	"testing"
 
 	"github.com/golang-jwt/jwt"
+	"github.com/golang/mock/gomock" //"go.uber.org/mock/gomock"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/suite"
-	"go.uber.org/mock/gomock"
 
 	"github.com/dndev-xx/go-ninja-chat/internal/middlewares"
 	managerv1 "github.com/dndev-xx/go-ninja-chat/internal/server-manager/v1"

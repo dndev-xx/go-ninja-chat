@@ -42,6 +42,7 @@ type problemsRepository interface {
 
 type outboxService interface {
 	Put(ctx context.Context, name, payload string, availableAt time.Time) (types.JobID, error)
+	PublishEvent(ctx context.Context, reqID types.RequestID, msg messagesrepo.Message) error
 }
 
 type transactor interface {
@@ -101,6 +102,9 @@ func (u UseCase) Handle(ctx context.Context, req Request) (Response, error) {
 		// FIXME: rollback not working!
 		if _, err := u.outbox.Put(ctx, sendclientmessagejob.Name, fmt.Sprintf(`{"message_id": "%s"}`, msg.ID), time.Now()); err != nil {
 			return fmt.Errorf("put job to outbox: %v", err)
+		}
+		if err := u.outbox.PublishEvent(ctx, req.ID, *msg); err != nil {
+			return fmt.Errorf("publish error: %w", err.Error())
 		}
 		return nil
 	}); err != nil {

@@ -5,10 +5,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/golang/mock/gomock" //"go.uber.org/mock/gomock"
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
-	"go.uber.org/mock/gomock"
 
 	"github.com/dndev-xx/go-ninja-chat/internal/cursor"
 	messagesrepo "github.com/dndev-xx/go-ninja-chat/internal/repositories/messages"

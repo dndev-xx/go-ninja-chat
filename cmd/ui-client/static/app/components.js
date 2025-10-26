@@ -3,7 +3,9 @@ const msgWasBlockedAlert = `<div id=#{blockedMsgAlertId} class="alert alert-dang
 причине наличия в нём чувствительной информации</div>`;
 
 class Message {
-    constructor(id, authorId, body, createdAtStr, isReceived, isBlocked, isService) {
+    constructor(id, authorId, body, createdAtStr, isReceived = false, isBlocked = false, isService = false) {
+        console.log('Message constructor called with:', { id, authorId, body, createdAtStr, isReceived, isBlocked, isService });
+
         this.id = id;
         this.authorId = authorId;
         this.body = body;
@@ -21,20 +23,28 @@ class Message {
         if (!this.body) {
             console.warn('message body is empty');
         }
-        if (!this.createdAt) {
-            console.warn('message createdAt is undefined');
+        if (!this.createdAt || isNaN(this.createdAt.getTime())) {
+            console.warn('message createdAt is undefined or invalid');
         }
     }
 
     static FromData(data) {
+        console.log('FromData data:', data);
+
+        const messageId = data.id || data.messageID || data.messageId;
+        const authorId = data.authorId || data.authorID;
+
+        console.log('Resolved messageId:', messageId);
+        console.log('Resolved authorId:', authorId);
+
         return new Message(
-            data.id || data.messageId,
-            data.authorId,
+            messageId,
+            authorId,
             data.body,
             data.createdAt,
-            data.isReceived,
-            data.isBlocked,
-            data.isService,
+            data.isReceived || false,
+            data.isBlocked || false,
+            data.isService || false,
         );
     }
 

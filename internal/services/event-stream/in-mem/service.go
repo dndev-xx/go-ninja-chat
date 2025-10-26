@@ -86,7 +86,6 @@ func (s *Service) Publish(ctx context.Context, userID types.UserID, event events
 	if err := event.Validate(); err != nil {
 		return err
 	}
-
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 

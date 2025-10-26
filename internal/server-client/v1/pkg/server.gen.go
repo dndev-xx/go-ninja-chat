@@ -19,6 +19,9 @@ type ServerInterface interface {
 
 	// (POST /v1/sendMessage)
 	PostV1SendMessage(ctx echo.Context, params PostV1SendMessageParams) error
+	// WebSocket endpoint for events
+	// (GET /ws)
+	SubscribeEvents(ctx echo.Context) error
 }
 
 // ServerInterfaceWrapper converts echo contexts to parameters.
@@ -92,6 +95,17 @@ func (w *ServerInterfaceWrapper) PostV1SendMessage(ctx echo.Context) error {
 	return err
 }
 
+// SubscribeEvents converts echo context to params.
+func (w *ServerInterfaceWrapper) SubscribeEvents(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BearerAuthScopes, []string{})
+
+	// Invoke the callback with all the unmarshaled arguments
+	err = w.Handler.SubscribeEvents(ctx)
+	return err
+}
+
 // This is a simple interface which specifies echo.Route addition functions which
 // are present on both echo.Echo and echo.Group, since we want to allow using
 // either of them for path registration
@@ -122,5 +136,6 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 
 	router.POST(baseURL+"/v1/getHistory", wrapper.PostV1GetHistory)
 	router.POST(baseURL+"/v1/sendMessage", wrapper.PostV1SendMessage)
+	router.GET(baseURL+"/ws", wrapper.SubscribeEvents)
 
 }

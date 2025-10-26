@@ -4,9 +4,12 @@
 package pkg
 
 import (
+	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/dndev-xx/go-ninja-chat/internal/types"
+	"github.com/oapi-codegen/runtime"
 )
 
 const (
@@ -27,6 +30,19 @@ const (
 	N1004                         ErrorCode = 1004
 )
 
+// Defines values for MessageSentEventEventType.
+const (
+	MessageSentEventEventTypeMessageSentEvent MessageSentEventEventType = "messageSentEvent"
+)
+
+// BaseEvent defines model for BaseEvent.
+type BaseEvent struct {
+	EventId   *types.EventID   `json:"eventId,omitempty"`
+	EventType string           `json:"eventType"`
+	MessageId *types.MessageID `json:"messageId,omitempty"`
+	RequestId *types.RequestID `json:"requestId,omitempty"`
+}
+
 // Error defines model for Error.
 type Error struct {
 	// Code contains HTTP error codes and specific business logic error codes (the last must be >= 1000).
@@ -37,6 +53,11 @@ type Error struct {
 
 // ErrorCode contains HTTP error codes and specific business logic error codes (the last must be >= 1000).
 type ErrorCode int
+
+// Event defines model for Event.
+type Event struct {
+	union json.RawMessage
+}
 
 // GetHistoryRequest defines model for GetHistoryRequest.
 type GetHistoryRequest struct {
@@ -67,6 +88,27 @@ type MessageHeader struct {
 	CreatedAt *time.Time       `json:"createdAt,omitempty"`
 	MessageID *types.MessageID `json:"messageID,omitempty"`
 }
+
+// MessageSentEvent defines model for MessageSentEvent.
+type MessageSentEvent struct {
+	AuthorId types.UserID `json:"authorId"`
+
+	// Body The content of the message.
+	Body string `json:"body"`
+
+	// CreatedAt Timestamp when the message was created.
+	CreatedAt time.Time                 `json:"createdAt"`
+	EventId   *types.EventID            `json:"eventId,omitempty"`
+	EventType MessageSentEventEventType `json:"eventType"`
+
+	// IsService Indicates if the message is a service message.
+	IsService bool             `json:"isService"`
+	MessageId *types.MessageID `json:"messageId,omitempty"`
+	RequestId *types.RequestID `json:"requestId,omitempty"`
+}
+
+// MessageSentEventEventType defines model for MessageSentEvent.EventType.
+type MessageSentEventEventType string
 
 // MessagesPage defines model for MessagesPage.
 type MessagesPage struct {
@@ -105,3 +147,62 @@ type PostV1GetHistoryJSONRequestBody = GetHistoryRequest
 
 // PostV1SendMessageJSONRequestBody defines body for PostV1SendMessage for application/json ContentType.
 type PostV1SendMessageJSONRequestBody = SendMessageRequest
+
+// AsMessageSentEvent returns the union data inside the Event as a MessageSentEvent
+func (t Event) AsMessageSentEvent() (MessageSentEvent, error) {
+	var body MessageSentEvent
+	err := json.Unmarshal(t.union, &body)
+	return body, err
+}
+
+// FromMessageSentEvent overwrites any union data inside the Event as the provided MessageSentEvent
+func (t *Event) FromMessageSentEvent(v MessageSentEvent) error {
+	v.EventType = "messageSentEvent"
+	b, err := json.Marshal(v)
+	t.union = b
+	return err
+}
+
+// MergeMessageSentEvent performs a merge with any union data inside the Event, using the provided MessageSentEvent
+func (t *Event) MergeMessageSentEvent(v MessageSentEvent) error {
+	v.EventType = "messageSentEvent"
+	b, err := json.Marshal(v)
+	if err != nil {
+		return err
+	}
+
+	merged, err := runtime.JSONMerge(t.union, b)
+	t.union = merged
+	return err
+}
+
+func (t Event) Discriminator() (string, error) {
+	var discriminator struct {
+		Discriminator string `json:"eventType"`
+	}
+	err := json.Unmarshal(t.union, &discriminator)
+	return discriminator.Discriminator, err
+}
+
+func (t Event) ValueByDiscriminator() (interface{}, error) {
+	discriminator, err := t.Discriminator()
+	if err != nil {
+		return nil, err
+	}
+	switch discriminator {
+	case "messageSentEvent":
+		return t.AsMessageSentEvent()
+	default:
+		return nil, errors.New("unknown discriminator value: " + discriminator)
+	}
+}
+
+func (t Event) MarshalJSON() ([]byte, error) {
+	b, err := t.union.MarshalJSON()
+	return b, err
+}
+
+func (t *Event) UnmarshalJSON(b []byte) error {
+	err := t.union.UnmarshalJSON(b)
+	return err
+}
