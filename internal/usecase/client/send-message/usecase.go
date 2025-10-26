@@ -104,7 +104,7 @@ func (u UseCase) Handle(ctx context.Context, req Request) (Response, error) {
 			return fmt.Errorf("put job to outbox: %v", err)
 		}
 		if err := u.outbox.PublishEvent(ctx, req.ID, *msg); err != nil {
-			return fmt.Errorf("publish error: %w", err.Error())
+			return fmt.Errorf("publish error: %v", err)
 		}
 		return nil
 	}); err != nil {

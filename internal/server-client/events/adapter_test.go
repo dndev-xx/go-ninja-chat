@@ -41,7 +41,7 @@ func TestAdapter_Adapt(t *testing.T) {
 				types.MustParse[types.RequestID]("cee5f290-bc30-11ed-b7fe-461e464ebed8"),
 				types.MustParse[types.ChatID]("31b4dc06-bc31-11ed-93cc-461e464ebed8"),
 				types.MustParse[types.MessageID]("cb36a888-bc30-11ed-b843-461e464ebed8"),
-				types.UserIDNil,
+				types.MustParse[types.UserID]("cb36a888-bc30-11ed-b843-461e464ebed8"),
 				time.Unix(1, 1).UTC(),
 				"Manager will coming soon",
 				true,
@@ -51,6 +51,7 @@ func TestAdapter_Adapt(t *testing.T) {
 				"createdAt": "1970-01-01T00:00:01.000000001Z",
 				"eventId": "d0ffbd36-bc30-11ed-8286-461e464ebed8",
 				"eventType": "NewMessageEvent",
+				"authorId": "cb36a888-bc30-11ed-b843-461e464ebed8",
 				"isService": true,
 				"messageId": "cb36a888-bc30-11ed-b843-461e464ebed8",
 				"requestId": "cee5f290-bc30-11ed-b7fe-461e464ebed8"

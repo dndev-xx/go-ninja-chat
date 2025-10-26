@@ -65,7 +65,7 @@ func (h *HTTPHandler) Serve(eCtx echo.Context) error {
 		return err
 	}
 	defer ws.Close()
-	userID := middlewares.MustUserID(eCtx) // middlewares.MustUserID TODO: test -> GetAuthUserID, app -> MustUserID
+	userID := middlewares.GetAuthUserID(eCtx) // middlewares.MustUserID TODO: test -> GetAuthUserID, app -> MustUserID
 	ctx, cancel := context.WithCancel(eCtx.Request().Context())
 	defer cancel()
 
@@ -232,7 +232,7 @@ func (h *HTTPHandler) writeEvent(ws Websocket, event eventstream.Event) error {
 	if err != nil {
 		return fmt.Errorf("adapt event: %w", err)
 	}
-	
+
 	writer, err := ws.NextWriter(gorillaws.TextMessage)
 	if err != nil {
 		return fmt.Errorf("get writer: %w", err)
