@@ -13,7 +13,7 @@ import (
 	"github.com/dndev-xx/go-ninja-chat/pkg/pointer"
 )
 
-func (h Handlers) PostGetHistory(eCtx echo.Context, params clientv1.PostGetHistoryParams) error {
+func (h Handlers) PostV1GetHistory(eCtx echo.Context, params clientv1.PostV1GetHistoryParams) error {
 	ctx := eCtx.Request().Context()
 	clientID := middlewares.MustUserID(eCtx)
 	var req clientv1.GetHistoryRequest

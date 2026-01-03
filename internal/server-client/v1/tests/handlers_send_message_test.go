@@ -17,7 +17,7 @@ func (s *HandlersSuite) TestSendMessage_BindRequestError() {
 	reqID := types.NewRequestID()
 	resp, eCtx := s.newEchoCtx(reqID, "/v1/sendMessage", `{"messageBody": "Hel"`)
 	// Action.
-	err := s.handlers.PostSendMessage(eCtx, clientv1.PostSendMessageParams{XRequestID: reqID})
+	err := s.handlers.PostV1SendMessage(eCtx, clientv1.PostV1SendMessageParams{XRequestID: reqID})
 
 	// Assert.
 	s.T().Log(err.Error())
@@ -32,7 +32,7 @@ func (s *HandlersSuite) TestSendMessage_BindRequestEmptyMsgError() {
 	resp, eCtx := s.newEchoCtx(reqID, "/v1/sendMessage", `{"messageBody": ""}`)
 
 	// Action.
-	err := s.handlers.PostSendMessage(eCtx, clientv1.PostSendMessageParams{XRequestID: reqID})
+	err := s.handlers.PostV1SendMessage(eCtx, clientv1.PostV1SendMessageParams{XRequestID: reqID})
 
 	// Assert.
 	s.Require().Error(err)
@@ -47,7 +47,7 @@ func (s *HandlersSuite) TestSendMessage_BindRequestMoreMsgError() {
 	resp, eCtx := s.newEchoCtx(reqID, "/v1/sendMessage", fmt.Sprintf(`{"messageBody": "%s"}`, bigMsg))
 
 	// Action.
-	err := s.handlers.PostSendMessage(eCtx, clientv1.PostSendMessageParams{XRequestID: reqID})
+	err := s.handlers.PostV1SendMessage(eCtx, clientv1.PostV1SendMessageParams{XRequestID: reqID})
 
 	// Assert.
 	s.T().Log(err.Error())
@@ -67,7 +67,7 @@ func (s *HandlersSuite) TestSendMessage_Usecase_ChatNotCreatedError() {
 	}).Return(sendmessage.Response{}, sendmessage.ErrChatNotCreated)
 
 	// Action.
-	err := s.handlers.PostSendMessage(eCtx, clientv1.PostSendMessageParams{XRequestID: reqID})
+	err := s.handlers.PostV1SendMessage(eCtx, clientv1.PostV1SendMessageParams{XRequestID: reqID})
 
 	// Assert.
 	s.Require().Error(err)
@@ -86,7 +86,7 @@ func (s *HandlersSuite) TestSendMessage_Usecase_ProblemNotCreatedError() {
 	}).Return(sendmessage.Response{}, sendmessage.ErrProblemNotCreated)
 
 	// Action.
-	err := s.handlers.PostSendMessage(eCtx, clientv1.PostSendMessageParams{XRequestID: reqID})
+	err := s.handlers.PostV1SendMessage(eCtx, clientv1.PostV1SendMessageParams{XRequestID: reqID})
 
 	// Assert.
 	s.Require().Error(err)
@@ -111,7 +111,7 @@ func (s *HandlersSuite) TestSendMessage_Usecase_Success() {
 	}, nil)
 
 	// Action.
-	err := s.handlers.PostSendMessage(eCtx, clientv1.PostSendMessageParams{XRequestID: reqID})
+	err := s.handlers.PostV1SendMessage(eCtx, clientv1.PostV1SendMessageParams{XRequestID: reqID})
 
 	// Assert.
 	s.Require().NoError(err)

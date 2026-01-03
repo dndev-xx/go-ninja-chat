@@ -7,6 +7,8 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/dndev-xx/go-ninja-chat/internal/repositories/messages"
+	eventstream "github.com/dndev-xx/go-ninja-chat/internal/services/event-stream"
 	"github.com/dndev-xx/go-ninja-chat/internal/types"
 )
 
@@ -35,4 +37,10 @@ func (s *Outbox) Put(ctx context.Context, name, payload string, availableAt time
 	)
 
 	return jobID, nil
+}
+
+func (s *Outbox) PublishEvent(ctx context.Context, reqID types.RequestID, msg messages.Message) error {
+	event := eventstream.NewMessageSentEventWithDetails(types.EventID(reqID), reqID, msg.ChatID, msg.ID, msg.AuthorID, msg.CreatedAt, msg.Body, msg.IsService)
+	s.eventStream.Publish(ctx, msg.AuthorID, event)
+	return nil
 }

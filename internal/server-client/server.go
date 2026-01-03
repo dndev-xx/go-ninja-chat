@@ -18,6 +18,7 @@ import (
 
 	mw "github.com/dndev-xx/go-ninja-chat/internal/middlewares"
 	clientv1 "github.com/dndev-xx/go-ninja-chat/internal/server-client/v1/pkg"
+	wsv1 "github.com/dndev-xx/go-ninja-chat/internal/server-event/v1/pkg"
 )
 
 const (
@@ -33,10 +34,12 @@ type Options struct {
 	allowOrigins   []string                 `option:"mandatory"`
 	v1Swagger      *openapi3.T              `option:"mandatory"`
 	v1Handlers     clientv1.ServerInterface `option:"mandatory"`
+	v1WsHandler    wsv1.ServerInterface     `option:"mandatory"`
 	keycloakClient mw.Introspector          `option:"mandatory"`
 	resource       string                   `option:"mandatory"`
 	role           string                   `option:"mandatory"`
 	errorHandler   echo.HTTPErrorHandler    `option:"mandatory"`
+	secWsProtocols string                   `option:"mandatory"`
 }
 
 type Server struct {
@@ -70,13 +73,14 @@ func New(opts Options) (*Server, error) {
 		MaxAge:           3600,
 	}))
 	authMiddleware := mw.NewKeycloakTokenAuth(opts.keycloakClient, opts.resource, opts.role)
+	wsAuth := mw.NewWebSocketAuth(opts.keycloakClient, opts.resource, opts.role)
 	loggerMiddleware := mw.NewRequestLogger(lg)
 	recoverLog := mw.NewRecovery(lg)
-
-	v1 := e.Group("/v1",
+	v1 := e.Group("",
 		loggerMiddleware,
 		recoverLog,
 		authMiddleware,
+		wsAuth,
 		echomdlwr.BodyLimit("12KI"),
 		oapimdlwr.OapiRequestValidatorWithOptions(opts.v1Swagger, &oapimdlwr.Options{
 			Options: openapi3filter.Options{
@@ -86,7 +90,6 @@ func New(opts Options) (*Server, error) {
 			},
 			SilenceServersWarning: true,
 		}))
-
 	clientv1.RegisterHandlers(v1, opts.v1Handlers)
 
 	// srv := &http.Server{

@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"go.uber.org/zap"
 	"golang.org/x/sync/errgroup"
 
 	application "github.com/dndev-xx/go-ninja-chat/pkg/context"
@@ -43,5 +44,5 @@ func main() {
 	if err = eg.Wait(); err != nil && !errors.Is(err, context.Canceled) {
 		log.Fatalf("run app: %v", err)
 	}
-	log.Println("Shutting down gracefully...")
+	zap.L().Info("Shutting down gracefully...")
 }

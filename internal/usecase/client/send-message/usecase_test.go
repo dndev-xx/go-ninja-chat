@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/golang/mock/gomock"
+	"github.com/golang/mock/gomock" //"go.uber.org/mock/gomock"
 	"github.com/stretchr/testify/suite"
 
 	messagesrepo "github.com/dndev-xx/go-ninja-chat/internal/repositories/messages"
@@ -269,6 +269,7 @@ func (s *UseCaseSuite) TestTransactionError() {
 		Return(&messagesrepo.Message{ID: types.NewMessageID()}, nil)
 	s.outBoxSvc.EXPECT().Put(gomock.Any(), sendclientmessagejob.Name, gomock.Any(), gomock.Any()).
 		Return(types.NewJobID(), nil)
+	s.outBoxSvc.EXPECT().PublishEvent(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 
 	req := sendmessage.Request{
 		ID:          reqID,
@@ -317,6 +318,7 @@ func (s *UseCaseSuite) TestNewMsgCreatedSuccessfully() {
 		}, nil)
 	s.outBoxSvc.EXPECT().Put(gomock.Any(), sendclientmessagejob.Name, gomock.Any(), gomock.Any()).
 		Return(types.NewJobID(), nil)
+	s.outBoxSvc.EXPECT().PublishEvent(gomock.Any(), gomock.Any(), gomock.Any()).Return(nil)
 
 	req := sendmessage.Request{
 		ID:          reqID,

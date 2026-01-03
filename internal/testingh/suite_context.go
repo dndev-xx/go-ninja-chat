@@ -2,6 +2,7 @@ package testingh
 
 import (
 	"context"
+	"sync"
 
 	"github.com/stretchr/testify/suite"
 )
@@ -9,6 +10,7 @@ import (
 type ContextSuite struct {
 	suite.Suite
 
+	mu        sync.RWMutex
 	Ctx       context.Context
 	ctxCancel context.CancelFunc
 
@@ -25,9 +27,21 @@ func (cs *ContextSuite) TearDownSuite() {
 }
 
 func (cs *ContextSuite) SetupTest() {
+	cs.mu.Lock()
+	defer cs.mu.Unlock()
 	cs.Ctx, cs.ctxCancel = context.WithCancel(cs.SuiteCtx)
 }
 
 func (cs *ContextSuite) TearDownTest() {
-	cs.ctxCancel()
+	cs.mu.Lock()
+	defer cs.mu.Unlock()
+	if cs.ctxCancel != nil {
+		cs.ctxCancel()
+	}
+}
+
+func (cs *ContextSuite) Context() context.Context {
+	cs.mu.RLock()
+	defer cs.mu.RUnlock()
+	return cs.Ctx
 }

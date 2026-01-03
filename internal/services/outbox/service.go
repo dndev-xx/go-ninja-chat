@@ -25,6 +25,7 @@ type Outbox struct {
 	repo         JobsRepository
 	logger       *zap.Logger
 	registry     map[string]Job
+	eventStream  eventPublisher
 	mu           sync.RWMutex
 	wg           sync.WaitGroup
 	shutdownChan chan struct{}
@@ -44,10 +45,11 @@ type transactor interface {
 }
 
 type Config struct {
-	Workers    int
-	IdleTime   time.Duration
-	ReserveFor time.Duration
-	Logger     *zap.Logger
+	Workers        int
+	IdleTime       time.Duration
+	ReserveFor     time.Duration
+	Logger         *zap.Logger
+	EventPublisher eventPublisher
 }
 
 func New(repo JobsRepository, db transactor, cfg Config) *Outbox {
@@ -57,6 +59,7 @@ func New(repo JobsRepository, db transactor, cfg Config) *Outbox {
 		reserveFor:   cfg.ReserveFor,
 		repo:         repo,
 		logger:       cfg.Logger,
+		eventStream:  cfg.EventPublisher,
 		registry:     make(map[string]Job),
 		shutdownChan: make(chan struct{}),
 		db:           db,

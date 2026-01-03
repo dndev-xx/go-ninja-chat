@@ -1,0 +1,87 @@
+# openapi: 3.0.3
+# info:
+#   title: Bank Support Chat Client Events
+#   version: v1
+
+# servers:
+#   - url: ws://localhost:8080
+#     description: Development server
+
+# paths:
+#   /ws:
+#     get:
+#       summary: WebSocket endpoint for events
+#       operationId: subscribeEvents
+#       responses:
+#         '101':
+#           description: Switching Protocols - WebSocket connection established
+#           content:
+#             application/json:
+#               schema:
+#                 $ref: '#/components/schemas/Event'
+
+# components:
+#   schemas:
+#     Event:
+#       oneOf:
+#         - $ref: '#/components/schemas/MessageSentEvent'
+#       discriminator:
+#         propertyName: eventType
+#         mapping:
+#           messageSentEvent: '#/components/schemas/MessageSentEvent'
+
+#     BaseEvent:
+#       type: object
+#       required:
+#         - eventType
+#       properties:
+#         eventType:
+#           type: string
+#         eventId:
+#           type: string
+#           format: uuid
+#           x-go-type: types.EventID
+#           x-go-type-import:
+#             path: "github.com/dndev-xx/go-ninja-chat/internal/types"
+#         messageId:
+#           type: string
+#           format: uuid
+#           x-go-type: types.MessageID
+#           x-go-type-import:
+#             path: "github.com/dndev-xx/go-ninja-chat/internal/types"
+#         requestId:
+#           type: string
+#           format: uuid
+#           x-go-type: types.RequestID
+#           x-go-type-import:
+#             path: "github.com/dndev-xx/go-ninja-chat/internal/types"
+
+#     MessageSentEvent:
+#       allOf:
+#         - $ref: '#/components/schemas/BaseEvent'
+#         - type: object
+#           required:
+#             - authorId
+#             - body
+#             - createdAt
+#             - isService
+#           properties:
+#             eventType:
+#               type: string
+#               enum: [messageSentEvent]
+#             authorId:
+#               type: string
+#               format: uuid
+#               x-go-type: types.UserID
+#               x-go-type-import:
+#                 path: "github.com/dndev-xx/go-ninja-chat/internal/types"
+#             body:
+#               type: string
+#               description: The content of the message.
+#             createdAt:
+#               type: string
+#               format: date-time
+#               description: Timestamp when the message was created.
+#             isService:
+#               type: boolean
+#               description: Indicates if the message is a service message.

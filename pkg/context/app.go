@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"time"
 
 	swag "github.com/getkin/kin-openapi/openapi3"
 	"go.uber.org/zap"
@@ -17,12 +18,14 @@ import (
 	repoProblems "github.com/dndev-xx/go-ninja-chat/internal/repositories/problems"
 	serverclient "github.com/dndev-xx/go-ninja-chat/internal/server-client"
 	servererror "github.com/dndev-xx/go-ninja-chat/internal/server-client/errhandler"
+	clientevents "github.com/dndev-xx/go-ninja-chat/internal/server-client/events"
 	h "github.com/dndev-xx/go-ninja-chat/internal/server-client/v1"
 	sw "github.com/dndev-xx/go-ninja-chat/internal/server-client/v1/pkg"
 	serverdebug "github.com/dndev-xx/go-ninja-chat/internal/server-debug"
 	servermanager "github.com/dndev-xx/go-ninja-chat/internal/server-manager"
 	hm "github.com/dndev-xx/go-ninja-chat/internal/server-manager/v1"
 	mgpkg "github.com/dndev-xx/go-ninja-chat/internal/server-manager/v1/pkg"
+	eventstreamsrv "github.com/dndev-xx/go-ninja-chat/internal/services/event-stream/in-mem"
 	managerload "github.com/dndev-xx/go-ninja-chat/internal/services/manager-load"
 	managerpool "github.com/dndev-xx/go-ninja-chat/internal/services/manager-pool/in-mem"
 	msgProducer "github.com/dndev-xx/go-ninja-chat/internal/services/msg-producer"
@@ -32,8 +35,10 @@ import (
 	db "github.com/dndev-xx/go-ninja-chat/internal/store"
 	usecase "github.com/dndev-xx/go-ninja-chat/internal/usecase/client/get-history"
 	usecaseMsg "github.com/dndev-xx/go-ninja-chat/internal/usecase/client/send-message"
+	wshandshake "github.com/dndev-xx/go-ninja-chat/internal/usecase/client/ws-handshake"
 	usecaseFreeHands "github.com/dndev-xx/go-ninja-chat/internal/usecase/manager/get-free-hands"
 	usecaseAvailableManager "github.com/dndev-xx/go-ninja-chat/internal/usecase/manager/getFreeHandsBtnAvailability"
+	"github.com/dndev-xx/go-ninja-chat/internal/websocket-stream"
 )
 
 var configPath = flag.String("config", "configs/config.toml", "Path to config file")
@@ -248,11 +253,13 @@ func (b *AppBuilder) WithClientHTTPSrv() Builder {
 		b.err = fmt.Errorf("create v1 usecase %v", err)
 		return b
 	}
+	eventStream := eventstreamsrv.New()
 	outbox := obox.New(jobRepo, db, obox.Config{
-		Workers:    10,
-		IdleTime:   b.App.Config.Services.Outbox.IdleTime,
-		ReserveFor: b.App.Config.Services.Outbox.ReserveFor,
-		Logger:     b.App.Logger,
+		Workers:        10,
+		IdleTime:       b.App.Config.Services.Outbox.IdleTime,
+		ReserveFor:     b.App.Config.Services.Outbox.ReserveFor,
+		Logger:         b.App.Logger,
+		EventPublisher: eventStream,
 	})
 	outbox.MustRegisterJob(job)
 	go outbox.Start(b.App.context)
@@ -270,7 +277,23 @@ func (b *AppBuilder) WithClientHTTPSrv() Builder {
 	if err != nil {
 		b.err = fmt.Errorf("create http error handler: %v", err)
 	}
-	handlers, err := h.NewHandlers(h.NewOptions(usecaseHist, usecaseMsg))
+	shutdownCh := make(chan struct{})
+	upgrader, err := websocketstream.NewHTTPHandler(websocketstream.NewOptions(
+		zap.L(),
+		websocketstream.NewUpgrader([]string{"http://localhost"}, "chat-service-protocol"),
+		shutdownCh,
+		websocketstream.WithPingPeriod(time.Second/4),
+		websocketstream.WithEventAdapter(clientevents.Adapter{}),
+		websocketstream.WithEventWriter(websocketstream.JSONEventWriter{}),
+		websocketstream.WithEventStream(eventStream),
+		// websocketstream.WithEventPublisher(eventStream),
+	))
+
+	usecaseUpgrade, err := wshandshake.New(
+		wshandshake.NewOptions(wshandshake.WithHttpUpgrade(upgrader)),
+	)
+
+	handlers, err := h.NewHandlers(h.NewOptions(usecaseHist, usecaseMsg, h.WithWsUpdateHttpReqUseCase(usecaseUpgrade)))
 	if err != nil {
 		b.err = fmt.Errorf("create v1 handlers %v", err)
 		return b
@@ -292,10 +315,12 @@ func (b *AppBuilder) WithClientHTTPSrv() Builder {
 		b.App.Config.Servers.Client.AllowOrigins,
 		b.App.Swagger["client"],
 		handlers,
+		handlers,
 		kc,
 		b.App.Config.Servers.Client.RequiredAccess.Resource,
 		b.App.Config.Servers.Client.RequiredAccess.Role,
 		httpErrorHandler.Handle,
+		b.App.Config.Servers.Client.SecWsProtocol,
 	))
 	if err != nil {
 		b.err = fmt.Errorf("create server %v", err)

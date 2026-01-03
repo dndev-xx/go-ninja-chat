@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/labstack/echo/v4"
+
 	usecaseHist "github.com/dndev-xx/go-ninja-chat/internal/usecase/client/get-history"
 	sendMessage "github.com/dndev-xx/go-ninja-chat/internal/usecase/client/send-message"
 )
@@ -18,10 +20,15 @@ type sendMsgUseCase interface {
 	Handle(ctx context.Context, req sendMessage.Request) (sendMessage.Response, error)
 }
 
+type wsUpdateHttpReqUseCase interface {
+	Handle(ctx echo.Context) error
+}
+
 //go:generate options-gen -out-filename=handlers.gen.go -from-struct=Options
 type Options struct {
-	getHistory getHistoryUseCase `option:"mandatory" validate:"required"`
-	sendMsg    sendMsgUseCase    `option:"mandatory"`
+	getHistory             getHistoryUseCase `option:"mandatory" validate:"required"`
+	sendMsg                sendMsgUseCase    `option:"mandatory"`
+	wsUpdateHttpReqUseCase wsUpdateHttpReqUseCase
 }
 
 type Handlers struct {

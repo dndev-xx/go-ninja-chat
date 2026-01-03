@@ -69,7 +69,7 @@ func New(opts Options) (*Server, error) {
 	loggerMiddleware := mw.NewRequestLogger(lg)
 	recoverLog := mw.NewRecovery(lg)
 
-	v1 := e.Group("/v1",
+	v1 := e.Group("",
 		loggerMiddleware,
 		recoverLog,
 		authMiddleware,

@@ -1,8 +1,11 @@
-const blockedMsgBody = `<div class="alert alert-danger">Сообщение не было доставлено менеджеру по
+const msgWasBlockedAlertId = 'msg-was-blocked-alert';
+const msgWasBlockedAlert = `<div id=#{blockedMsgAlertId} class="alert alert-danger">Сообщение не было доставлено менеджеру по
 причине наличия в нём чувствительной информации</div>`;
 
 class Message {
-    constructor(id, authorId, body, createdAtStr, isReceived, isBlocked, isService) {
+    constructor(id, authorId, body, createdAtStr, isReceived = false, isBlocked = false, isService = false) {
+        console.log('Message constructor called with:', { id, authorId, body, createdAtStr, isReceived, isBlocked, isService });
+
         this.id = id;
         this.authorId = authorId;
         this.body = body;
@@ -10,17 +13,38 @@ class Message {
         this.isReceived = isReceived;
         this.isBlocked = isBlocked;
         this.isService = isService;
+
+        if (!this.id) {
+            console.warn('message id is undefined');
+        }
+        if (!this.authorId) {
+            console.warn('message authorId is undefined');
+        }
+        if (!this.body) {
+            console.warn('message body is empty');
+        }
+        if (!this.createdAt || isNaN(this.createdAt.getTime())) {
+            console.warn('message createdAt is undefined or invalid');
+        }
     }
 
     static FromData(data) {
+        console.log('FromData data:', data);
+
+        const messageId = data.id || data.messageID || data.messageId;
+        const authorId = data.authorId || data.authorID;
+
+        console.log('Resolved messageId:', messageId);
+        console.log('Resolved authorId:', authorId);
+
         return new Message(
-            data.id,
-            data.authorId,
+            messageId,
+            authorId,
             data.body,
             data.createdAt,
-            data.isReceived,
-            data.isBlocked,
-            data.isService,
+            data.isReceived || false,
+            data.isBlocked || false,
+            data.isService || false,
         );
     }
 
@@ -28,7 +52,7 @@ class Message {
         if (this.authorId === App.clientID) {
             let body = `<p class="body">${this.body}</p>`;
             if (this.isBlocked) {
-                body = blockedMsgBody;
+                body = msgWasBlockedAlert;
             }
 
             const check = this.isReceived ? 'fa-check-double' : 'fa-check';
@@ -53,7 +77,7 @@ class Message {
         <p class="meta">${this.createdAt.toLocaleString()}</p>
     </div>
  </div>
-        `
+        `;
         }
 
         return `

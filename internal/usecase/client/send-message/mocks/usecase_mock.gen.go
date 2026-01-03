@@ -166,6 +166,20 @@ func (m *MockoutboxService) EXPECT() *MockoutboxServiceMockRecorder {
 	return m.recorder
 }
 
+// PublishEvent mocks base method.
+func (m *MockoutboxService) PublishEvent(ctx context.Context, reqID types.RequestID, msg messages.Message) error {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "PublishEvent", ctx, reqID, msg)
+	ret0, _ := ret[0].(error)
+	return ret0
+}
+
+// PublishEvent indicates an expected call of PublishEvent.
+func (mr *MockoutboxServiceMockRecorder) PublishEvent(ctx, reqID, msg interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "PublishEvent", reflect.TypeOf((*MockoutboxService)(nil).PublishEvent), ctx, reqID, msg)
+}
+
 // Put mocks base method.
 func (m *MockoutboxService) Put(ctx context.Context, name, payload string, availableAt time.Time) (types.JobID, error) {
 	m.ctrl.T.Helper()

@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"github.com/golang-jwt/jwt"
-	"github.com/golang/mock/gomock"
+	"github.com/golang/mock/gomock" //"go.uber.org/mock/gomock"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

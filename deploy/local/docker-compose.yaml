@@ -51,8 +51,50 @@ services:
       KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT,EXTERNAL:PLAINTEXT
       KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
-      KAFKA_CREATE_TOPICS: "chat.messages:16:1"
+      KAFKA_CREATE_TOPICS: "chat.messages:16:1,afc.msg-verdicts:16:1,afc.msg-verdicts.dlq:1:1"
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "false"
+
+  afc_emulator:
+    image: antonboom/writing-go-service.afc
+    depends_on:
+      - kafka
+    restart: on-failure
+    environment:
+      AFC_LOG_LEVEL: "DEBUG"
+      AFC_BROKER_ADDR: "kafka:29092"
+      AFC_MESSAGES_TOPIC: "chat.messages"
+      AFC_VERDICTS_TOPIC: "afc.msg-verdicts"
+      AFC_ENV: "dev"
+      AFC_MSG_DECRYPTION_KEY: "6D597133743677397A24432646294A40"
+      AFC_VERDICTS_SIGN_PRIVATE_KEY: | #not real key
+        -----BEGIN PRIVATE KEY-----
+        MIIEvwIBADANBgkqhkiG9w0BAQEFAASCBKkwggSlAgEAAoIBAQD6zXS1qLihjuF2
+        pEUumVQusgHB7MkUR5G8KvG0WOtPXRlDMQpSX62cE0NgKw+2zsr9TlzblOXogYPe
+        TX5/7TAoKTVll9QFNcV1AyDKVs7a16OCisE0aSXkxcp4r3jH2b2ikwbnsu8WmfCE
+        8CSlHdkgSO+NUD9z3v9srCH14sV4Gvab2yV4x7e8Okb7Yt7t3tlRgedTyaEzDrw3
+        W2OwKCrpwbLx/lK2b7oC1CgM5qALkApmJF7A7Q4HEevxa5EIgb2sSkAti/ogKuhT
+        Sm0XddKEmPFguPs/VakMWSGKlK2fGzgUye8rxtj5uY7Y9KVrweIiZVSOJrhxHpRL
+        gw7D3CAVAgMBAAECggEAHLiEgf0VT6L+HMkJByIV6tcFroCAMmtTvBmq3j1EjS0b
+        JH+sL+y3A+WM1Kl5vjSGOGXN6nNttKeIQ1/aeane1uqJK94sMICM4S5/hcxVGeiR
+        1/Qt1eOorD8eRZ3KlhBQUBrIMqZiDNOKIJ8jgykc4T6Y+DTVX16NH5PCu9bBSFSM
+        Gj0jvbrLfBvsGjKYSNoYATxLrnSI/68dz7Rt6ZhOhJoGSooBPEstwudupM0YuIQk
+        dCD/v++q9m3bivexRfUD7d+Sx5Cn6fuPmuoy1yQQL5bUdbhj5FX+jT5ohpPwvo/i
+        K27/SqRZeDt0anicEwpdDXDn9qswRnebDGrkO+rGDQKBgQD+CxWr//xcoNo+aepw
+        45vQC3HflX9rapLRe0UytOmhqRQoECiXVjzD4Smz/R55njeklxNkobmBzwl2YsxC
+        f3zj+EUwBcs1Gc1zA93QT+V4f8ohy3g38vOLfVuiivRnneejlq0ewpGPiwOxr3sL
+        U8qkJtOq9Mha2SoN64sp/HcI1wKBgQD8u/szCbZEqlpUbRWyhNepNP9AK7WTIuhE
+        9py8j6bpJAGpsuw37/7FNs7L7C3iWwhXVjJxlFKo+IZ29iyM73ox2UkXaobVYExq
+        wPwxN57WZdoZjNUw+ShEifF2gWamUNzHGhg38uzDkAn+HYkRzLPwUc1O4SHSOrwo
+        F6fqjNOk8wKBgQDY050rsNE0PhYIL15p+9qBN0N6EZ8vj0bAhPYK0V6XHDiX+TKr
+        +G7kwMlXVjMsml3jnQ5wVZh/srXg1XKBT07JRJ3I3ykRqXQxNpubsJWqw2dCcOeq
+        2TIFXHlZwj/YMG4EshYQqwCSA5Sjk6LxiBLtCDahM0vOPowmVWPx8gmnAQKBgQDR
+        uWyKvdRyxqqOxLbsnTAZSdFG/v5+SslT8RG/p7VqYma+26sKAC36mbChqCurWr9h
+        OjZB6kNt1E5BCaeOjGtqUlVFCTE6f97p95tPfEhiwcJq0WNYcGnp9k5ZeKgl+5Q5
+        5H2UcBHpdu3T4c6M5sGq+zbT7h6Sxgq9emPtT0+R4QKBgQCSG2g0gwiefUVKTst1
+        xN53SaCDrcCufhJ9tl+rI9sAvNvl/I+Swo40aaGUd6ofXCt/PK0BUAI2qWoy+rQt
+        5zJ27U2qvdMUr393falVyAVrk6o23KXNB6628FDOdhnVisbHVcUXuqTT2hBeRLZI
+        vE3NSO1bLL0RhlUU1yfI8a4YGg==
+        -----END PRIVATE KEY-----
 
   kafka-ui:
     image: provectuslabs/kafka-ui:latest

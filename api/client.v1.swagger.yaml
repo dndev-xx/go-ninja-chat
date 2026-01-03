@@ -4,11 +4,11 @@ info:
   version: v1
 
 servers:
-  - url: http://localhost:8080/v1
+  - url: http://localhost:8080
     description: Development server
 
 paths:
-  /sendMessage:
+  /v1/sendMessage:
     post:
       description: Send new message to the chat.
       parameters:
@@ -27,7 +27,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/SendMessageResponse"
 
-  /getHistory:
+  /v1/getHistory:
     post:
       description: Get chat history.
       parameters:
@@ -58,6 +58,18 @@ paths:
               schema:
                 $ref: "#/components/schemas/Error"
 
+  /ws:
+    get:
+      summary: WebSocket endpoint for events
+      operationId: subscribeEvents
+      responses:
+        '101':
+          description: Switching Protocols - WebSocket connection established
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'
+
 security:
   - bearerAuth: []
 
@@ -81,6 +93,71 @@ components:
       required: true
 
   schemas:
+
+    Event:
+      oneOf:
+        - $ref: '#/components/schemas/MessageSentEvent'
+      discriminator:
+        propertyName: eventType
+        mapping:
+          messageSentEvent: '#/components/schemas/MessageSentEvent'
+
+    BaseEvent:
+      type: object
+      required:
+        - eventType
+      properties:
+        eventType:
+          type: string
+        eventId:
+          type: string
+          format: uuid
+          x-go-type: types.EventID
+          x-go-type-import:
+            path: "github.com/dndev-xx/go-ninja-chat/internal/types"
+        messageId:
+          type: string
+          format: uuid
+          x-go-type: types.MessageID
+          x-go-type-import:
+            path: "github.com/dndev-xx/go-ninja-chat/internal/types"
+        requestId:
+          type: string
+          format: uuid
+          x-go-type: types.RequestID
+          x-go-type-import:
+            path: "github.com/dndev-xx/go-ninja-chat/internal/types"
+
+    MessageSentEvent:
+      allOf:
+        - $ref: '#/components/schemas/BaseEvent'
+        - type: object
+          required:
+            - authorId
+            - body
+            - createdAt
+            - isService
+          properties:
+            eventType:
+              type: string
+              enum: [messageSentEvent]
+            authorId:
+              type: string
+              format: uuid
+              x-go-type: types.UserID
+              x-go-type-import:
+                path: "github.com/dndev-xx/go-ninja-chat/internal/types"
+            body:
+              type: string
+              description: The content of the message.
+            createdAt:
+              type: string
+              format: date-time
+              description: Timestamp when the message was created.
+            isService:
+              type: boolean
+              description: Indicates if the message is a service message.
+
     SendMessageRequest:
       required: [messageBody]
       type: object

@@ -5,10 +5,6 @@
 
 # Bank Support Chat System
 
-```
-brew install graphviz #for visualization heap
-```
-
 ## Structure project
 ```
 .

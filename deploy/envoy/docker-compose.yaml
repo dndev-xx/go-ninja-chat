@@ -1,0 +1,24 @@
+version: "3.8"
+
+services:
+  envoy-local:
+    image: envoyproxy/envoy:v1.28-latest
+    container_name: envoy-local
+    ports:
+      - "10000:10000" # HTTP трафик
+      - "9901:9901" # Admin панель
+    volumes:
+      - ./envoy.yaml:/etc/envoy/envoy.yaml:ro
+    command:
+      ["/usr/local/bin/envoy", "-c", "/etc/envoy/envoy.yaml", "-l", "debug"]
+    restart: unless-stopped
+
+  # Опциональный тестовый backend сервис
+  test-backend:
+    image: httpd:2.4-alpine
+    container_name: test-backend
+    ports:
+      - "8080:80"
+    volumes:
+      - ./index.html:/usr/local/apache2/htdocs/index.html:ro
+    restart: unless-stopped
