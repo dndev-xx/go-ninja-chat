@@ -5,6 +5,7 @@ go 1.23.1
 require (
 	entgo.io/ent v0.14.4
 	github.com/BurntSushi/toml v1.5.0
+	github.com/cenkalti/backoff/v4 v4.3.0
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/getkin/kin-openapi v0.131.0
 	github.com/go-playground/validator/v10 v10.24.0
@@ -24,7 +25,6 @@ require (
 	github.com/segmentio/kafka-go v0.4.48
 	github.com/stretchr/testify v1.10.0
 	go.uber.org/goleak v1.3.0
-	go.uber.org/mock v0.6.0
 	go.uber.org/zap v1.27.0
 	golang.org/x/sync v0.16.0
 )
